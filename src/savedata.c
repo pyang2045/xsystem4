@@ -170,6 +170,8 @@ static struct gsave_flat_array *collect_flat_arrays(struct page *page, struct gs
 int32_t add_value_to_gsave(enum ain_data_type type, union vm_value val, struct gsave *save)
 {
 	switch (type) {
+	case AIN_ENUM:
+	case AIN_ENUM2:
 	case AIN_VOID:
 	case AIN_INT:
 	case AIN_BOOL:
@@ -499,9 +501,34 @@ static int struct_member_index(struct ain_struct *st, const char *name)
 
 union vm_value gsave_to_vm_value(struct gsave *save, enum ain_data_type type, int struct_type, int array_rank, int32_t value);
 
-/* The loader of add_typed_value_to_gsave's values. A generic array is made
- * as X_A_INIT makes one (a_type AIN_ARRAY, its one-slot stride in
- * array.struct_type). */
+/* The page X_A_INIT makes for a generic array of et: a concrete array type
+ * for one-slot ints, floats, strings and structs (as the Array library
+ * expects, e.g. Array.Find), else a_type AIN_ARRAY with its one-slot stride
+ * in array.struct_type. */
+static struct page *generic_array_page(const struct ain_type *et, int nr_values)
+{
+	enum ain_data_type a_type = AIN_ARRAY;
+	int struct_type = 1;
+	switch (et ? et->data : AIN_VOID) {
+	case AIN_INT: case AIN_BOOL: case AIN_ENUM:
+		a_type = AIN_ARRAY_INT; struct_type = -1; break;
+	case AIN_FLOAT:
+		a_type = AIN_ARRAY_FLOAT; struct_type = -1; break;
+	case AIN_STRING:
+		a_type = AIN_ARRAY_STRING; struct_type = -1; break;
+	case AIN_STRUCT:
+		a_type = AIN_ARRAY_STRUCT; struct_type = et->struc; break;
+	default:
+		break;
+	}
+	struct page *page = alloc_page(ARRAY_PAGE, a_type, nr_values);
+	page->array.rank = 1;
+	page->array.struct_type = struct_type;
+	return page;
+}
+
+/* The loader of add_typed_value_to_gsave's values; a generic array gets the
+ * page of generic_array_page. */
 static union vm_value gsave_typed_to_vm_value(struct gsave *save, const struct ain_type *t, int32_t value)
 {
 	if (!(t->data == AIN_ARRAY && t->array_type))
@@ -512,17 +539,11 @@ static union vm_value gsave_typed_to_vm_value(struct gsave *save, const struct a
 	if (!array || array->rank != 1 || array->nr_flat_arrays != 1 || !generic_elem_savable(et)) {
 		if (array && array->rank != -1)
 			WARNING("load: generic array of unexpected shape (rank %d)", array->rank);
-		struct page *page = alloc_page(ARRAY_PAGE, AIN_ARRAY, 0);
-		page->array.rank = 1;
-		page->array.struct_type = 1;
-		heap_set_page(slot, page);
+		heap_set_page(slot, generic_array_page(et, 0));
 		return vm_int(slot);
 	}
 	struct gsave_flat_array *fa = &array->flat_arrays[0];
-	struct page *page = alloc_page(ARRAY_PAGE, AIN_ARRAY, fa->nr_values);
-	page->array.rank = 1;
-	page->array.struct_type = 1;
-	heap_set_page(slot, page);
+	heap_set_page(slot, generic_array_page(et, fa->nr_values));
 	for (int i = 0; i < fa->nr_values; i++) {
 		union vm_value v = gsave_typed_to_vm_value(save, et, fa->values[i].value);
 		heap[slot].page->values[i] = v;
@@ -555,6 +576,8 @@ static struct gsave_flat_array *gsave_load_array(struct gsave *save, struct page
 union vm_value gsave_to_vm_value(struct gsave *save, enum ain_data_type type, int struct_type, int array_rank, int32_t value)
 {
 	switch (type) {
+	case AIN_ENUM:
+	case AIN_ENUM2:
 	case AIN_VOID:
 	case AIN_INT:
 	case AIN_BOOL:
