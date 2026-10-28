@@ -899,6 +899,10 @@ void parts_controller_relink_roots(void);
 // entries (and IsExistActivity its answer) when a controller releases parts.
 void pe_v14_activity_parts_released(int parts_no);
 void pe_v14_activity_reset(void);
+struct iarray_writer;
+struct iarray_reader;
+void pe_v14_activity_save(struct iarray_writer *w);
+void pe_v14_activity_load(struct iarray_reader *r);
 void parts_v14_restart(void);
 void pe_v14_message_reset(void);
 bool pe_v14_activity_number_released(int parts_no);

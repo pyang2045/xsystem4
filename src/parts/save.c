@@ -83,11 +83,20 @@
  * know it stops before it; without it a loaded parts has no names and keeps
  * the sound numbers of its record. The numbers of a parts with names are
  * made from them again.
+ *
+ * The activity section (SAVE_ACTIVITIES in hll/pe_v14_activity.c) follows
+ * the sound names; it is always written by a v14 engine. The unique ID
+ * section (SAVE_UNIQUE_IDS) follows it and precedes the controller IDs: its
+ * mark, a count and, for each parts with a unique ID (PE_v14_SetEventID;
+ * the script's message manager drops a message whose ID is not the parts'),
+ * the number and the ID; it is written only when a parts has one. A reader
+ * that does not know a section stops before it.
  */
 #define CURRENT_SAVE_VERSION 14
 #define SAVE_CG_DEFORMS 0x46444350 /* "PCDF" */
 #define SAVE_WHEELABLE 0x45485750 /* "PWHE" */
 #define SAVE_SOUND_NAMES 0x444e5350 /* "PSND" */
+#define SAVE_UNIQUE_IDS 0x44495550 /* "PUID" */
 
 /*
  * Controllers in a save. The controller fields (the active controller, each
@@ -1178,6 +1187,47 @@ static void save_sound_names(struct iarray_writer *w, bool save_hidden)
 		iarray_write_at(w, count_pos, count);
 }
 
+static void save_unique_ids(struct iarray_writer *w, bool save_hidden)
+{
+	unsigned count_pos = 0, count = 0;
+	struct parts *parts;
+	PARTS_LIST_FOREACH(parts) {
+		if (!save_hidden && !parts->global.show)
+			continue;
+		if (!parts->want_save || parts_is_controller_root(parts) || !parts->unique_id)
+			continue;
+		if (!count) {
+			iarray_write(w, SAVE_UNIQUE_IDS);
+			count_pos = iarray_writer_pos(w);
+			iarray_write(w, 0);
+		}
+		iarray_write(w, parts->no);
+		iarray_write(w, parts->unique_id);
+		count++;
+	}
+	if (count)
+		iarray_write_at(w, count_pos, count);
+}
+
+static void load_unique_ids(struct iarray_reader *r)
+{
+	if (r->error || r->pos >= r->size || r->data[r->pos].i != SAVE_UNIQUE_IDS)
+		return;
+	iarray_read(r);
+	int nr = iarray_read(r);
+	if (r->error || nr < 0 || (unsigned)nr > (r->size - r->pos) / 2) {
+		WARNING("invalid unique ID section");
+		return;
+	}
+	for (int i = 0; i < nr; i++) {
+		int no = iarray_read(r);
+		int id = iarray_read(r);
+		struct parts *parts = no > 0 ? parts_try_get(no) : NULL;
+		if (parts)
+			parts->unique_id = id;
+	}
+}
+
 // A section that does not read as one is warned about and left; the rest of
 // the save is loaded.
 static void load_sound_names(struct iarray_reader *r)
@@ -1296,6 +1346,8 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		save_cg_deforms(&w, save_hidden);
 		save_wheelable(&w, save_hidden);
 		save_sound_names(&w, save_hidden);
+		pe_v14_activity_save(&w);
+		save_unique_ids(&w, save_hidden);
 	}
 
 	// The controller ID section is the end of the save, after every list
@@ -1405,6 +1457,8 @@ bool PE_Load(struct page **buffer)
 			return false;
 		}
 		load_sound_names(&r);
+		pe_v14_activity_load(&r);
+		load_unique_ids(&r);
 	}
 	// (the controller ID section follows the lists; it was read first)
 	if (parts_multi_controller && ain->version >= 14) {

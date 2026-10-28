@@ -974,30 +974,51 @@ static void PE_v14_RemoveController(int erase_slot, int index)
 	}
 }
 
-// v14: Save/SaveWithoutHideParts/Load are declared with a wrap<> first
-// argument, which the FFI passes as an int heap slot — not the page**
-// the legacy declarations produce. Adapt around the legacy savers.
-static bool PE_v14_Save(int buf_slot)
+// v14: Save/SaveWithoutHideParts/Load take the buffer as an int heap slot,
+// not the page** the legacy declarations produce. Haharanman's
+// gamesave::detail::セーブ実行 passes an array<int> it made empty with
+// X_A_INIT (through parts::detail::Save/Load), so the slot is the array's
+// own; a wrap<array<int>> (a one-element struct page) holds the array's slot
+// instead. A save into the array replaces its page.
+static bool pe_v14_buffer_is_array(int slot)
 {
+	return slot > 0 && (size_t)slot < heap_size && heap[slot].type == VM_PAGE
+		&& (!heap[slot].page || heap[slot].page->type == ARRAY_PAGE);
+}
+
+static bool pe_v14_save_into(int buf_slot, bool (*save)(struct page **))
+{
+	if (pe_v14_buffer_is_array(buf_slot)) {
+		struct page *buf = heap[buf_slot].page;
+		if (!save(&buf))
+			return false;
+		// save() freed the old page if it replaced it.
+		heap_set_page(buf_slot, buf);
+		return true;
+	}
 	struct page *buf = wrap_get_page(buf_slot, 0);
-	bool ok = PE_Save(&buf);
+	bool ok = save(&buf);
 	if (ok)
 		wrap_set_slot(buf_slot, 0, heap_alloc_page(buf));
 	return ok;
+}
+
+static bool PE_v14_Save(int buf_slot)
+{
+	return pe_v14_save_into(buf_slot, PE_Save);
 }
 
 static bool PE_v14_SaveWithoutHideParts(int buf_slot)
 {
-	struct page *buf = wrap_get_page(buf_slot, 0);
-	bool ok = PE_SaveWithoutHideParts(&buf);
-	if (ok)
-		wrap_set_slot(buf_slot, 0, heap_alloc_page(buf));
-	return ok;
+	return pe_v14_save_into(buf_slot, PE_SaveWithoutHideParts);
 }
 
 static bool PE_v14_Load(int buf_slot)
 {
-	struct page *buf = wrap_get_page(buf_slot, 0);
+	struct page *buf = pe_v14_buffer_is_array(buf_slot) ? heap[buf_slot].page
+		: wrap_get_page(buf_slot, 0);
+	if (buf && !buf->nr_vars)
+		buf = NULL;
 	return PE_Load(&buf);
 }
 

@@ -44,6 +44,7 @@
 #include "parts.h"
 #include "../parts/parts_internal.h"
 #include "hll.h"
+#include "iarray.h"
 #include "xsystem4.h"
 
 extern struct string *sjis_to_gbk_string(const char *src, size_t len);
@@ -134,6 +135,118 @@ void pe_v14_activity_reset(void)
 	free(controller_released);
 	controller_released = NULL;
 	controller_released_size = 0;
+}
+
+/*
+ * The activity section of a v14 parts save (see parts/save.c): a restored
+ * image's scripts look their activities up by name (GetActivityPartsNumber
+ * after gamesave::detail::セーブ実行_ロード後復帰処理 -> parts::detail::Load),
+ * so the table, the next number and the released numbers are saved with the
+ * parts. Strings are a length and then one byte a word.
+ */
+#define SAVE_ACTIVITIES 0x54434150 /* "PACT" */
+
+static void activity_write_str(struct iarray_writer *w, const char *s)
+{
+	int len = strlen(s);
+	iarray_write(w, len);
+	for (int i = 0; i < len; i++)
+		iarray_write(w, (uint8_t)s[i]);
+}
+
+static bool activity_read_str(struct iarray_reader *r, char *buf, size_t size)
+{
+	int len = iarray_read(r);
+	if (r->error || len < 0 || (size_t)len >= size || (unsigned)len > r->size - r->pos)
+		return false;
+	for (int i = 0; i < len; i++)
+		buf[i] = iarray_read(r);
+	buf[len] = 0;
+	return !r->error;
+}
+
+void pe_v14_activity_save(struct iarray_writer *w)
+{
+	iarray_write(w, SAVE_ACTIVITIES);
+	iarray_write(w, next_activity_parts_no);
+	iarray_write(w, nr_activities);
+	for (int i = 0; i < nr_activities; i++) {
+		struct activity *act = &activities[i];
+		activity_write_str(w, act->name);
+		iarray_write(w, act->nr_parts);
+		for (int j = 0; j < act->nr_parts; j++) {
+			activity_write_str(w, act->parts[j].name);
+			iarray_write(w, act->parts[j].number);
+		}
+		iarray_write(w, act->nr_close_parts);
+		for (int j = 0; j < act->nr_close_parts; j++)
+			activity_write_str(w, act->close_parts[j]);
+		iarray_write(w, act->nr_end_keys);
+		for (int j = 0; j < act->nr_end_keys; j++)
+			iarray_write(w, act->end_keys[j]);
+	}
+	int nr_released = min(controller_released_size, next_activity_parts_no - ACTIVITY_PARTS_BASE);
+	iarray_write(w, nr_released);
+	for (int i = 0; i < nr_released; i++)
+		iarray_write(w, controller_released[i]);
+}
+
+// Without the section (an older save) the table is left as it is. A section
+// that does not read as one is warned about and leaves the table empty.
+void pe_v14_activity_load(struct iarray_reader *r)
+{
+	if (r->error || r->pos >= r->size || r->data[r->pos].i != SAVE_ACTIVITIES)
+		return;
+	iarray_read(r);
+	pe_v14_activity_reset();
+	int next_no = iarray_read(r);
+	int nr = iarray_read(r);
+	if (r->error || next_no < ACTIVITY_PARTS_BASE || nr < 0 || nr > MAX_ACTIVITIES)
+		goto invalid;
+	for (int i = 0; i < nr; i++) {
+		struct activity *act = &activities[i];
+		memset(act, 0, sizeof(*act));
+		if (!activity_read_str(r, act->name, sizeof(act->name)))
+			goto invalid;
+		act->nr_parts = iarray_read(r);
+		if (r->error || act->nr_parts < 0 || act->nr_parts > MAX_ACTIVITY_PARTS)
+			goto invalid;
+		for (int j = 0; j < act->nr_parts; j++) {
+			if (!activity_read_str(r, act->parts[j].name, sizeof(act->parts[j].name)))
+				goto invalid;
+			act->parts[j].number = iarray_read(r);
+		}
+		act->nr_close_parts = iarray_read(r);
+		if (r->error || act->nr_close_parts < 0 || act->nr_close_parts > MAX_ACTIVITY_PARTS)
+			goto invalid;
+		for (int j = 0; j < act->nr_close_parts; j++) {
+			if (!activity_read_str(r, act->close_parts[j], sizeof(act->close_parts[j])))
+				goto invalid;
+		}
+		act->nr_end_keys = iarray_read(r);
+		if (r->error || act->nr_end_keys < 0 || act->nr_end_keys > MAX_ACTIVITY_END_KEYS)
+			goto invalid;
+		for (int j = 0; j < act->nr_end_keys; j++)
+			act->end_keys[j] = iarray_read(r);
+		nr_activities = i + 1;
+	}
+	int nr_released = iarray_read(r);
+	if (r->error || nr_released < 0 || nr_released > next_no - ACTIVITY_PARTS_BASE
+			|| (unsigned)nr_released > r->size - r->pos)
+		goto invalid;
+	next_activity_parts_no = next_no;
+	if (nr_released) {
+		controller_released = xcalloc(nr_released, 1);
+		controller_released_size = nr_released;
+		for (int i = 0; i < nr_released; i++)
+			controller_released[i] = iarray_read(r) != 0;
+	}
+	if (r->error)
+		goto invalid;
+	return;
+invalid:
+	WARNING("invalid activity section");
+	pe_v14_activity_reset();
 }
 
 bool pe_v14_activity_number_released(int parts_no)

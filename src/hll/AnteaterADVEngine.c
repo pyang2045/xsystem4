@@ -279,7 +279,14 @@ bool ADVLogList_Save(struct page **iarray)
 
 bool ADVLogList_Load(struct page **data)
 {
-	if (!data || ain->version >= 14)
+	// v14: Save writes nothing (above), so there is nothing to load; the
+	// backlog starts empty instead of failing the load (Haharanman's
+	// セーブ実行_ロード後復帰処理 reports a failure as an error).
+	if (ain->version >= 14) {
+		ADVLogList_Clear();
+		return true;
+	}
+	if (!data)
 		return false;
 	if (!(*data))
 		return false;
