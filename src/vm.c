@@ -53,6 +53,12 @@
 #include "sprite.h"
 #include "xsystem4.h"
 
+// ResumeLoad from a nested vm_execute (see CALLHLL): where it is unwound to.
+static jmp_buf resume_buf;
+static bool resume_unwind_ready = false;
+static void vm_apply_pending_resume_load(void);
+static int vm_execute_depth;
+
 /* free_deferred_strings() lived in the fork's libsys4 (submodule pin 7f8d5298,
  * now GC'd/unrecoverable). That build deferred string frees during the alloc
  * phase and flushed them here. The current libsys4 (d9f4a138) frees strings
@@ -2222,6 +2228,10 @@ static void function_return(void)
 	int expected_return = 0;
 	if (fno >= 0 && fno < ain->nr_functions)
 		expected_return = ain_return_slots_type(&ain->functions[fno].return_type);
+	// A frame restored from a resume save without its base (load_rsave_call_
+	// stack): the return values are what is on top.
+	if (base_sp < 0)
+		base_sp = max(stack_ptr - expected_return, 0);
 
 
 	// Enforce stack balance: ensure exactly expected_return values above base_sp.
@@ -3457,17 +3467,13 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 		// hll_call completes its write-back and cleanup.
 		extern char *resume_load_key_pending, *resume_load_path_pending;
 		if (resume_load_key_pending) {
-			char *key = resume_load_key_pending;
-			char *path = resume_load_path_pending;
-			resume_load_key_pending = NULL;
-			resume_load_path_pending = NULL;
-				vm_load_image(key, path);
-			free(key);
-			free(path);
-			// vm_load_image restored instr_ptr to the save point's CALLHLL addr.
-			// ip_inc (14 for CALLHLL v11+) will advance to the next instruction.
-			// Push bool false (0) as ResumeSave's return value (= "loaded").
-			stack_push(0);
+			// Called from a callback that C code runs (a parts event,
+			// e.g. the load screen's button): the image replaces what
+			// those C frames and the nested vm_execute work on, so they
+			// are left first, as for system.Reset.
+			if (vm_execute_depth > 1 && resume_unwind_ready)
+				longjmp(resume_buf, 1);
+			vm_apply_pending_resume_load();
 		}
 		// system.Reset: the original runs no instruction after the call
 		// (its instruction handler 0x667ef0 only waits on the host once
@@ -6278,8 +6284,38 @@ int vm_execute_ain(struct ain *program)
 	}
 	vm_init_globals();
 
+	if (setjmp(resume_buf)) {
+		// A ResumeLoad made inside a nested vm_execute: every frame above
+		// this one is gone, so the counters they kept start again, and the
+		// loaded call stack runs here down to main's return.
+		vm_execute_depth = 0;
+		vm_call_depth = 0;
+		vm_call_insn_limit = 0;
+		function_call_args_borrowed = false;
+		vm_apply_pending_resume_load();
+		instr_ptr += instruction_width(CALLHLL);
+		vm_execute();
+		return stack_pop().i;
+	}
+	resume_unwind_ready = true;
+
 	vm_call(ain->main, -1);
 	return stack_pop().i;
+}
+
+/* Loads the image ResumeLoad asked for. instr_ptr is then the save point's
+ * CALLHLL (ResumeSave), whose return value is pushed: false, "loaded". */
+static void vm_apply_pending_resume_load(void)
+{
+	extern char *resume_load_key_pending, *resume_load_path_pending;
+	char *key = resume_load_key_pending;
+	char *path = resume_load_path_pending;
+	resume_load_key_pending = NULL;
+	resume_load_path_pending = NULL;
+	vm_load_image(key, path);
+	free(key);
+	free(path);
+	stack_push(0);
 }
 
 void vm_stack_trace(void)

@@ -380,6 +380,22 @@ static void save_call_stack_to_rsave(struct rsave *rs)
 		rs->return_records[i + 1].crc = func->crc;
 		prev_func = func;
 	}
+	// What the format has no place for (libsys4's "XFR" trailer): the
+	// frames' stack bases and flags, which function_return balances the
+	// stack with, and the delegate pins unref_call_frame releases.
+	rs->nr_xframes = call_stack_ptr;
+	rs->xframes = xcalloc(max(call_stack_ptr, 1) * RSAVE_XFRAME_WORDS, sizeof(int32_t));
+	for (int i = 0; i < call_stack_ptr; i++) {
+		struct function_call *call = &call_stack[i];
+		int32_t *x = rs->xframes + i * RSAVE_XFRAME_WORDS;
+		x[0] = call->base_sp;
+		x[1] = (call->is_method ? 1 : 0) | (call->is_delegate_call ? 2 : 0);
+		x[2] = call->dg_return_slots;
+		x[3] = call->env_page;
+		x[4] = call->delegate_obj_ref;
+		x[5] = call->delegate_env_ref;
+		x[6] = call->call_address;
+	}
 	rs->ip = rs->return_records[call_stack_ptr];
 	rs->ip.return_addr = instr_ptr + 6;
 	rs->ip.local_addr = instr_ptr - prev_func->address + 6;
@@ -794,6 +810,8 @@ static void load_rsave_heap(struct rsave *save)
 		}
 	}
 	heap_next_seq = save->next_seq;
+	// The free slots of the image (delete_heap cleared the list).
+	heap_rebuild_free_list();
 	// v14 delegates do not own their objects; rebuild the object ->
 	// delegate lists once every object is back (see delegate_page_register).
 	delegate_targets_reset();
@@ -818,6 +836,22 @@ static void load_json_call_stack(cJSON *json)
 	}
 }
 
+/* A frame's function: names can repeat (overloads, e.g. Haharanman's two
+ * Scenes::RunIScene), so the one with the saved CRC. -1 when no function has
+ * the name, -2 when none of them has the CRC. */
+static int rsave_find_function(const char *name, int32_t crc)
+{
+	int found = -1;
+	for (int i = 0; i < ain->nr_functions; i++) {
+		if (strcmp(ain->functions[i].name, name))
+			continue;
+		if (ain->functions[i].crc == crc)
+			return i;
+		found = -2;
+	}
+	return found;
+}
+
 static void load_rsave_call_stack(struct rsave *save)
 {
 	call_stack_ptr = 0;
@@ -833,10 +867,10 @@ static void load_rsave_call_stack(struct rsave *save)
 	int32_t return_address = -1;
 	for (int i = 0; i < save->nr_call_frames; i++) {
 		if (save->call_frames[i].type != RSAVE_CALL_STACK_BOTTOM) {
-			int fno = ain_get_function(ain, rr->caller_func);
-			if (fno < 0)
+			int fno = rsave_find_function(rr->caller_func, rr->crc);
+			if (fno == -1)
 				VM_ERROR("Failed to load VM image: function '%s' not found", display_sjis0(rr->caller_func));
-			if (ain->functions[fno].crc != rr->crc)
+			if (fno < 0)
 				VM_ERROR("Failed to load VM image: CRC mismatch for function '%s'", display_sjis0(rr->caller_func));
 			call_stack[call_stack_ptr++] = (struct function_call) {
 				.fno            = fno,
@@ -850,6 +884,28 @@ static void load_rsave_call_stack(struct rsave *save)
 		}
 		if (++rr == save->return_records + save->nr_return_records)
 			rr = &save->ip;
+	}
+	// The frames' own words (see save_call_stack_to_rsave). A save without
+	// them (AliceSoft's, or an older one of ours) has base_sp -1:
+	// function_return then takes the bytecode's stack as it is.
+	bool xframes = save->nr_xframes == call_stack_ptr;
+	if (!xframes && save->nr_xframes)
+		WARNING("resume save: %d frame records for %d frames; ignored", save->nr_xframes, call_stack_ptr);
+	for (int i = 0; i < call_stack_ptr; i++) {
+		struct function_call *call = &call_stack[i];
+		if (!xframes) {
+			call->base_sp = -1;
+			continue;
+		}
+		const int32_t *x = save->xframes + i * RSAVE_XFRAME_WORDS;
+		call->base_sp = x[0];
+		call->is_method = x[1] & 1;
+		call->is_delegate_call = x[1] & 2;
+		call->dg_return_slots = x[2];
+		call->env_page = x[3];
+		call->delegate_obj_ref = x[4];
+		call->delegate_env_ref = x[5];
+		call->call_address = x[6];
 	}
 	// RSM records instruction pointer after the CALLSYS instruction, but
 	// xsystem4 expects the address of the CALLSYS instruction, so -6.
