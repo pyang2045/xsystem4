@@ -2584,16 +2584,26 @@ static int Array_CountIf(struct page **array, int func)
 	return matches;
 }
 
-static enum ain_data_type array_query_value_type(const struct page *array)
+static bool heap_slot_is_string(int slot)
+{
+	return slot > 0 && (size_t)slot < heap_size && HEAP_REF(slot) > 0
+		&& heap[slot].type == VM_STRING && heap[slot].s;
+}
+
+static enum ain_data_type array_query_value_type(const struct page *array, int needle)
 {
 	if (array->array.rank > 1 || array_elem_is_2slot())
 		VM_ERROR("Array.Find: unsupported value element shape");
 	switch (array->a_type) {
 	case AIN_INT: case AIN_ARRAY_INT: case AIN_BOOL: case AIN_ARRAY_BOOL:
 	case AIN_ENUM: case AIN_ENUM2:
-		// Generic allocation can default to ARRAY_INT even for heap elements.
+		// Generic allocation (e.g. PushBack onto an empty array) can default
+		// to ARRAY_INT even for heap elements, and the type operand (2) is
+		// the same for a string and a struct. A string needle means a string
+		// array (key<string>@Find in Haharanman); anything else compares as
+		// a handle.
 		if (array_elem_is_ref())
-			VM_ERROR("Array.Find: reference element lacks a supported concrete type");
+			return heap_slot_is_string(needle) ? AIN_STRING : AIN_INT;
 		return AIN_INT;
 	case AIN_FLOAT: case AIN_ARRAY_FLOAT:
 		return AIN_FLOAT;
@@ -2624,7 +2634,7 @@ static int Array_FindValueRange(struct page **array, int begin, int end, int val
 	const struct page *src = array ? *array : NULL;
 	if (!src || src->type != ARRAY_PAGE || src->nr_vars <= 0)
 		return -1;
-	enum ain_data_type type = array_query_value_type(src);
+	enum ain_data_type type = array_query_value_type(src, value);
 	int count = src->nr_vars;
 	if (begin < 0) begin = 0;
 	if (end > count) end = count;
@@ -2674,7 +2684,7 @@ static int Array_FindLastValueRange(struct page **array, int begin, int end, int
 	const struct page *src = array ? *array : NULL;
 	if (!src || src->type != ARRAY_PAGE || src->nr_vars <= 0)
 		return -1;
-	enum ain_data_type type = array_query_value_type(src);
+	enum ain_data_type type = array_query_value_type(src, value);
 	int count = src->nr_vars;
 	if (begin < 0) begin = 0;
 	if (end >= count) end = count - 1;
