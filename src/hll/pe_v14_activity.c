@@ -747,6 +747,7 @@ enum {
 	PACTEX_EPT_RECT = 25,
 	PACTEX_EPT_CONSTRUCTION = 26,
 	PACTEX_EPT_CG_DETECTION = 27,
+	PACTEX_EPT_FLAT = 28,
 	PACTEX_EPT_COUNT = 31,
 };
 static const char *const pactex_ept_names[PACTEX_EPT_COUNT] = {
@@ -855,6 +856,7 @@ static int pactex_low_level_type(struct ex_tree *state)
 	case PACTEX_EPT_RECT: return PACTEX_EPT_RECT;
 	case PACTEX_EPT_CONSTRUCTION: return PACTEX_EPT_CONSTRUCTION;
 	case PACTEX_EPT_CG_DETECTION: return PACTEX_EPT_CG_DETECTION;
+	case PACTEX_EPT_FLAT: return PACTEX_EPT_FLAT;
 	default: return -1;
 	}
 }
@@ -2066,6 +2068,32 @@ static void pactex_apply_gauge_state(struct ex_tree *state, int parts_no, int pe
 		pactex_get_int(state, "\xb7\xb4\xde\x44", 0)) != 0;
 }
 
+/* フラットパーツ: a low-level state that plays a flat animation (e.g.
+ * フラット：愛情レベルアップ, which CLevelUp takes with GetFlat; the ADV skip and
+ * auto mode marks). Its keys: フラット名, サーフェイスエリア (all 0 in the game's
+ * pactex: the flat's own size), 開始時シーク量 (the frame it starts at), and
+ * ＣＧ名ペアリスト / サウンド名ペアリスト / FPS, which are not followed (the
+ * game's lists are empty). */
+static void pactex_apply_flat_state(struct ex_tree *state, int parts_no, int pe_state)
+{
+	const char *name = pactex_get_string(state, "\x83\x74\x83\x89\x83\x62\x83\x67\x96\xbc"); /* フラット名 */
+	if (!name) name = pactex_get_string(state, "\xa5\xd5\xa5\xe9\xa5\xc3\xa5\xc8\xc3\xfb"); /* GBK */
+	if (name && name[0]) {
+		struct string *s = cstr_to_string(name);
+		if (!PE_SetPartsFlat(parts_no, s, pe_state))
+			WARNING("pactex: flat '%s' not found", display_sjis0(name));
+		free_string(s);
+		int seek = pactex_get_int(state, "\x8a\x4a\x8e\x6e\x8e\x9e\x83\x56\x81\x5b\x83\x4e\x97\xca", 0); /* 開始時シーク量 */
+		if (seek > 0)
+			PE_GoFramePartsFlat(parts_no, seek, pe_state);
+	} else {
+		parts_get_flat(parts_get(parts_no), pe_state - 1);
+	}
+	int x, y, w, h;
+	if (pactex_get_surface_area(state, &x, &y, &w, &h, 0) && w > 0 && h > 0)
+		PE_SetPartsFlatSurfaceArea(parts_no, x, y, w, h, pe_state);
+}
+
 static bool pactex_apply_low_level_state(struct ex_tree *state, int parts_no, int pe_state)
 {
 	if (!pe_state) return false;
@@ -2088,6 +2116,11 @@ static bool pactex_apply_low_level_state(struct ex_tree *state, int parts_no, in
 			pactex_construction_canvas(state, parts);
 		}
 		parts->component_state_type[pe_state - 1] = type;
+		return true;
+	}
+	if (type == PACTEX_EPT_FLAT) {
+		pactex_apply_flat_state(state, parts_no, pe_state);
+		parts_get(parts_no)->component_state_type[pe_state - 1] = type;
 		return true;
 	}
 	bool text = type == PACTEX_EPT_TEXT;
