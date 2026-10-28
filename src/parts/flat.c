@@ -310,6 +310,74 @@ int parts_flat_stop_motion_get_cg_lib(struct parts_flat *f, int sm_lib_idx, int 
 	return frames->lib_indices[frame];
 }
 
+/*
+ * v14 flats (Haharanman's ＡＤＶ／スキップモード, ＡＤＶ／オートモード, 昇段.flat)
+ * have no CG libraries: their pictures are packed into the TALT section, one
+ * QNT atlas per entry, and each metadata record names a picture (SJIS, every
+ * byte XOR 0x55, e.g. "赤丸.png") and gives its rectangle in the atlas (x, y,
+ * w, h). The graphic timelines refer to those names. Make each picture a CG
+ * library of its own; *cgs receives the cropped pictures, NULL for the
+ * libraries the file has.
+ */
+static struct cg *flat_crop_cg(struct cg *atlas, int x, int y, int w, int h)
+{
+	if (w <= 0 || h <= 0 || x < 0 || y < 0 || x + w > atlas->metrics.w || y + h > atlas->metrics.h)
+		return NULL;
+	struct cg *cg = xcalloc(1, sizeof(struct cg));
+	cg->type = atlas->type;
+	cg->metrics = atlas->metrics;
+	cg->metrics.x = 0;
+	cg->metrics.y = 0;
+	cg->metrics.w = w;
+	cg->metrics.h = h;
+	cg->metrics.pixel_pitch = w * (atlas->metrics.bpp / 8);
+	cg->pixels = xmalloc(w * h * 4);
+	const uint8_t *src = atlas->pixels;
+	for (int row = 0; row < h; row++)
+		memcpy((uint8_t *)cg->pixels + row * w * 4,
+		       src + ((y + row) * atlas->metrics.w + x) * 4, w * 4);
+	return cg;
+}
+
+static void flat_add_talt_libraries(struct flat *fl, struct cg ***cgs)
+{
+	*cgs = NULL;
+	size_t n = 0;
+	for (unsigned i = 0; i < fl->nr_talt_entries; i++)
+		n += fl->talt_entries[i].nr_meta;
+	if (!n)
+		return;
+	size_t base = fl->nr_libraries;
+	fl->libraries = xrealloc(fl->libraries, (base + n) * sizeof(struct flat_library));
+	*cgs = xcalloc(base + n, sizeof(struct cg *));
+	size_t added = 0;
+	for (unsigned i = 0; i < fl->nr_talt_entries; i++) {
+		struct talt_entry *e = &fl->talt_entries[i];
+		struct cg *atlas = cg_load_buffer(fl->data + e->off, e->size);
+		if (!atlas) {
+			WARNING("flat: failed to load TALT image %u", i);
+			continue;
+		}
+		for (unsigned m = 0; m < e->nr_meta; m++) {
+			struct talt_metadata *md = &e->metadata[m];
+			char *name = xmalloc(md->unknown1_size + 1);
+			for (unsigned b = 0; b < md->unknown1_size; b++)
+				name[b] = fl->data[md->unknown1_off + b] ^ 0x55;
+			name[md->unknown1_size] = '\0';
+			struct flat_library *lib = &fl->libraries[base + added];
+			memset(lib, 0, sizeof(*lib));
+			lib->name = cstr_to_string(name);
+			lib->type = FLAT_LIB_CG;
+			free(name);
+			(*cgs)[base + added] = flat_crop_cg(atlas, md->unknown2, md->unknown3,
+					md->unknown4, md->unknown5);
+			added++;
+		}
+		cg_free(atlas);
+	}
+	fl->nr_libraries = base + added;
+}
+
 bool parts_flat_load(struct parts *parts, struct parts_flat *f, struct string *filename)
 {
 	if (f->flat) {
@@ -338,6 +406,9 @@ bool parts_flat_load(struct parts *parts, struct parts_flat *f, struct string *f
 			f->flat->timelines, f->flat->nr_timelines) - 1;
 	f->root_state = flat_layer_state_new(f->flat->nr_timelines);
 
+	struct cg **talt_cgs;
+	flat_add_talt_libraries(f->flat, &talt_cgs);
+
 	// Load textures for CG libraries.
 	f->nr_libraries = f->flat->nr_libraries;
 	f->textures = xcalloc(f->nr_libraries, sizeof(Texture));
@@ -347,6 +418,13 @@ bool parts_flat_load(struct parts *parts, struct parts_flat *f, struct string *f
 		struct flat_library *lib = &f->flat->libraries[i];
 		if (lib->type != FLAT_LIB_CG)
 			continue;
+		if (talt_cgs && talt_cgs[i]) {
+			gfx_init_texture_with_cg(&f->textures[i], talt_cgs[i]);
+			cg_free(talt_cgs[i]);
+			continue;
+		}
+		if (!lib->cg.data)
+			continue;
 		struct cg *cg = cg_load_buffer((uint8_t *)lib->cg.data, lib->cg.size);
 		if (!cg) {
 			WARNING("flat: failed to load CG for library '%s'", display_game0(lib->name->text));
@@ -355,6 +433,7 @@ bool parts_flat_load(struct parts *parts, struct parts_flat *f, struct string *f
 		gfx_init_texture_with_cg(&f->textures[i], cg);
 		cg_free(cg);
 	}
+	free(talt_cgs);
 	for (size_t i = 0; i < f->flat->nr_libraries; i++) {
 		if (f->flat->libraries[i].type == FLAT_LIB_STOP_MOTION)
 			build_stop_motion_frames(f, (int)i);
