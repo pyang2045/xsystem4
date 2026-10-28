@@ -215,6 +215,26 @@ static bool parts_hittest(struct parts *parts, int state, Point pos)
 	// size (layoutbox.c).
 	if (ain->version >= 14 && parts->states[0].type == PARTS_LAYOUT_BOX)
 		return false;
+	// v14: a parts with an alpha clipper (+0x2fc) is under the cursor only
+	// where its clipper is, the clipper tested by its pixels (CGUIPartsView's
+	// hit test 0x568df0 calls the clipper's with +0x1ad, the pixel decision,
+	// set). So Haharanman's title film filter, a full-screen CG clipped to
+	// the film frame, does not cover the menu buttons.
+	if (ain->version >= 14 && parts->alpha_clipper_parts_no
+			&& parts->alpha_clipper_parts_no != parts->no) {
+		static int depth;	// a clipper clipped by its own clippee
+		struct parts *clipper = parts_try_get(parts->alpha_clipper_parts_no);
+		if (clipper && depth < 4) {
+			bool pixel = clipper->pixel_hittest;
+			clipper->pixel_hittest = true;
+			depth++;
+			bool hit = parts_hittest(clipper, PARTS_STATE_DEFAULT, pos);
+			depth--;
+			clipper->pixel_hittest = pixel;
+			if (!hit)
+				return false;
+		}
+	}
 	struct parts_common *c = &parts->states[state].common;
 	bool use_pixels = parts->pixel_hittest && c->texture.handle && c->texture.w > 0
 		&& c->texture.h > 0 && c->w > 0 && c->h > 0;
