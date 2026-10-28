@@ -321,9 +321,14 @@ static void pactex_apply_pixel_decide(struct ex_tree *node, int parts_no)
  * spelling is known; a missing key is 0, as the parser's default. */
 static const char GBK_CN_PASS_CURSOR[] = "\xa5\xaa\xa5\xf3\xd6\xb8\xe1\x98\xcd\xb8\xdf\x5e"; /* オン指針透過 */
 
+/* The SJIS spelling, as in the JP Haharanman.exe (0x7d5f38). */
+static const char SJIS_PASS_CURSOR[] = "\x83\x49\x83\x93\x83\x4a\x81\x5b\x83\x5c\x83\x8b\x93\xa7\x89\xdf"; /* オンカーソル透過 */
+
 static void pactex_apply_pass_cursor(struct ex_tree *node, int parts_no)
 {
-	PE_SetPassCursor(parts_no, pactex_get_int(node, GBK_CN_PASS_CURSOR, 0) == 1);
+	int v = pactex_get_int(node, SJIS_PASS_CURSOR, -1);
+	if (v < 0) v = pactex_get_int(node, GBK_CN_PASS_CURSOR, 0);
+	PE_SetPassCursor(parts_no, v == 1);
 }
 
 /* Native 0x5549cf: the component's own wheel flag is true only for the
@@ -331,10 +336,16 @@ static void pactex_apply_pass_cursor(struct ex_tree *node, int parts_no)
  * spelling is inferred here. */
 static const char GBK_CN_WHEELABLE[] = "\xa5\xdb\xa5\xa4\xa9\x60\xa5\xeb\xd3\xd0\x84\xbf";
 
+/* The SJIS spelling, as in the JP Haharanman.exe (0x7d604c). */
+static const char SJIS_WHEELABLE[] = "\x83\x7a\x83\x43\x81\x5b\x83\x8b\x97\x4c\x8c\xf8"; /* ホイール有効 */
+
 static void pactex_apply_wheelable(struct ex_tree *node, int parts_no)
 {
-	if (ain->version >= 14)
-		parts_get(parts_no)->wheelable = pactex_get_int(node, GBK_CN_WHEELABLE, 0) == 1;
+	if (ain->version >= 14) {
+		int v = pactex_get_int(node, SJIS_WHEELABLE, -1);
+		if (v < 0) v = pactex_get_int(node, GBK_CN_WHEELABLE, 0);
+		parts_get(parts_no)->wheelable = v == 1;
+	}
 }
 
 /* スピードアップ有効 (speed-up enabled), the last field the same parser reads:
@@ -345,9 +356,14 @@ static void pactex_apply_wheelable(struct ex_tree *node, int parts_no)
  * Only the CN spelling is known. */
 static const char GBK_CN_SPEED_UP[] = "\xa5\xb9\xa5\xd4\xa9\x60\xa5\xc9\xa5\xa2\xa5\xc3\xa5\xd7\xd3\xd0\x84\xbf"; /* スピードアップ有効 */
 
+/* The SJIS spelling, as in the JP Haharanman.exe (0x7d5ff0). */
+static const char SJIS_SPEED_UP[] = "\x83\x58\x83\x73\x81\x5b\x83\x68\x83\x41\x83\x62\x83\x76\x97\x4c\x8c\xf8"; /* スピードアップ有効 */
+
 static void pactex_apply_speed_up(struct ex_tree *node, int parts_no)
 {
-	PE_SetEnableSpeedUp(parts_no, pactex_get_int(node, GBK_CN_SPEED_UP, 1) == 1);
+	int v = pactex_get_int(node, SJIS_SPEED_UP, -1);
+	if (v < 0) v = pactex_get_int(node, GBK_CN_SPEED_UP, 1);
+	PE_SetEnableSpeedUp(parts_no, v == 1);
 }
 
 /* 點擊許可 (click permission), the field the same parser reads just before
@@ -377,9 +393,14 @@ static void pactex_apply_speed_up(struct ex_tree *node, int parts_no)
  * of the same release is sent in any case (parts/input.c). */
 static const char GBK_CN_CLICK_PERMISSION[] = "\xfc\x63\x93\xf4\xd4\x53\xbf\xc9"; /* 點擊許可 */
 
+/* The SJIS spelling, as in the JP Haharanman.exe (0x7d5f4c). */
+static const char SJIS_CLICK_PERMISSION[] = "\x83\x4e\x83\x8a\x83\x62\x83\x4e\x8b\x96\x89\xc2"; /* クリック許可 */
+
 static void pactex_apply_click_permission(struct ex_tree *node, int parts_no)
 {
-	if (pactex_get_int(node, GBK_CN_CLICK_PERMISSION, 0) == 1)
+	int v = pactex_get_int(node, SJIS_CLICK_PERMISSION, -1);
+	if (v < 0) v = pactex_get_int(node, GBK_CN_CLICK_PERMISSION, 0);
+	if (v == 1)
 		PE_SetClickable(parts_no, true);
 }
 
@@ -3028,6 +3049,8 @@ static void end_key_erase(struct activity *act, int key)
 
 /* 結束キー (GBK; the original's key 0x7db894). */
 static const char GBK_END_KEY[] = "\xbd\x59\xca\xf8\xa5\xad\xa9\x60";
+/* The SJIS spelling, as in the JP Haharanman.exe (0x7d6650). */
+static const char SJIS_END_KEY[] = "\x8f\x49\x97\xb9\x83\x4c\x81\x5b"; /* 終了キー */
 
 /* The end key block: the activity loader 0x560210 reads the list block
  * 結束キー (0x5603df..0x56046f), before the activity tree, and inserts each
@@ -3038,7 +3061,9 @@ static const char GBK_END_KEY[] = "\xbd\x59\xca\xf8\xa5\xad\xa9\x60";
  * scene backlog, and no block anywhere else. */
 static void pactex_read_end_keys(struct activity *act, struct ex *ex)
 {
-	struct ex_list *keys = ex_get_list(ex, GBK_END_KEY);
+	struct ex_list *keys = ex_get_list(ex, SJIS_END_KEY);
+	if (!keys)
+		keys = ex_get_list(ex, GBK_END_KEY);
 	if (!keys)
 		return;
 	for (unsigned i = 0; i < keys->nr_items; i++) {
