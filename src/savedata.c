@@ -28,6 +28,7 @@
 #include "system4/string.h"
 
 #include "savedata.h"
+#include "serialize_struct.h"
 #include "vm.h"
 #include "vm/heap.h"
 #include "vm/page.h"
@@ -93,6 +94,60 @@ static int get_group_index(const char *name)
 }
 
 int32_t add_value_to_gsave(enum ain_data_type type, union vm_value val, struct gsave *save);
+static int32_t add_typed_value_to_gsave(const struct ain_type *t, union vm_value val, struct gsave *save);
+
+/*
+ * v11+ generic arrays (array<T>, AIN_ARRAY): the page does not tell its
+ * element type (a_type is AIN_ARRAY, or AIN_ARRAY_INT for some pages the
+ * Array library makes, whatever the elements are), so the declaration's
+ * element type (ain_type.array_type) decides how each element is saved and
+ * loaded. They are saved as rank 1 arrays of that type. Elements of more
+ * than one slot (option, wrap, interface) are not saved.
+ */
+static bool generic_elem_savable(const struct ain_type *et)
+{
+	return et && ss_type_slot_count(et) == 1;
+}
+
+static int32_t add_generic_array_to_gsave(const struct ain_type *t, union vm_value val, struct gsave *save)
+{
+	const struct ain_type *et = t->array_type;
+	struct page *page = val.i > 0 && heap_index_valid(val.i) ? heap_get_page(val.i) : NULL;
+	if (!page || page->type != ARRAY_PAGE || !generic_elem_savable(et)) {
+		if (page && page->nr_vars && !generic_elem_savable(et))
+			WARNING("save: generic array of %s not saved", et ? display_game0(ain_strtype(ain, et->data, -1)) : "?");
+		struct gsave_array array = { .rank = -1 };
+		return gsave_add_array(save, &array);
+	}
+	struct gsave_array array = {
+		.rank = 1,
+		.dimensions = xcalloc(1, sizeof(int32_t)),
+		.nr_flat_arrays = 1,
+		.flat_arrays = xcalloc(1, sizeof(struct gsave_flat_array)),
+	};
+	array.dimensions[0] = page->nr_vars;
+	struct gsave_flat_array *fa = &array.flat_arrays[0];
+	fa->nr_values = page->nr_vars;
+	fa->type = et->data;
+	fa->values = xcalloc(max(fa->nr_values, 1), sizeof(struct gsave_array_value));
+	for (int i = 0; i < page->nr_vars; i++) {
+		fa->values[i].type = et->data;
+		// Reread the page: an element's conversion allocates no pages,
+		// but keep the access pattern of collect_flat_arrays.
+		fa->values[i].value = add_typed_value_to_gsave(et, heap_get_page(val.i)->values[i], save);
+	}
+	return gsave_add_array(save, &array);
+}
+
+static int32_t add_typed_value_to_gsave(const struct ain_type *t, union vm_value val, struct gsave *save)
+{
+	if (t->data == AIN_ARRAY && t->array_type)
+		return add_generic_array_to_gsave(t, val, save);
+	// An unset string slot (-1) of a generic container.
+	if (t->data == AIN_STRING && !(val.i >= 0 && heap_index_valid(val.i) && heap[val.i].s))
+		return gsave_add_string(save, &EMPTY_STRING);
+	return add_value_to_gsave(t->data, val, save);
+}
 
 static struct gsave_flat_array *collect_flat_arrays(struct page *page, struct gsave_flat_array *fa, struct gsave *save)
 {
@@ -145,7 +200,7 @@ int32_t add_value_to_gsave(enum ain_data_type type, union vm_value val, struct g
 			}
 			for (int i = 0; i < page->nr_vars; i++) {
 				enum ain_data_type type = st->members[i].type.data;
-				int32_t value = add_value_to_gsave(type, page->values[i], save);
+				int32_t value = add_typed_value_to_gsave(&st->members[i].type, page->values[i], save);
 				struct gsave_keyval kv = {
 					.name = strdup(st->members[i].name),
 					.type = type,
@@ -221,7 +276,7 @@ int save_globals(const char *keyname, const char *filename, const char *group_na
 				continue;
 			global->name = strdup(ain->globals[i].name);
 			global->type = ain->globals[i].type.data;
-			global->value = add_value_to_gsave(global->type, global_get(i), save);
+			global->value = add_typed_value_to_gsave(&ain->globals[i].type, global_get(i), save);
 			global++;
 		}
 	}
@@ -444,6 +499,37 @@ static int struct_member_index(struct ain_struct *st, const char *name)
 
 union vm_value gsave_to_vm_value(struct gsave *save, enum ain_data_type type, int struct_type, int array_rank, int32_t value);
 
+/* The loader of add_typed_value_to_gsave's values. A generic array is made
+ * as X_A_INIT makes one (a_type AIN_ARRAY, its one-slot stride in
+ * array.struct_type). */
+static union vm_value gsave_typed_to_vm_value(struct gsave *save, const struct ain_type *t, int32_t value)
+{
+	if (!(t->data == AIN_ARRAY && t->array_type))
+		return gsave_to_vm_value(save, t->data, t->struc, t->rank, value);
+	const struct ain_type *et = t->array_type;
+	int slot = heap_alloc_slot(VM_PAGE);
+	struct gsave_array *array = value >= 0 && value < save->nr_arrays ? &save->arrays[value] : NULL;
+	if (!array || array->rank != 1 || array->nr_flat_arrays != 1 || !generic_elem_savable(et)) {
+		if (array && array->rank != -1)
+			WARNING("load: generic array of unexpected shape (rank %d)", array->rank);
+		struct page *page = alloc_page(ARRAY_PAGE, AIN_ARRAY, 0);
+		page->array.rank = 1;
+		page->array.struct_type = 1;
+		heap_set_page(slot, page);
+		return vm_int(slot);
+	}
+	struct gsave_flat_array *fa = &array->flat_arrays[0];
+	struct page *page = alloc_page(ARRAY_PAGE, AIN_ARRAY, fa->nr_values);
+	page->array.rank = 1;
+	page->array.struct_type = 1;
+	heap_set_page(slot, page);
+	for (int i = 0; i < fa->nr_values; i++) {
+		union vm_value v = gsave_typed_to_vm_value(save, et, fa->values[i].value);
+		heap[slot].page->values[i] = v;
+	}
+	return vm_int(slot);
+}
+
 static struct gsave_flat_array *gsave_load_array(struct gsave *save, struct page *page, struct gsave_flat_array *flat_array)
 {
 	assert(page->type == ARRAY_PAGE);
@@ -503,9 +589,13 @@ union vm_value gsave_to_vm_value(struct gsave *save, enum ain_data_type type, in
 				}
 				int struct_type, array_rank;
 				enum ain_data_type data_type = variable_type(page, index, &struct_type, &array_rank);
+				if (st->members[index].type.data == AIN_ARRAY)
+					data_type = AIN_ARRAY;	// variable_type() erases it
 				if (data_type != field_type)
 					VM_ERROR("Bad save file: structure member type mismatch");
-				union vm_value val = gsave_to_vm_value(save, data_type, struct_type, array_rank, kv->value);
+				union vm_value val = st->members[index].type.data == AIN_ARRAY
+					? gsave_typed_to_vm_value(save, &st->members[index].type, kv->value)
+					: gsave_to_vm_value(save, data_type, struct_type, array_rank, kv->value);
 				page->values[index] = val;
 			}
 			return vm_int(slot);
@@ -560,7 +650,7 @@ int load_globals_from_gsave(struct gsave *save, const char *keyname, const char 
 			return 0;
 		}
 		bool call_dtors = false; // Destructors for old objects should not be called.
-		global_set(global_index, gsave_to_vm_value(save, type->data, type->struc, type->rank, g->value), call_dtors);
+		global_set(global_index, gsave_typed_to_vm_value(save, type, g->value), call_dtors);
 		if (n)
 			(*n)++;
 	}
