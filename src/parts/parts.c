@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <time.h>
 #include <cglm/cglm.h>
 
 #include "system4.h"
