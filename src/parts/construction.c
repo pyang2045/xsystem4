@@ -73,6 +73,10 @@ void parts_cp_op_free(struct parts_cp_op *op)
 	case PARTS_CP_GRAY_SCALE:
 	case PARTS_CP_FILL_POLYGON_PIXEL_AMAP:
 	case PARTS_CP_FILL_POLYGON_AMAP:
+	case PARTS_CP_ADD_FILTER:
+	case PARTS_CP_MUL_FILTER:
+	case PARTS_CP_TILE_CG_BLEND:
+	case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
 		free(op->pixel.points);
 		break;
 	}
@@ -477,9 +481,41 @@ bool PE_AddGrayScaleToPartsConstructionProcess(int parts_no, int x, int y, int w
 }
 
 bool PE_AddAddFilterToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
-		int r, int g, int b, bool full_size, int state);
+		int r, int g, int b, bool full_size, int state)
+{
+	return add_pixel_op(parts_no, state, PARTS_CP_ADD_FILTER, (struct parts_cp_pixel) {
+		.x = x, .y = y, .w = w, .h = h, .full = full_size, .r = r, .g = g, .b = b
+	});
+}
+
 bool PE_AddMulFilterToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
-		int r, int g, int b, bool full_size, int state);
+		int r, int g, int b, bool full_size, int state)
+{
+	return add_pixel_op(parts_no, state, PARTS_CP_MUL_FILTER, (struct parts_cp_pixel) {
+		.x = x, .y = y, .w = w, .h = h, .full = full_size, .r = r, .g = g, .b = b
+	});
+}
+
+bool PE_AddTileCGBlendToPartsConstructionProcess(int parts_no, struct string *cg_name,
+		int x, int y, int w, int h, bool full_size, int state)
+{
+	int cg_no;
+	if (!asset_exists_by_name(ASSET_CG, cg_name->text, &cg_no)) {
+		WARNING("Invalid CG name: %s", display_sjis0(cg_name->text));
+		return false;
+	}
+	return add_pixel_op(parts_no, state, PARTS_CP_TILE_CG_BLEND, (struct parts_cp_pixel) {
+		.x = x, .y = y, .w = w, .h = h, .full = full_size, .cg_no = cg_no
+	});
+}
+
+bool PE_AddFillEllipseWithAlphaToPartsConstructionProcess(int parts_no, int cx, int cy,
+		int rx, int ry, int r, int g, int b, int a, int state)
+{
+	return add_pixel_op(parts_no, state, PARTS_CP_FILL_ELLIPSE_WITH_ALPHA, (struct parts_cp_pixel) {
+		.x = cx, .y = cy, .radius = rx, .line_width = ry, .r = r, .g = g, .b = b, .a = a
+	});
+}
 bool PE_AddDrawLineToPartsConstructionProcess(int parts_no, int x1, int y1, int x2, int y2,
 		int r, int g, int b, int a, int state);
 
@@ -1059,6 +1095,10 @@ static bool cp_op_on_pixels(const struct parts_cp_op *op)
 	case PARTS_CP_GRAY_SCALE:
 	case PARTS_CP_FILL_POLYGON_PIXEL_AMAP:
 	case PARTS_CP_FILL_POLYGON_AMAP:
+	case PARTS_CP_ADD_FILTER:
+	case PARTS_CP_MUL_FILTER:
+	case PARTS_CP_TILE_CG_BLEND:
+	case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
 	case PARTS_CP_SCALE_COPY_CG:
 	case PARTS_CP_CUT_CG_COPY:
 	case PARTS_CP_CUT_CG_SCALE_BLEND:
@@ -1660,6 +1700,92 @@ static void build_tile_cg(uint8_t *pixels, int tw, int th, const struct parts_cp
 }
 
 /*
+ * AddFilter and MulFilter (v14 construction commands 16 and 17): each colour
+ * of the rectangle's pixels (全體: the whole surface) has r, g, b added,
+ * clamped to 255, or is multiplied by r, g, b / 255. The alpha is not
+ * written. Not checked against the original's pixel functions.
+ */
+static void build_color_filter(uint8_t *pixels, int tw, int th, const struct parts_cp_pixel *op, bool mul)
+{
+	int x = op->x, y = op->y, w = op->w, h = op->h;
+	if (op->full) {
+		x = 0; y = 0;
+		w = tw; h = th;
+	}
+	if (!cp_clip_span(&x, &w, tw) || !cp_clip_span(&y, &h, th))
+		return;
+	const int c[3] = { cp_byte(op->r), cp_byte(op->g), cp_byte(op->b) };
+	for (int row = y; row < y + h; row++) {
+		uint8_t *p = pixels + ((size_t)row * tw + x) * 4;
+		for (int col = 0; col < w; col++, p += 4) {
+			for (int k = 0; k < 3; k++)
+				p[k] = mul ? p[k] * c[k] / 255 : cp_byte(p[k] + c[k]);
+		}
+	}
+}
+
+/*
+ * TileCGBlend (v14 construction command 128): the CG tiled over the
+ * rectangle as TileCGCopy (129) tiles it, each pixel blended onto the
+ * surface by its alpha (cp_blend_pixel) instead of copied. Haharanman's
+ * title film filter tiles its grain this way. Not checked against the
+ * original's pixel function.
+ */
+static void build_tile_cg_blend(uint8_t *pixels, int tw, int th, const struct parts_cp_pixel *op)
+{
+	struct cg *cg = asset_cg_load(op->cg_no);
+	if (!cg)
+		return;
+	const size_t size = (size_t)tw * th * 4;
+	uint8_t *tile = xcalloc(1, size);
+	if (op->full)
+		parts_cp_tile(tile, tw, th, 0, 0, tw, th, cg->pixels, cg->metrics.w, cg->metrics.h);
+	else
+		parts_cp_tile(tile, tw, th, op->x, op->y, op->w, op->h, cg->pixels, cg->metrics.w, cg->metrics.h);
+	cg_free(cg);
+	int x = op->x, y = op->y, w = op->w, h = op->h;
+	if (op->full) {
+		x = 0; y = 0;
+		w = tw; h = th;
+	}
+	if (cp_clip_span(&x, &w, tw) && cp_clip_span(&y, &h, th)) {
+		for (int row = y; row < y + h; row++) {
+			for (int col = x; col < x + w; col++) {
+				const uint8_t *s = tile + ((size_t)row * tw + col) * 4;
+				if (s[3])
+					cp_blend_pixel(pixels + ((size_t)row * tw + col) * 4, s[0], s[1], s[2], s[3]);
+			}
+		}
+	}
+	free(tile);
+}
+
+/*
+ * FillEllipseWithAlpha (v14 construction command 110): the pixels whose
+ * centres lie within the ellipse of centre (x, y) and radii (rx, ry) take
+ * (r, g, b, a), as FillWithAlpha (6) replaces a rectangle's. The rotation at
+ * ints[37] is not followed. Not checked against the original's scan, which
+ * may antialias the edge as the circle commands do.
+ */
+static void build_fill_ellipse_with_alpha(uint8_t *pixels, int tw, int th, const struct parts_cp_pixel *op)
+{
+	const int rx = op->radius, ry = op->line_width;
+	if (rx <= 0 || ry <= 0)
+		return;
+	const uint8_t c[4] = { cp_byte(op->r), cp_byte(op->g), cp_byte(op->b), cp_byte(op->a) };
+	const int y0 = max(op->y - ry, 0), y1 = min(op->y + ry, th - 1);
+	const int x0 = max(op->x - rx, 0), x1 = min(op->x + rx, tw - 1);
+	for (int py = y0; py <= y1; py++) {
+		const double dy = (py + 0.5 - op->y) / ry;
+		for (int px = x0; px <= x1; px++) {
+			const double dx = (px + 0.5 - op->x) / rx;
+			if (dx * dx + dy * dy <= 1.0)
+				memcpy(pixels + ((size_t)py * tw + px) * 4, c, 4);
+		}
+	}
+}
+
+/*
  * CutCGScaleCopy (v14 construction command 14, native 0x4fe5a0) as the
  * pactex loader gives it: all of the CG (元矩形 without a positive width and
  * height, 0x5ab3b0) on a surface of its own (0x4fe68a -> 0x50b350 ->
@@ -2001,7 +2127,7 @@ bool parts_build_construction_process(struct parts *parts,
 		case PARTS_CP_FILL_POLYGON_PIXEL_AMAP:
 			build_fill_polygon(pixels, t->w, t->h, &op->pixel, op->type, has_alpha);
 			break;
-		case PARTS_CP_FILL_POLYGON_AMAP:
+			case PARTS_CP_FILL_POLYGON_AMAP:
 			if (has_alpha)
 				build_fill_polygon(pixels, t->w, t->h, &op->pixel, op->type, true);
 			break;
@@ -2026,6 +2152,16 @@ bool parts_build_construction_process(struct parts *parts,
 			break;
 		case PARTS_CP_GRAY_SCALE:
 			build_gray_scale(pixels, t->w, t->h, &op->pixel);
+			break;
+		case PARTS_CP_ADD_FILTER:
+		case PARTS_CP_MUL_FILTER:
+			build_color_filter(pixels, t->w, t->h, &op->pixel, op->type == PARTS_CP_MUL_FILTER);
+			break;
+		case PARTS_CP_TILE_CG_BLEND:
+			build_tile_cg_blend(pixels, t->w, t->h, &op->pixel);
+			break;
+		case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
+			build_fill_ellipse_with_alpha(pixels, t->w, t->h, &op->pixel);
 			break;
 		}
 	}

@@ -234,6 +234,14 @@ bool PE_AddBlendFillToPartsConstructionProcess(int parts_no, int x, int y, int w
 		bool full_size, int r, int g, int b, int a, int state);
 bool PE_AddGrayScaleToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
 		bool full_size, int state);
+bool PE_AddAddFilterToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
+		int r, int g, int b, bool full_size, int state);
+bool PE_AddMulFilterToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
+		int r, int g, int b, bool full_size, int state);
+bool PE_AddTileCGBlendToPartsConstructionProcess(int parts_no, struct string *cg_name,
+		int x, int y, int w, int h, bool full_size, int state);
+bool PE_AddFillEllipseWithAlphaToPartsConstructionProcess(int parts_no, int cx, int cy,
+		int rx, int ry, int r, int g, int b, int a, int state);
 bool PE_AddCopyTextToPartsConstructionProcess(int parts_no, int x, int y, struct string *text,
 		int type, int size, int r, int g, int b, float bold_weight,
 		int edge_r, int edge_g, int edge_b, float edge_weight,

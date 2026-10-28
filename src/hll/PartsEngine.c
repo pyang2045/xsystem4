@@ -1075,6 +1075,8 @@ enum v14_cp_type {
 	V14_CP_DRAW_CIRCLE_AMAP = 52,
 	V14_CP_DRAW_CIRCLE_ALPHA_BLEND_IN_RECT = 57,
 	V14_CP_FILL_POLYGON_ALPHA_BLEND = 97,
+	V14_CP_FILL_ELLIPSE_WITH_ALPHA = 110,
+	V14_CP_TILE_CG_BLEND = 128,
 	V14_CP_FILL_CIRCLE_AMAP = 102,
 	V14_CP_FILL_CIRCLE_ALPHA_BLEND = 106,
 	V14_CP_TILE_CG_COPY = 129,
@@ -1372,15 +1374,36 @@ static void PartsEngine_AddPartsConstructionProcess(int parts_no, int wi_slot, i
 		PE_AddBlurToPartsConstructionProcess(parts_no, cmd == V14_CP_VBLUR_FILTER,
 			dx, dy, dw, dh, V14_CP_INT(30, 0) != 0, V14_CP_INT(31, 0), state);
 		break;
+	// CASConstructionProcess@SetGrayFilter / SetAddFilter / SetMulFilter:
+	// the rectangle at 6, 7, 10, 11, the colour at 12..14 (Add, Mul) and
+	// 全體 at 30.
 	case V14_CP_GRAY_FILTER:
-	case V14_CP_ADD_FILTER:
-	case V14_CP_MUL_FILTER: {
-		/* Filter stubs — no-op, the parts texture is already rendered */
-		static int filter_warn = 0;
-		if (filter_warn++ < 3)
-			WARNING("AddPartsConstructionProcess: filter type %d (stub) parts=%d", cmd, parts_no);
+		PE_AddGrayScaleToPartsConstructionProcess(parts_no, dx, dy, dw, dh,
+			V14_CP_INT(30, 0) != 0, state);
 		break;
-	}
+	case V14_CP_ADD_FILTER:
+		PE_AddAddFilterToPartsConstructionProcess(parts_no, dx, dy, dw, dh, r, g, b,
+			V14_CP_INT(30, 0) != 0, state);
+		break;
+	case V14_CP_MUL_FILTER:
+		PE_AddMulFilterToPartsConstructionProcess(parts_no, dx, dy, dw, dh, r, g, b,
+			V14_CP_INT(30, 0) != 0, state);
+		break;
+	// SetFillEllipseWithAlpha: the centre at 6, 7, the radii at 32, 33,
+	// the colour at 12..15 and a rotation at 37 (not followed).
+	case V14_CP_FILL_ELLIPSE_WITH_ALPHA:
+		if (V14_CP_INT(37, 0))
+			WARNING("AddPartsConstructionProcess: ellipse rotation %d not supported", V14_CP_INT(37, 0));
+		PE_AddFillEllipseWithAlphaToPartsConstructionProcess(parts_no, dx, dy,
+			V14_CP_INT(32, 0), V14_CP_INT(33, 0), r, g, b, a, state);
+		break;
+	// SetTileCGBlend: the CG name at strings[1], the rectangle at 6, 7, 10,
+	// 11 and 全體 at 30, as SetTileCGCopy.
+	case V14_CP_TILE_CG_BLEND:
+		if (cg_name)
+			PE_AddTileCGBlendToPartsConstructionProcess(parts_no, cg_name, dx, dy, dw, dh,
+				V14_CP_INT(30, 0) != 0, state);
+		break;
 	case V14_CP_DRAW_LINE:
 	case V14_CP_DRAW_LINE_WITH_ALPHA: {
 		int x1 = dx, y1 = dy, x2 = dx2, y2 = dy2;

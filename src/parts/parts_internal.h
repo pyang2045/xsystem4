@@ -277,12 +277,20 @@ enum parts_cp_op_type {
 	// parts_cp_cut_cg, as PARTS_CP_COPY_CUT_CG). Saved since XPE version 13.
 	PARTS_CP_CUT_CG_COPY,
 	PARTS_CP_CUT_CG_SCALE_BLEND,
-#define PARTS_NR_CP_TYPES (PARTS_CP_CUT_CG_SCALE_BLEND+1)
+	// v14 commands 16 (AddFilter), 17 (MulFilter, last), 128 (TileCGBlend) and 110
+	// (FillEllipseWithAlpha), which Haharanman's title builds (struct
+	// parts_cp_pixel; radius is the x radius, line_width the y radius).
+	PARTS_CP_ADD_FILTER,
+	PARTS_CP_TILE_CG_BLEND,
+	PARTS_CP_FILL_ELLIPSE_WITH_ALPHA,
+	PARTS_CP_MUL_FILTER,	// v14 command 17
+#define PARTS_NR_CP_TYPES (PARTS_CP_MUL_FILTER+1)
 };
 // What XPE versions 11 to 13 saves hold for the types added last.
 _Static_assert(PARTS_CP_FILL_POLYGON_PIXEL_AMAP == 27 && PARTS_CP_FILL_POLYGON_AMAP == 28
 		&& PARTS_CP_SCALE_COPY_CG == 29 && PARTS_CP_CUT_CG_COPY == 30
-		&& PARTS_CP_CUT_CG_SCALE_BLEND == 31, "the values of enum parts_cp_op_type are saved");
+		&& PARTS_CP_CUT_CG_SCALE_BLEND == 31 && PARTS_CP_ADD_FILTER == 32
+		&& PARTS_CP_FILL_ELLIPSE_WITH_ALPHA == 34, "the values of enum parts_cp_op_type are saved");
 
 struct parts_cp_create {
 	int w;

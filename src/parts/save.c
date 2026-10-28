@@ -437,6 +437,10 @@ static void save_parts_cp_op(struct iarray_writer *w, struct parts_cp_op *op)
 	case PARTS_CP_GRAY_SCALE:
 	case PARTS_CP_FILL_POLYGON_PIXEL_AMAP:
 	case PARTS_CP_FILL_POLYGON_AMAP:
+	case PARTS_CP_ADD_FILTER:
+	case PARTS_CP_MUL_FILTER:
+	case PARTS_CP_TILE_CG_BLEND:
+	case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
 		// Since version 8, for the reason given above (the blending fill
 		// and the gray scale since version 10, the last two since version
 		// 11). One layout for all of them, a polygon's points last.
@@ -543,6 +547,10 @@ static struct parts_cp_op *load_parts_cp_op(struct iarray_reader *r)
 	case PARTS_CP_GRAY_SCALE:
 	case PARTS_CP_FILL_POLYGON_PIXEL_AMAP:
 	case PARTS_CP_FILL_POLYGON_AMAP:
+	case PARTS_CP_ADD_FILTER:
+	case PARTS_CP_MUL_FILTER:
+	case PARTS_CP_TILE_CG_BLEND:
+	case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
 		op->pixel.x = iarray_read(r);
 		op->pixel.y = iarray_read(r);
 		op->pixel.w = iarray_read(r);

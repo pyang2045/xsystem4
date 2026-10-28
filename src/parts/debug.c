@@ -131,6 +131,10 @@ static void parts_construction_process_to_json(struct parts_construction_process
 		[PARTS_CP_ONLY_ALPHA_TEXT] = "only_alpha_text",
 		[PARTS_CP_BLEND_FILL] = "blend_fill",
 		[PARTS_CP_GRAY_SCALE] = "gray_scale",
+		[PARTS_CP_ADD_FILTER] = "add_filter",
+		[PARTS_CP_MUL_FILTER] = "mul_filter",
+		[PARTS_CP_TILE_CG_BLEND] = "tile_cg_blend",
+		[PARTS_CP_FILL_ELLIPSE_WITH_ALPHA] = "fill_ellipse_with_alpha",
 		[PARTS_CP_FILL_POLYGON_PIXEL_AMAP] = "fill_polygon_pixel_amap",
 		[PARTS_CP_FILL_POLYGON_AMAP] = "fill_polygon_amap",
 		[PARTS_CP_SCALE_COPY_CG] = "scale_copy_cg",
@@ -238,6 +242,10 @@ static void parts_construction_process_to_json(struct parts_construction_process
 		case PARTS_CP_GRAY_SCALE:
 		case PARTS_CP_FILL_POLYGON_PIXEL_AMAP:
 		case PARTS_CP_FILL_POLYGON_AMAP:
+		case PARTS_CP_ADD_FILTER:
+		case PARTS_CP_MUL_FILTER:
+		case PARTS_CP_TILE_CG_BLEND:
+		case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
 			cJSON_AddItemToObjectCS(obj, "rect", tmp = cJSON_CreateObject());
 			cJSON_AddNumberToObject(tmp, "x", op->pixel.x);
 			cJSON_AddNumberToObject(tmp, "y", op->pixel.y);
@@ -678,6 +686,18 @@ static void parts_list_print(struct parts *parts, int indent)
 				break;
 			case PARTS_CP_FILL_POLYGON_AMAP:
 				sys_message(" fill-polygon-amap");
+				break;
+			case PARTS_CP_ADD_FILTER:
+				sys_message(" add-filter");
+				break;
+			case PARTS_CP_MUL_FILTER:
+				sys_message(" mul-filter");
+				break;
+			case PARTS_CP_TILE_CG_BLEND:
+				sys_message(" tile-cg-blend");
+				break;
+			case PARTS_CP_FILL_ELLIPSE_WITH_ALPHA:
+				sys_message(" fill-ellipse-with-alpha");
 				break;
 			case PARTS_CP_SCALE_COPY_CG:
 				sys_message(" scale-copy-cg");
