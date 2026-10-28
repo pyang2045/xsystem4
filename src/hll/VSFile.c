@@ -81,9 +81,26 @@ static bool vsf_write_type(enum vsf_valuetype type)
 	return vsf_write(&b, 1);
 }
 
+/*
+ * Relative names: Pastel Chime 3 reads files from the game directory, while
+ * Haharanman names a save slot's companion file after its .asd
+ * (gamesave::detail::TransAddSaveFileName), which belongs in the save
+ * folder. So files are written to the save folder, and read from there when
+ * they exist, else from the game directory.
+ */
+static char *vsfile_path(const char *name, bool read)
+{
+	char *path = savedir_path(name);
+	if (read && !file_exists(path)) {
+		free(path);
+		path = gamedir_path(name);
+	}
+	return path;
+}
+
 static bool vsfile_open(struct string *filename, bool read)
 {
-	char *u = gamedir_path(filename->text);
+	char *u = vsfile_path(filename->text, read);
 	if (vs_file) {
 		WARNING("VSFile is already opened");
 		fclose(vs_file);
