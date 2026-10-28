@@ -3605,6 +3605,13 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 						display_sjis0(file_s ? file_s->text : "?"),
 						line,
 						display_sjis1(expr_s ? expr_s->text : "?"));
+				if (getenv("XSYS4_ASSERT_STACK")) {
+					for (int _h = call_stack_ptr-1; _h >= 0 && _h >= call_stack_ptr-14; _h--) {
+						int _hfno = call_stack[_h].fno;
+						WARNING("  assert stack[%d]: fno=%d '%s'", _h, _hfno,
+							(_hfno >= 0 && _hfno < ain->nr_functions && ain->functions[_hfno].name) ? display_game0(ain->functions[_hfno].name) : "?");
+					}
+				}
 			} else if (assert_count == 4) {
 				WARNING("(suppressing further assert warnings)");
 			}

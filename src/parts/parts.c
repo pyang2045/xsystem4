@@ -198,6 +198,8 @@ struct parts *parts_get(int parts_no)
 			stale_warnings++;
 			WARNING("stale activity parts %d re-created on controller %d",
 					parts_no, parts->controller_no);
+			if (getenv("XSYS4_STALE_STACK") && stale_warnings == 1)
+				vm_stack_trace();
 		}
 		// ... and hangs under the root of its controller (0x53d1d0 ->
 		// 0x53afb0).

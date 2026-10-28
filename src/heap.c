@@ -705,11 +705,32 @@ void heap_unref(int slot)
 				case VM_PAGE:
 					if (heap[s].page) {
 						bool was_struct = heap[s].page->type == STRUCT_PAGE;
+						int queued = deferred_count;
 						delete_page(s);
 						// after the destructor, drop the delegate
 						// entries that target it (0x681f70)
 						if (was_struct)
 							delegate_target_freed(s);
+						// What it let go of is destroyed in the order
+						// it let go of it, each page with all that page
+						// lets go of, as the original's reference
+						// counting destroys it (the queue is taken
+						// from its end). SaveLoadScene's <Activity>,
+						// released before its m_lpcSceneStack
+						// (delete_page_vars) and before the lambda
+						// environments of the delegates that targeted
+						// the scene, which hold the scene stack too,
+						// has to go while the stack's layer still has
+						// the activity's parts: the activity's release
+						// finds its user components by them, and
+						// without them its page button and item
+						// activities stayed and the next save or load
+						// screen was empty.
+						for (int i = queued, j = deferred_count - 1; i < j; i++, j--) {
+							int t = deferred_queue[i];
+							deferred_queue[i] = deferred_queue[j];
+							deferred_queue[j] = t;
+						}
 					}
 					break;
 				case VM_STRING:

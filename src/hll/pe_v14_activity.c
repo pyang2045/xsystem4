@@ -113,6 +113,15 @@ static int alloc_activity_parts_no(void)
 static uint8_t *controller_released;
 static int controller_released_size;
 
+// XSYS4_ACT_TRACE=1: log the activities made, released and loaded.
+static bool activity_trace(void)
+{
+	static int on = -1;
+	if (on < 0)
+		on = getenv("XSYS4_ACT_TRACE") != NULL;
+	return on;
+}
+
 void pe_v14_activity_parts_released(int parts_no)
 {
 	if (parts_no < ACTIVITY_PARTS_BASE || parts_no >= next_activity_parts_no)
@@ -243,6 +252,11 @@ void pe_v14_activity_load(struct iarray_reader *r)
 	}
 	if (r->error)
 		goto invalid;
+	if (activity_trace()) {
+		for (int i = 0; i < nr_activities; i++)
+			WARNING("ACT loaded '%s' parts=%d", display_sjis0(activities[i].name),
+				activities[i].nr_parts);
+	}
 	return;
 invalid:
 	WARNING("invalid activity section");
@@ -3392,6 +3406,8 @@ static bool PartsEngine_CreateActivity(struct string *name)
 		return false;
 	struct activity *act = &activities[nr_activities];
 	snprintf(act->name, sizeof(act->name), "%s", name->text);
+	if (activity_trace())
+		WARNING("ACT create '%s' #%d", display_sjis0(name->text), nr_activities);
 	act->nr_parts = 0;
 	act->nr_close_parts = 0;
 	act->nr_end_keys = 0;
@@ -3432,6 +3448,8 @@ void pe_v14_append_int_list(int out_slot, const struct page *list);
 static bool PartsEngine_ReleaseActivity(struct string *name, int erase_list)
 {
 	int idx = find_activity(name);
+	if (activity_trace())
+		WARNING("ACT release '%s' idx=%d", display_sjis0(name->text), idx);
 	if (idx < 0) return false;
 	struct activity *act = &activities[idx];
 	struct page *delegate_indices = NULL;

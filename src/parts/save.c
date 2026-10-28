@@ -91,12 +91,26 @@
  * the script's message manager drops a message whose ID is not the parts'),
  * the number and the ID; it is written only when a parts has one. A reader
  * that does not know a section stops before it.
+ *
+ * The user component section (SAVE_USER_COMPONENTS) follows the unique IDs:
+ * its mark, a count and, for each parts with a user component name or data
+ * (the pactex ユーザコンポーネント名 and 數據, which loading does not read
+ * again), the number, the name and the number of data strings and the
+ * strings (keys and values in turn), each string its length and then its
+ * bytes, one byte a word. The script's CUserComponentManager keys its
+ * components by activity and parts name, and releasing an activity removes
+ * only the components of the parts that GetUserComponentName names: without
+ * the names, the components of an activity loaded before the save stayed
+ * in the manager after it was released, and the next activity of the name
+ * found them (a map scene rebuilt after an event: actionselect::CBack's
+ * (nonnull) a.Back and CActivityWrap's (nonnull) m_root asserts).
  */
 #define CURRENT_SAVE_VERSION 14
 #define SAVE_CG_DEFORMS 0x46444350 /* "PCDF" */
 #define SAVE_WHEELABLE 0x45485750 /* "PWHE" */
 #define SAVE_SOUND_NAMES 0x444e5350 /* "PSND" */
 #define SAVE_UNIQUE_IDS 0x44495550 /* "PUID" */
+#define SAVE_USER_COMPONENTS 0x4d435550 /* "PUCM" */
 
 /*
  * Controllers in a save. The controller fields (the active controller, each
@@ -1228,6 +1242,104 @@ static void load_unique_ids(struct iarray_reader *r)
 	}
 }
 
+static void save_bytes(struct iarray_writer *w, const char *s)
+{
+	int len = s ? strlen(s) : 0;
+	iarray_write(w, len);
+	for (int k = 0; k < len; k++)
+		iarray_write(w, (uint8_t)s[k]);
+}
+
+// A string of save_bytes (heap-allocated), or NULL if it does not read as one.
+static char *load_bytes(struct iarray_reader *r)
+{
+	int len = iarray_read(r);
+	if (r->error || len < 0 || (unsigned)len > r->size - r->pos)
+		return NULL;
+	char *s = xmalloc(len + 1);
+	for (int k = 0; k < len; k++)
+		s[k] = iarray_read(r);
+	s[len] = 0;
+	return s;
+}
+
+static void save_user_components(struct iarray_writer *w, bool save_hidden)
+{
+	unsigned count_pos = 0, count = 0;
+	struct parts *parts;
+	PARTS_LIST_FOREACH(parts) {
+		if (!save_hidden && !parts->global.show)
+			continue;
+		if (!parts->want_save || parts_is_controller_root(parts))
+			continue;
+		if (!parts->user_component_name && !parts->nr_uc_data)
+			continue;
+		if (!count) {
+			iarray_write(w, SAVE_USER_COMPONENTS);
+			count_pos = iarray_writer_pos(w);
+			iarray_write(w, 0);
+		}
+		iarray_write(w, parts->no);
+		save_bytes(w, parts->user_component_name);
+		iarray_write(w, parts->nr_uc_data);
+		for (int i = 0; i < parts->nr_uc_data; i++)
+			save_bytes(w, parts->uc_data[i]);
+		count++;
+	}
+	if (count)
+		iarray_write_at(w, count_pos, count);
+}
+
+static void load_user_components(struct iarray_reader *r)
+{
+	if (r->error || r->pos >= r->size || r->data[r->pos].i != SAVE_USER_COMPONENTS)
+		return;
+	iarray_read(r);
+	int nr = iarray_read(r);
+	if (r->error || nr < 0 || (unsigned)nr > r->size - r->pos) {
+		WARNING("invalid user component section");
+		return;
+	}
+	for (int i = 0; i < nr; i++) {
+		int no = iarray_read(r);
+		struct parts *parts = no > 0 ? parts_try_get(no) : NULL;
+		char *name = load_bytes(r);
+		int nr_data = iarray_read(r);
+		if (!name || r->error || nr_data < 0 || (unsigned)nr_data > r->size - r->pos) {
+			WARNING("invalid user component section");
+			free(name);
+			return;
+		}
+		if (parts) {
+			free(parts->user_component_name);
+			parts->user_component_name = *name ? name : NULL;
+			if (!*name)
+				free(name);
+		} else {
+			free(name);
+		}
+		char *key = NULL;
+		for (int k = 0; k < nr_data; k++) {
+			char *str = load_bytes(r);
+			if (!str) {
+				WARNING("invalid user component section");
+				free(key);
+				return;
+			}
+			if (!(k & 1)) {
+				key = str;
+				continue;
+			}
+			if (parts)
+				parts_uc_data_set(parts, key, str);
+			free(key);
+			free(str);
+			key = NULL;
+		}
+		free(key);
+	}
+}
+
 // A section that does not read as one is warned about and left; the rest of
 // the save is loaded.
 static void load_sound_names(struct iarray_reader *r)
@@ -1348,6 +1460,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		save_sound_names(&w, save_hidden);
 		pe_v14_activity_save(&w);
 		save_unique_ids(&w, save_hidden);
+		save_user_components(&w, save_hidden);
 	}
 
 	// The controller ID section is the end of the save, after every list
@@ -1459,6 +1572,7 @@ bool PE_Load(struct page **buffer)
 		load_sound_names(&r);
 		pe_v14_activity_load(&r);
 		load_unique_ids(&r);
+		load_user_components(&r);
 	}
 	// (the controller ID section follows the lists; it was read first)
 	if (parts_multi_controller && ain->version >= 14) {
