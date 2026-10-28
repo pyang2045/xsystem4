@@ -3988,10 +3988,15 @@ static bool array_decl_has_func(const struct ain_hll_function *f)
  * Shapes not handled here keep the name-matched default, so games that do not
  * use these overloads link exactly as before.
  */
+static void Array_Duplicate_Wrap(struct page **dst, int src_slot);
+
 void *array_select_function(const struct ain_hll_function *f, void *fallback)
 {
 	if (!f || !f->name)
 		return fallback;
+	if (!strcmp(f->name, "Duplicate") && f->nr_arguments == 2
+			&& f->arguments[1].type.data == AIN_WRAP)
+		return (void *)Array_Duplicate_Wrap;
 	if (!strcmp(f->name, "Erase"))
 		return array_erase_function(f);
 	if (!strcmp(f->name, "IsExist"))
@@ -4114,6 +4119,17 @@ static void Array_Duplicate(struct page **dst, struct page **src)
 			heap_ref(s->values[i].i);
 	}
 	*dst = new_a;
+}
+
+/* Haharanman declares Duplicate(ref array<?> dst, wrap<array<?>> src): the
+ * source arrives as its heap slot (CExecutedCommandParam@InitInstantList). */
+static void Array_Duplicate_Wrap(struct page **dst, int src_slot)
+{
+	struct page *s = array_wrap_page(src_slot);
+	if (!dst || !s || s == *dst)
+		return;
+	struct page *src = s;
+	Array_Duplicate(dst, &src);
 }
 
 /* All: return true if all elements pass predicate */
