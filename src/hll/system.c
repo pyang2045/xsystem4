@@ -744,15 +744,26 @@ static int system_GetTime(void)
 }
 
 // [31] GetFuncStackName(index) -> string
+// Index 0 is the function calling the HLL, 1 its caller, and so on:
+// Haharanman's ■イベントスキップ and 既読 take GetFuncStackName(1) as the
+// event's name (管理／ＥＶ／...) when they are given an empty one.
 static struct string *system_GetFuncStackName(int index)
 {
-	return cstr_to_string("");
+	int i = call_stack_ptr - 1 - index;
+	if (index < 0 || i < 0)
+		return cstr_to_string("");
+	int fno = call_stack[i].fno;
+	if (fno < 0 || fno >= ain->nr_functions || !ain->functions[fno].name)
+		return cstr_to_string("");
+	return cstr_to_string(ain->functions[fno].name);
 }
 
 // [32] ExistFunc(funcName) -> bool
+// Haharanman's 条件関数実行 and 管理関数実行 check the event functions the EX
+// file names (条件／ＥＶ／..., 管理／ＥＶ／...) before calling them by name.
 static bool system_ExistFunc(struct string *funcName)
 {
-	return false;
+	return funcName && funcName->size > 0 && ain_get_function(ain, funcName->text) >= 0;
 }
 
 HLL_LIBRARY(system,
