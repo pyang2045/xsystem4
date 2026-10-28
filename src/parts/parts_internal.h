@@ -284,13 +284,17 @@ enum parts_cp_op_type {
 	PARTS_CP_TILE_CG_BLEND,
 	PARTS_CP_FILL_ELLIPSE_WITH_ALPHA,
 	PARTS_CP_MUL_FILTER,	// v14 command 17
-#define PARTS_NR_CP_TYPES (PARTS_CP_MUL_FILTER+1)
+	// v14 command 120 (FillPieWithAlpha; struct parts_cp_pie). Saved since
+	// XPE version 14, as 32..35.
+	PARTS_CP_FILL_PIE_WITH_ALPHA,
+#define PARTS_NR_CP_TYPES (PARTS_CP_FILL_PIE_WITH_ALPHA+1)
 };
 // What XPE versions 11 to 13 saves hold for the types added last.
 _Static_assert(PARTS_CP_FILL_POLYGON_PIXEL_AMAP == 27 && PARTS_CP_FILL_POLYGON_AMAP == 28
 		&& PARTS_CP_SCALE_COPY_CG == 29 && PARTS_CP_CUT_CG_COPY == 30
 		&& PARTS_CP_CUT_CG_SCALE_BLEND == 31 && PARTS_CP_ADD_FILTER == 32
-		&& PARTS_CP_FILL_ELLIPSE_WITH_ALPHA == 34, "the values of enum parts_cp_op_type are saved");
+		&& PARTS_CP_FILL_ELLIPSE_WITH_ALPHA == 34 && PARTS_CP_MUL_FILTER == 35
+		&& PARTS_CP_FILL_PIE_WITH_ALPHA == 36, "the values of enum parts_cp_op_type are saved");
 
 struct parts_cp_create {
 	int w;
@@ -335,6 +339,7 @@ struct parts_cp_pie {
 	int start, sweep;
 	int a;
 	int angle;
+	int r, g, b;	// PARTS_CP_FILL_PIE_WITH_ALPHA only
 };
 
 // The commands that work on the surface's pixels; each uses the fields its

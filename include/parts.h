@@ -214,6 +214,8 @@ bool PE_AddCutCGScaleBlendToPartsConstructionProcess(int parts_no, struct string
 		int dx, int dy, int dw, int dh, int sx, int sy, int sw, int sh, int interp_type, int state);
 bool PE_AddGrayFilterToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
 		bool full_size, int state);
+bool PE_AddFillPieWithAlphaToPartsConstructionProcess(int parts_no, int x, int y, int rx, int ry,
+		int start_angle, int sweep_angle, int r, int g, int b, int a, int angle, int state);
 bool PE_AddFillPieAMapToPartsConstructionProcess(int parts_no, int x, int y, int rx, int ry,
 		int start_angle, int sweep_angle, int a, int angle, int state);
 bool PE_AddMulAMapGradationToPartsConstructionProcess(int parts_no, bool columns,

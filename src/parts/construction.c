@@ -53,6 +53,7 @@ void parts_cp_op_free(struct parts_cp_op *op)
 	case PARTS_CP_CUT_CG_SCALE_BLEND:
 	case PARTS_CP_GRAY_FILTER:
 	case PARTS_CP_FILL_PIE_AMAP:
+	case PARTS_CP_FILL_PIE_WITH_ALPHA:
 		break;
 	case PARTS_CP_DRAW_TEXT:
 	case PARTS_CP_COPY_TEXT:
@@ -365,6 +366,26 @@ bool PE_AddFillPieAMapToPartsConstructionProcess(int parts_no, int x, int y, int
 		.x = x, .y = y, .rx = rx, .ry = ry,
 		.start = start_angle, .sweep = sweep_angle,
 		.a = a, .angle = angle
+	};
+
+	parts_add_cp_op(cproc, op);
+	return true;
+}
+
+bool PE_AddFillPieWithAlphaToPartsConstructionProcess(int parts_no, int x, int y, int rx, int ry,
+		int start_angle, int sweep_angle, int r, int g, int b, int a, int angle, int state)
+{
+	if (!parts_state_valid(--state))
+		return false;
+
+	struct parts_construction_process *cproc = get_cproc(parts_no, state);
+	struct parts_cp_op *op = xcalloc(1, sizeof(struct parts_cp_op));
+	op->type = PARTS_CP_FILL_PIE_WITH_ALPHA;
+	op->pie = (struct parts_cp_pie) {
+		.x = x, .y = y, .rx = rx, .ry = ry,
+		.start = start_angle, .sweep = sweep_angle,
+		.a = a, .angle = angle,
+		.r = r, .g = g, .b = b
 	};
 
 	parts_add_cp_op(cproc, op);
@@ -748,15 +769,21 @@ static void build_gray_filter(struct parts_construction_process *cproc, struct p
  * save data, so what the pactex loader would not pass is checked again here:
  * a rotation, radii above PARTS_CP_PIE_MAX_RADIUS and angles beyond one turn
  * draw nothing.
+ *
+ * FillPieWithAlpha (v14 command 120, native 0x5082e0 -> 0x5aecb0) scans and
+ * samples the sector the same way (0x4cf7a0, 0x4ea490, 0x4e5a50) and writes
+ * the colour and a * (n * 255 / 64) / 255 to a covered pixel (0x4cfa30 ->
+ * 0x5af1c0, each clamped to 0..255; the alpha only on a surface with one).
  */
-static void build_fill_pie_amap(struct parts_construction_process *cproc, struct parts_cp_pie *op)
+static void build_fill_pie(struct parts_construction_process *cproc, struct parts_cp_pie *op,
+		bool with_colour, bool has_alpha)
 {
 	Texture *t = &cproc->common.texture;
 	if (op->rx <= 0 || op->ry <= 0 || op->start < 0 || op->sweep < 0)
 		return;
 	if (op->angle || op->rx > PARTS_CP_PIE_MAX_RADIUS || op->ry > PARTS_CP_PIE_MAX_RADIUS
 			|| op->start > 360 || op->sweep > 360) {
-		WARNING("FillPieAMap: unsupported sector");
+		WARNING("%s: unsupported sector", with_colour ? "FillPieWithAlpha" : "FillPieAMap");
 		return;
 	}
 	if (!t->handle || t->w <= 0 || t->h <= 0)
@@ -805,7 +832,14 @@ static void build_fill_pie_amap(struct parts_construction_process *cproc, struct
 				continue;
 			// Scaled first (0x4d05c0), then clamped (0x5b0a10).
 			const int64_t a = (int64_t)op->a * (n * 255 / 64) / 255;
-			pixels[((int)py * t->w + (int)px) * 4 + 3] = min(max(a, 0), 255);
+			uint8_t *d = pixels + ((int)py * t->w + (int)px) * 4;
+			if (with_colour) {
+				d[0] = min(max(op->r, 0), 255);
+				d[1] = min(max(op->g, 0), 255);
+				d[2] = min(max(op->b, 0), 255);
+			}
+			if (has_alpha)
+				d[3] = min(max(a, 0), 255);
 		}
 	}
 	gfx_update_texture_with_pixels(t, pixels);
@@ -2101,7 +2135,10 @@ bool parts_build_construction_process(struct parts *parts,
 			break;
 		case PARTS_CP_FILL_PIE_AMAP:
 			if (has_alpha)
-				build_fill_pie_amap(cproc, &op->pie);
+				build_fill_pie(cproc, &op->pie, false, true);
+			break;
+		case PARTS_CP_FILL_PIE_WITH_ALPHA:
+			build_fill_pie(cproc, &op->pie, true, has_alpha);
 			break;
 		// The commands that write only the alpha are left out on a
 		// surface without one, as FillPieAMap is; what the original does

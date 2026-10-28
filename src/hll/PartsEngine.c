@@ -1074,8 +1074,11 @@ enum v14_cp_type {
 	V14_CP_DRAW_LINE_WITH_ALPHA = 30,
 	V14_CP_DRAW_CIRCLE_AMAP = 52,
 	V14_CP_DRAW_CIRCLE_ALPHA_BLEND_IN_RECT = 57,
+	V14_CP_FILL_POLYGON_WITH_ALPHA = 94,
+	V14_CP_FILL_POLYGON_AMAP = 95,
 	V14_CP_FILL_POLYGON_ALPHA_BLEND = 97,
 	V14_CP_FILL_ELLIPSE_WITH_ALPHA = 110,
+	V14_CP_FILL_PIE_WITH_ALPHA = 120,
 	V14_CP_TILE_CG_BLEND = 128,
 	V14_CP_FILL_CIRCLE_AMAP = 102,
 	V14_CP_FILL_CIRCLE_ALPHA_BLEND = 106,
@@ -1397,6 +1400,13 @@ static void PartsEngine_AddPartsConstructionProcess(int parts_no, int wi_slot, i
 		PE_AddFillEllipseWithAlphaToPartsConstructionProcess(parts_no, dx, dy,
 			V14_CP_INT(32, 0), V14_CP_INT(33, 0), r, g, b, a, state);
 		break;
+	// SetFillPieWithAlpha: as the ellipse, with the start and sweep
+	// angles at 38, 39.
+	case V14_CP_FILL_PIE_WITH_ALPHA:
+		PE_AddFillPieWithAlphaToPartsConstructionProcess(parts_no, dx, dy,
+			V14_CP_INT(32, 0), V14_CP_INT(33, 0), V14_CP_INT(38, 0), V14_CP_INT(39, 0),
+			r, g, b, a, V14_CP_INT(37, 0), state);
+		break;
 	// SetTileCGBlend: the CG name at strings[1], the rectangle at 6, 7, 10,
 	// 11 and 全體 at 30, as SetTileCGCopy.
 	case V14_CP_TILE_CG_BLEND:
@@ -1431,6 +1441,11 @@ static void PartsEngine_AddPartsConstructionProcess(int parts_no, int wi_slot, i
 		PE_AddDrawCircleToPartsConstructionProcess(parts_no, dx, dy, V14_CP_INT(32, 0),
 			V14_CP_INT(34, 0), V14_CP_INT(15, 0), state);
 		break;
+	// SetFillPolygonWithAlpha (94) and SetFillPolygonAMap (95, the alpha
+	// at 15 alone) have the points, colour, 36 and 37 of 97; they write
+	// what the pactex loader's commands 94 and 95 do.
+	case V14_CP_FILL_POLYGON_WITH_ALPHA:
+	case V14_CP_FILL_POLYGON_AMAP:
 	case V14_CP_FILL_POLYGON_ALPHA_BLEND: {
 		// 0x506610 fails with fewer than two vertices; the scan draws
 		// nothing with fewer than three.
@@ -1446,8 +1461,13 @@ static void PartsEngine_AddPartsConstructionProcess(int parts_no, int wi_slot, i
 		int *points = xmalloc(nr_points * 2 * sizeof(int));
 		for (int i = 0; i < nr_points * 2; i++)
 			points[i] = pos->values[i].i;
-		PE_AddFillPolygonToPartsConstructionProcess(parts_no, nr_points, points,
-			r, g, b, V14_CP_INT(15, 0), state);
+		if (cmd == V14_CP_FILL_POLYGON_ALPHA_BLEND)
+			PE_AddFillPolygonToPartsConstructionProcess(parts_no, nr_points, points,
+				r, g, b, V14_CP_INT(15, 0), state);
+		else
+			PE_AddFillPolygonWriteToPartsConstructionProcess(parts_no,
+				cmd == V14_CP_FILL_POLYGON_AMAP, nr_points, points,
+				r, g, b, V14_CP_INT(15, 0), state);
 		free(points);
 		break;
 	}

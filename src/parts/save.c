@@ -51,6 +51,9 @@
  * command 14; the fields of 7 and 8).
  * Version 13 has the operations 30 and 31 (the cut copy and the cut, scaled
  * blend of a CG of the v14 commands 12 and 13; the fields of 7 and 8).
+ * Version 14 has the operations 32 to 35 (the v14 filters, TileCGBlend and
+ * FillEllipseWithAlpha; the fields of 14..22) and 36 (FillPieWithAlpha; the
+ * fields of 11, then r, g, b).
  *
  * A v14 save can also have the CG deform section (SAVE_CG_DEFORMS) after
  * the lists, before the controller ID section: its mark, a count, and for
@@ -81,7 +84,7 @@
  * the sound numbers of its record. The numbers of a parts with names are
  * made from them again.
  */
-#define CURRENT_SAVE_VERSION 13
+#define CURRENT_SAVE_VERSION 14
 #define SAVE_CG_DEFORMS 0x46444350 /* "PCDF" */
 #define SAVE_WHEELABLE 0x45485750 /* "PWHE" */
 #define SAVE_SOUND_NAMES 0x444e5350 /* "PSND" */
@@ -413,6 +416,7 @@ static void save_parts_cp_op(struct iarray_writer *w, struct parts_cp_op *op)
 		iarray_write(w, op->filter.full_size);
 		break;
 	case PARTS_CP_FILL_PIE_AMAP:
+	case PARTS_CP_FILL_PIE_WITH_ALPHA:
 		// Since version 7: older readers read no fields for a type they
 		// do not know, and would misread the rest of the save.
 		iarray_write(w, op->pie.x);
@@ -423,6 +427,11 @@ static void save_parts_cp_op(struct iarray_writer *w, struct parts_cp_op *op)
 		iarray_write(w, op->pie.sweep);
 		iarray_write(w, op->pie.a);
 		iarray_write(w, op->pie.angle);
+		if (op->type == PARTS_CP_FILL_PIE_WITH_ALPHA) {
+			iarray_write(w, op->pie.r);
+			iarray_write(w, op->pie.g);
+			iarray_write(w, op->pie.b);
+		}
 		break;
 	case PARTS_CP_MUL_AMAP_GRADATION_ROWS:
 	case PARTS_CP_MUL_AMAP_GRADATION_COLUMNS:
@@ -525,6 +534,7 @@ static struct parts_cp_op *load_parts_cp_op(struct iarray_reader *r)
 		op->filter.full_size = !!iarray_read(r);
 		break;
 	case PARTS_CP_FILL_PIE_AMAP:
+	case PARTS_CP_FILL_PIE_WITH_ALPHA:
 		op->pie.x = iarray_read(r);
 		op->pie.y = iarray_read(r);
 		op->pie.rx = iarray_read(r);
@@ -533,6 +543,11 @@ static struct parts_cp_op *load_parts_cp_op(struct iarray_reader *r)
 		op->pie.sweep = iarray_read(r);
 		op->pie.a = iarray_read(r);
 		op->pie.angle = iarray_read(r);
+		if (op->type == PARTS_CP_FILL_PIE_WITH_ALPHA) {
+			op->pie.r = iarray_read(r);
+			op->pie.g = iarray_read(r);
+			op->pie.b = iarray_read(r);
+		}
 		break;
 	case PARTS_CP_MUL_AMAP_GRADATION_ROWS:
 	case PARTS_CP_MUL_AMAP_GRADATION_COLUMNS:

@@ -118,6 +118,7 @@ static void parts_construction_process_to_json(struct parts_construction_process
 		[PARTS_CP_COPY_TEXT] = "copy_text",
 		[PARTS_CP_GRAY_FILTER] = "gray_filter",
 		[PARTS_CP_FILL_PIE_AMAP] = "fill_pie_amap",
+		[PARTS_CP_FILL_PIE_WITH_ALPHA] = "fill_pie_with_alpha",
 		[PARTS_CP_MUL_AMAP_GRADATION_ROWS] = "mul_amap_gradation_rows",
 		[PARTS_CP_MUL_AMAP_GRADATION_COLUMNS] = "mul_amap_gradation_columns",
 		[PARTS_CP_BLUR_H] = "blur_h",
@@ -218,6 +219,7 @@ static void parts_construction_process_to_json(struct parts_construction_process
 			cJSON_AddBoolToObject(obj, "full_size", op->filter.full_size);
 			break;
 		case PARTS_CP_FILL_PIE_AMAP:
+		case PARTS_CP_FILL_PIE_WITH_ALPHA:
 			cJSON_AddItemToObjectCS(obj, "center", tmp = cJSON_CreateObject());
 			cJSON_AddNumberToObject(tmp, "x", op->pie.x);
 			cJSON_AddNumberToObject(tmp, "y", op->pie.y);
@@ -228,6 +230,11 @@ static void parts_construction_process_to_json(struct parts_construction_process
 			cJSON_AddNumberToObject(obj, "sweep_angle", op->pie.sweep);
 			cJSON_AddNumberToObject(obj, "a", op->pie.a);
 			cJSON_AddNumberToObject(obj, "angle", op->pie.angle);
+			if (op->type == PARTS_CP_FILL_PIE_WITH_ALPHA) {
+				cJSON_AddNumberToObject(obj, "r", op->pie.r);
+				cJSON_AddNumberToObject(obj, "g", op->pie.g);
+				cJSON_AddNumberToObject(obj, "b", op->pie.b);
+			}
 			break;
 		case PARTS_CP_MUL_AMAP_GRADATION_ROWS:
 		case PARTS_CP_MUL_AMAP_GRADATION_COLUMNS:
@@ -647,6 +654,9 @@ static void parts_list_print(struct parts *parts, int indent)
 				break;
 			case PARTS_CP_FILL_PIE_AMAP:
 				sys_message(" fill-pie-amap");
+				break;
+			case PARTS_CP_FILL_PIE_WITH_ALPHA:
+				sys_message(" fill-pie-with-alpha");
 				break;
 			case PARTS_CP_MUL_AMAP_GRADATION_ROWS:
 				sys_message(" mul-amap-gradation-rows");
