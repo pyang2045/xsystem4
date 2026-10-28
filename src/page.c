@@ -147,6 +147,10 @@ union vm_value variable_initval(enum ain_data_type type)
 		    && type != AIN_ENUM && type != AIN_ENUM2
 		    && type != AIN_HLL_PARAM && type != AIN_HLL_FUNC
 		    && type != AIN_IFACE
+		    // scalar refs are a (page, index) pair; null is 0
+		    && type != AIN_REF_INT && type != AIN_REF_FLOAT
+		    && type != AIN_REF_BOOL && type != AIN_REF_LONG_INT
+		    && type != AIN_REF_ENUM
 		    && initval_warn++ < 1)
 			WARNING("variable_initval: unhandled type %d → 0", type);
 		return (union vm_value) { .i = 0 };

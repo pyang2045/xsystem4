@@ -604,7 +604,9 @@ static bool system_CopySaveFile(struct string *dest, struct string *src)
 	FILE *fin = fopen(src_path, "rb");
 	if (!fin) {
 		int err = errno;
-		WARNING("system.CopySaveFile: cannot open source '%s': %s", display_game0(src->text), strerror(err));
+		// Games back up save files that may not exist yet; just fail.
+		if (err != ENOENT)
+			WARNING("system.CopySaveFile: cannot open source '%s': %s", display_game0(src->text), strerror(err));
 		goto cleanup;
 	}
 	FILE *fout = fopen(dest_path, "wb");

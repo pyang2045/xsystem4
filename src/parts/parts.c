@@ -1342,15 +1342,20 @@ static int parts_load_numeral_font_separate(int cg_no)
 static int parts_load_numeral_font_separate_string(struct string *cg_name)
 {
 	// convert name to CG indices
-	int indices[12];
+	// A font need not have all twelve glyphs (0-9, minus, comma):
+	// Haharanman's fonts mostly have no sign, and a count limit's only 0-5.
+	// Only a font without any is reported.
+	int indices[12], nr_found = 0;
 	for (int i = 0; i < 12; i++) {
 		struct string *name = string_format(cg_name, (union vm_value){.i = i}, STRFMT_INT);
-		if (!asset_exists_by_name(ASSET_CG, name->text, &indices[i])) {
-			WARNING("numeral cg doesn't exist: %s", display_sjis0(name->text));
+		if (asset_exists_by_name(ASSET_CG, name->text, &indices[i]))
+			nr_found++;
+		else
 			indices[i] = -1;
-		}
 		free_string(name);
 	}
+	if (!nr_found)
+		WARNING("numeral font has no CGs: %s", display_sjis0(cg_name->text));
 
 	// find existing font
 	for (int i = 0; i < parts_nr_numeral_fonts; i++) {

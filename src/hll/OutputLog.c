@@ -42,7 +42,8 @@ static void OutputLog_Output(int handle, struct string *s)
 	}
 }
 
-HLL_WARN_UNIMPLEMENTED( , void, OutputLog, Clear, int handle);
+// Logs are written through as they are output, so there is nothing to clear.
+HLL_QUIET_UNIMPLEMENTED( , void, OutputLog, Clear, int handle);
 HLL_WARN_UNIMPLEMENTED(0, int,  OutputLog, Save, int handle, struct string *filename);
 HLL_WARN_UNIMPLEMENTED(0, bool, OutputLog, EnableAutoSave, int handle, struct string *filename);
 HLL_WARN_UNIMPLEMENTED(0, bool, OutputLog, DisableAutoSave, int handle);
