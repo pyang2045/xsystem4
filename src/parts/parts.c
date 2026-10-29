@@ -3565,6 +3565,36 @@ bool PE_IsButtonEnable(int parts_no)
 	return parts && !parts->button_disabled;
 }
 
+/* SetButtonCGName (void (int Number, string Name)): the button's base CG
+ * name, whose ／通常, ／オン, ／ダウン and ／無効 CGs the states draw, as a
+ * pactex 按鈕 gives it. AdvLayer::SystemButton::CSwitch@0 makes the message
+ * window's system buttons (Ｑセーブ, オート, ...) with AFL_Parts_CreateButton and
+ * names their CG here from the EX (ＡＤＶ.システムボタン.項目.*.ボタン.*.ＣＧ);
+ * a stub left them without a CG, and the round panel of the window empty.
+ * The button also takes clicks: these buttons never call SetClickable (no
+ * pactex gives them a クリック許可), and their CSwitch@MouseLClickEvent is
+ * how the window's Ｑセーブ and the rest run. The original's button widget
+ * takes the click as a widget; here a parts with a button CG stands for one,
+ * as component type 0 is also the loader's guess for a plain container.
+ * A missing parts is ignored. */
+void PE_SetButtonCGName(int parts_no, struct string *name)
+{
+	struct parts *parts = parts_button_widget(parts_no);
+	if (!parts)
+		return;
+	parts_button_set_cg_name(parts, name ? name->text : NULL);
+	if (parts->button_cg_name)
+		parts->clickable = true;
+}
+
+/* GetButtonCGName: that name, "" without one or without a parts. */
+struct string *PE_GetButtonCGName(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->button_cg_name ? cstr_to_string(parts->button_cg_name)
+		: string_ref(&EMPTY_STRING);
+}
+
 const char *parts_uc_data_get(struct parts *parts, const char *key)
 {
 	for (int i = 0; i + 1 < parts->nr_uc_data; i += 2) {

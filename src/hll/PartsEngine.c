@@ -2125,6 +2125,8 @@ static void pe_v14_register_batch(int libno)
 	static_library_register(lib, "SaveBackScene", PE_v14_SaveBackScene);
 	static_library_register(lib, "SetButtonEnable", PE_SetButtonEnable);
 	static_library_register(lib, "IsButtonEnable", PE_IsButtonEnable);
+	static_library_register(lib, "SetButtonCGName", PE_SetButtonCGName);
+	static_library_register(lib, "GetButtonCGName", PE_GetButtonCGName);
 	// void SetLayoutBoxPadding(int Number, int Top, int Bottom, int Left,
 	// int Right) and int GetLayoutBoxPadding*(int Number): native cases 488
 	// to 492 (0x594ec0, 0x594f10..) on +0x50..+0x5c, top, bottom, left, right.

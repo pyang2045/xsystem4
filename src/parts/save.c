@@ -104,6 +104,13 @@
  * in the manager after it was released, and the next activity of the name
  * found them (a map scene rebuilt after an event: actionselect::CBack's
  * (nonnull) a.Back and CActivityWrap's (nonnull) m_root asserts).
+ *
+ * The button section (SAVE_BUTTONS) follows the user components: its mark,
+ * a count and, for each parts with a button CG name (SetButtonCGName or a
+ * pactex 按鈕), the number, the name (as above) and whether the button is
+ * disabled. Loading names the CG again, which builds the states from it, so
+ * that SetButtonEnable can change them later (the message window's system
+ * buttons, made at boot, are in every save).
  */
 #define CURRENT_SAVE_VERSION 14
 #define SAVE_CG_DEFORMS 0x46444350 /* "PCDF" */
@@ -111,6 +118,7 @@
 #define SAVE_SOUND_NAMES 0x444e5350 /* "PSND" */
 #define SAVE_UNIQUE_IDS 0x44495550 /* "PUID" */
 #define SAVE_USER_COMPONENTS 0x4d435550 /* "PUCM" */
+#define SAVE_BUTTONS 0x4e544250 /* "PBTN" */
 
 /*
  * Controllers in a save. The controller fields (the active controller, each
@@ -1340,6 +1348,57 @@ static void load_user_components(struct iarray_reader *r)
 	}
 }
 
+static void save_buttons(struct iarray_writer *w, bool save_hidden)
+{
+	unsigned count_pos = 0, count = 0;
+	struct parts *parts;
+	PARTS_LIST_FOREACH(parts) {
+		if (!save_hidden && !parts->global.show)
+			continue;
+		if (!parts->want_save || parts_is_controller_root(parts) || !parts->button_cg_name)
+			continue;
+		if (!count) {
+			iarray_write(w, SAVE_BUTTONS);
+			count_pos = iarray_writer_pos(w);
+			iarray_write(w, 0);
+		}
+		iarray_write(w, parts->no);
+		save_bytes(w, parts->button_cg_name);
+		iarray_write(w, parts->button_disabled);
+		count++;
+	}
+	if (count)
+		iarray_write_at(w, count_pos, count);
+}
+
+static void load_buttons(struct iarray_reader *r)
+{
+	if (r->error || r->pos >= r->size || r->data[r->pos].i != SAVE_BUTTONS)
+		return;
+	iarray_read(r);
+	int nr = iarray_read(r);
+	if (r->error || nr < 0 || (unsigned)nr > r->size - r->pos) {
+		WARNING("invalid button section");
+		return;
+	}
+	for (int i = 0; i < nr; i++) {
+		int no = iarray_read(r);
+		char *name = load_bytes(r);
+		int disabled = iarray_read(r);
+		if (!name || r->error) {
+			WARNING("invalid button section");
+			free(name);
+			return;
+		}
+		struct parts *parts = no > 0 ? parts_try_get(no) : NULL;
+		if (parts) {
+			parts->button_disabled = disabled;
+			parts_button_set_cg_name(parts, name);
+		}
+		free(name);
+	}
+}
+
 // A section that does not read as one is warned about and left; the rest of
 // the save is loaded.
 static void load_sound_names(struct iarray_reader *r)
@@ -1461,6 +1520,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		pe_v14_activity_save(&w);
 		save_unique_ids(&w, save_hidden);
 		save_user_components(&w, save_hidden);
+		save_buttons(&w, save_hidden);
 	}
 
 	// The controller ID section is the end of the save, after every list
@@ -1573,6 +1633,7 @@ bool PE_Load(struct page **buffer)
 		pe_v14_activity_load(&r);
 		load_unique_ids(&r);
 		load_user_components(&r);
+		load_buttons(&r);
 	}
 	// (the controller ID section follows the lists; it was read first)
 	if (parts_multi_controller && ain->version >= 14) {
