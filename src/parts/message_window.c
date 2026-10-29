@@ -188,8 +188,8 @@ static bool markup_tag_is(const char *tag, size_t size, const char *name)
  * ${time N} span has N as its interval, unscaled, and ${/time} takes the
  * previous one back (0x5c0a39, 0x5c0a6b; a ${/time} without a span is
  * dropped). A line break is no character and takes no slot (0x5bc785); a
- * full-width space does. Font tags are removed as before; their styling and
- * ruby are not done here. */
+ * full-width space does. Font and ruby tags are removed; font styling and
+ * the ruby reading are not drawn here. */
 static struct string *message_window_plain_text(struct parts_message_window *mw, int interval)
 {
 	struct string *plain = string_ref(&EMPTY_STRING);
@@ -230,7 +230,10 @@ static struct string *message_window_plain_text(struct parts_message_window *mw,
 				p = close + 1;
 				continue;
 			}
-			if (markup_tag_is(tag, size, "font") || markup_tag_is(tag, size, "/font")) {
+			// ${ruby text=...}base${/ruby}: the base text is drawn, the
+			// reading (furigana) is not.
+			if (markup_tag_is(tag, size, "font") || markup_tag_is(tag, size, "/font")
+					|| markup_tag_is(tag, size, "ruby") || markup_tag_is(tag, size, "/ruby")) {
 				p = close + 1;
 				continue;
 			}

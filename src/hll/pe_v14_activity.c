@@ -3648,6 +3648,11 @@ static bool PartsEngine_GetActivityParts(int index, struct string *name, int par
 
 static bool PartsEngine_IsExistActivityPartsByName(struct string *name, struct string *parts_name)
 {
+	// The root's sentinel entry has an empty name, but it is not a named
+	// part: 母爛漫's name plate frame (EX ...名札.フレーム.パーツ, unset →
+	// '') must not bind to the window root, or hiding the plate hides
+	// the whole window (ト書き windows stayed invisible).
+	if (!parts_name->text[0]) return false;
 	int idx = find_activity(name);
 	if (idx < 0) return false;
 	struct activity *act = &activities[idx];
