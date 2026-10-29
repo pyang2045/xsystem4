@@ -630,15 +630,20 @@ static void render_flat_cg(struct parts *parts, Texture *tex,
 	// area_x/area_y select a sub-rectangle of the texture atlas, but
 	// should not shift the on-screen position. This translation cancels
 	// the offset that the sub-rect's top-left would otherwise introduce.
-	glm_translate(render_m, (vec3){ -(float)key->area_x, -(float)key->area_y, 0.0f });
-	glm_scale(render_m, (vec3){ tex->w, tex->h, 1.0f });
-
 	Rectangle rect;
 	if (key->area_width && key->area_height) {
 		rect = (Rectangle){ key->area_x, key->area_y, key->area_width, key->area_height };
 	} else {
 		rect = (Rectangle){ 0, 0, tex->w, tex->h };
 	}
+	// The key's origin mode hangs the picture (the drawn rectangle) on
+	// the key position: 5 centres it, as in 母爛漫's v15 flats.
+	if (key->origin_mode >= 2 && key->origin_mode <= 9) {
+		int m = key->origin_mode - 1;
+		glm_translate(render_m, (vec3){ -rect.w * (m % 3) / 2.0f, -rect.h * (m / 3) / 2.0f, 0.0f });
+	}
+	glm_translate(render_m, (vec3){ -(float)key->area_x, -(float)key->area_y, 0.0f });
+	glm_scale(render_m, (vec3){ tex->w, tex->h, 1.0f });
 
 	parts_render_texture(parts, tex, render_m, &rect, ctx->alpha, ctx->add_color, ctx->mul_color,
 			ctx->draw_filter, parts->alpha_clipper_parts_no);
