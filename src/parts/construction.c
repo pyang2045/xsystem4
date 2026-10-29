@@ -721,18 +721,64 @@ static void build_copy_cut_cg(struct parts_construction_process *cproc, struct p
 	gfx_delete_texture(&src);
 }
 
-static void build_draw_text(struct parts_construction_process *cproc, struct parts_cp_text *op)
+/* The text commands draw a "\n" as the original's loop does (see
+ * build_text_grid): the pen goes back to X and down by the font's line, its
+ * size made even plus 2e, and the line spacing. Off the CN glyph grid the
+ * lines are drawn one by one, each as the whole text was before.
+ * CBackLogUnit@CreateText draws a backlog entry's lines, joined with "\n" by
+ * CBackLogUnit@CreateLog, in one command 23; drawn as one line they ran off
+ * the entry's right edge, and the row TextParts_CalcSize left for the second
+ * stayed empty. */
+static void cp_text_each_line(struct parts_cp_text *op,
+		void (*draw)(struct parts_cp_text *line, void *data), void *data)
 {
+	if (!strchr(op->text->text, '\n')) {
+		draw(op, data);
+		return;
+	}
+	const int size = lroundf(op->style.size);
+	const int line_height = size + (size & 1) + 2 * gfx_text_cn_style_edge(&op->style);
+	struct parts_cp_text line = *op;
+	// SJIS and GBK trail bytes are 0x40 or above: a 0x0a is a line feed.
+	for (const char *p = op->text->text;;) {
+		const char *nl = strchr(p, '\n');
+		const int len = nl ? nl - p : (int)strlen(p);
+		if (len > 0) {
+			line.text = make_string(p, len);
+			draw(&line, data);
+			free_string(line.text);
+		}
+		if (!nl)
+			break;
+		line.y += line_height + op->line_space;
+		p = nl + 1;
+	}
+}
+
+static void draw_text_line(struct parts_cp_text *op, void *data)
+{
+	struct parts_construction_process *cproc = data;
 	gfx_render_text(&cproc->common.texture, op->x, op->y, op->text->text, &op->style, true);
 }
 
-static void build_copy_text(struct parts_construction_process *cproc, struct parts_cp_text *op)
+static void build_draw_text(struct parts_construction_process *cproc, struct parts_cp_text *op)
 {
+	cp_text_each_line(op, draw_text_line, cproc);
+}
+
+static void copy_text_line(struct parts_cp_text *op, void *data)
+{
+	struct parts_construction_process *cproc = data;
 	int w = ceilf(gfx_size_text (&op->style, op->text->text));
 	int h = ceilf(op->style.size + op->style.edge_up + op->style.edge_down);
 	gfx_fill_with_alpha(&cproc->common.texture, op->x, op->y, w, h,
 			op->style.edge_color.r, op->style.edge_color.g, op->style.edge_color.b, 0);
 	gfx_render_text(&cproc->common.texture, op->x, op->y, op->text->text, &op->style, false);
+}
+
+static void build_copy_text(struct parts_construction_process *cproc, struct parts_cp_text *op)
+{
+	cp_text_each_line(op, copy_text_line, cproc);
 }
 
 static void build_gray_filter(struct parts_construction_process *cproc, struct parts_cp_filter *op)
@@ -1093,12 +1139,23 @@ static void build_text_grid(uint8_t *pixels, int tw, int th, struct parts_cp_tex
 }
 
 /* Commands 23 and 24 where the glyphs are not on that grid: the text is drawn
- * as command 8 draws it there (one line, build_copy_text), on a surface of
- * its own, and that is put on this one. A line wider than a texture can be
- * ends where the texture does. */
-static void build_text_staged(uint8_t *pixels, int tw, int th, struct parts_cp_text *op,
-		enum parts_cp_op_type type, bool has_alpha)
+ * line by line (cp_text_each_line) as command 8 draws a line there
+ * (build_copy_text), on a surface of its own, and that is put on this one. A
+ * line wider than a texture can be ends where the texture does. */
+struct staged_target {
+	uint8_t *pixels;
+	int tw, th;
+	enum parts_cp_op_type type;
+	bool has_alpha;
+};
+
+static void text_staged_line(struct parts_cp_text *op, void *data)
 {
+	struct staged_target *t = data;
+	uint8_t *pixels = t->pixels;
+	const int tw = t->tw, th = t->th;
+	const enum parts_cp_op_type type = t->type;
+	const bool has_alpha = t->has_alpha;
 	const int w = ceilf(gfx_size_text(&op->style, op->text->text));
 	const int h = ceilf(op->style.size + op->style.edge_up + op->style.edge_down);
 	if (w <= 0 || h <= 0)
@@ -1113,6 +1170,13 @@ static void build_text_staged(uint8_t *pixels, int tw, int th, struct parts_cp_t
 	gfx_delete_texture(&staged);
 	cp_text_put_rect(pixels, tw, th, op->x, op->y, src, src_w, src_h, 0, src_w, src_h, type, has_alpha);
 	free(src);
+}
+
+static void build_text_staged(uint8_t *pixels, int tw, int th, struct parts_cp_text *op,
+		enum parts_cp_op_type type, bool has_alpha)
+{
+	struct staged_target t = { pixels, tw, th, type, has_alpha };
+	cp_text_each_line(op, text_staged_line, &t);
 }
 
 /* The commands that run on the surface's pixels. */
