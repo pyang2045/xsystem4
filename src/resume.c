@@ -672,6 +672,35 @@ static int resolve_struct_symbol(struct rsave_symbol *sym)
 	return ain_get_struct(ain, sym->name);
 }
 
+/* A local page's function. The heap keeps only its name, and names repeat:
+ * overloads (Scenes::RunIScene) and the functions of several classes that
+ * a name stands for. The first function of the name whose variables have
+ * the frame's types, else the first of the name (which the type check below
+ * then rejects). A save made mid-event (a quick save from the message
+ * window) has such a frame on its call stack; the first of the name had
+ * fewer variables and the load failed. */
+static int rsave_frame_function(struct rsave_heap_frame *f)
+{
+	if (!f->func.name)
+		return f->func.id;
+	int first = -1;
+	for (int i = 0; i < ain->nr_functions; i++) {
+		struct ain_function *fn = &ain->functions[i];
+		if (strcmp(fn->name, f->func.name))
+			continue;
+		if (first < 0)
+			first = i;
+		if (fn->nr_vars < f->nr_types)
+			continue;
+		int k = 0;
+		while (k < f->nr_types && f->types[k] == fn->vars[k].type.data)
+			k++;
+		if (k == f->nr_types)
+			return i;
+	}
+	return first;
+}
+
 static void load_rsave_frame(int slot, struct rsave_heap_frame *f)
 {
 	struct page *page;
@@ -682,7 +711,9 @@ static void load_rsave_frame(int slot, struct rsave_heap_frame *f)
 		nr_vars = ain->nr_globals;
 		vars = ain->globals;
 	} else {
-		int func = resolve_func_symbol(&f->func);
+		int func = rsave_frame_function(f);
+		if (func < 0)
+			invalid_save_data("call frame of an unknown function");
 		page = alloc_page(LOCAL_PAGE, func, f->nr_slots);
 		nr_vars = ain->functions[func].nr_vars;
 		vars = ain->functions[func].vars;
@@ -691,7 +722,9 @@ static void load_rsave_frame(int slot, struct rsave_heap_frame *f)
 
 	// type check
 	if (nr_vars < f->nr_types) {
-		invalid_save_data("call frame has too many variables");
+		invalid_save_data("call frame has too many variables (%s: %d of %d)",
+				f->tag == RSAVE_GLOBALS ? "globals" : display_sjis0(f->func.name ? f->func.name : "?"),
+				f->nr_types, nr_vars);
 	}
 	for (int i = 0; i < f->nr_types; i++) {
 		if (f->types[i] != vars[i].type.data) {
