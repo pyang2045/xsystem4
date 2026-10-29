@@ -1093,6 +1093,7 @@ enum v14_cp_type {
 	V14_CP_VBLUR_FILTER = 28,
 	V14_CP_CG_BLEND = 29,
 	V14_CP_DRAW_LINE_WITH_ALPHA = 30,
+	V14_CP_DRAW_RECT_WITH_ALPHA = 39,
 	V14_CP_DRAW_CIRCLE_AMAP = 52,
 	V14_CP_DRAW_CIRCLE_ALPHA_BLEND_IN_RECT = 57,
 	V14_CP_FILL_POLYGON_WITH_ALPHA = 94,
@@ -1497,6 +1498,25 @@ static void PartsEngine_AddPartsConstructionProcess(int parts_no, int wi_slot, i
 			PE_AddTileCGToPartsConstructionProcess(parts_no, cg_name, dx, dy, dw, dh,
 				V14_CP_INT(30, 0) != 0, state);
 		break;
+	case V14_CP_DRAW_RECT_WITH_ALPHA: {
+		/* SetDrawRectWithAlpha: ints[34] line width, [36] a flag the
+		 * original only uses below width 4, [37] not known. Native
+		 * 0x5002b0 -> 0x4cef50 draws it with the shape rasterizer (mode 3);
+		 * here four bars inside the rectangle replace RGBA, as FillWithAlpha
+		 * does. The game draws 1-pixel frames (e.g. 279x48 on the map). */
+		int lw = max(1, V14_CP_INT(34, 1));
+		if (dw <= 0 || dh <= 0)
+			break;
+		if (2 * lw >= dw || 2 * lw >= dh) {
+			PE_AddFillWithAlphaToPartsConstructionProcess(parts_no, dx, dy, dw, dh, r, g, b, a, state);
+			break;
+		}
+		PE_AddFillWithAlphaToPartsConstructionProcess(parts_no, dx, dy, dw, lw, r, g, b, a, state);
+		PE_AddFillWithAlphaToPartsConstructionProcess(parts_no, dx, dy + dh - lw, dw, lw, r, g, b, a, state);
+		PE_AddFillWithAlphaToPartsConstructionProcess(parts_no, dx, dy + lw, lw, dh - 2 * lw, r, g, b, a, state);
+		PE_AddFillWithAlphaToPartsConstructionProcess(parts_no, dx + dw - lw, dy + lw, lw, dh - 2 * lw, r, g, b, a, state);
+		break;
+	}
 	case V14_CP_DRAW_CIRCLE_ALPHA_BLEND_IN_RECT: {
 		/* Circle draw — approximate with fill alpha color */
 		int fw = dw > 0 ? dw : (dx2 > 0 ? dx2 : 16384);
