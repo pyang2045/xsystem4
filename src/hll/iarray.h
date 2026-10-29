@@ -54,6 +54,8 @@ static inline unsigned iarray_writer_pos(struct iarray_writer *w)
 
 struct page *iarray_to_page(struct iarray_writer *w);
 uint8_t *iarray_to_buffer(struct iarray_writer *w, size_t *size_out);
+// Store the written words into a v14 wrap<array<int>> argument (a heap slot).
+bool iarray_store_wrap(int slot, struct iarray_writer *w);
 
 struct iarray_reader {
 	union vm_value *data;
@@ -68,6 +70,8 @@ static inline bool iarray_end(struct iarray_reader *r)
 }
 
 bool iarray_init_reader(struct iarray_reader *r, struct page *a, const char *header);
+// Read a v14 wrap<array<int>> argument; false if it is empty or lacks the header.
+bool iarray_init_wrap_reader(struct iarray_reader *r, int slot, const char *header);
 int iarray_read(struct iarray_reader *r);
 float iarray_read_float(struct iarray_reader *r);
 struct string *iarray_read_string(struct iarray_reader *r);

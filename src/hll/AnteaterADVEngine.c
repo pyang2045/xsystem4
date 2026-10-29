@@ -695,12 +695,6 @@ static struct string *AnteaterADVEngine_v14_GetADVLogVoiceFilter(int log_no, int
  */
 #define V14_LOG_HEADER "ADL14"
 
-static bool v14_buffer_is_array(int slot)
-{
-	return slot > 0 && (size_t)slot < heap_size && heap[slot].type == VM_PAGE
-		&& (!heap[slot].page || heap[slot].page->type == ARRAY_PAGE);
-}
-
 static bool AnteaterADVEngine_v14_Save(int buf_slot)
 {
 	struct iarray_writer w;
@@ -719,23 +713,10 @@ static bool AnteaterADVEngine_v14_Save(int buf_slot)
 		}
 	}
 	iarray_write(&w, 1);
-	struct page *buf = iarray_to_page(&w);
+	bool ok = iarray_store_wrap(buf_slot, &w);
 	iarray_free_writer(&w);
-
-	if (v14_buffer_is_array(buf_slot)) {
-		struct page *old = heap[buf_slot].page;
-		heap_set_page(buf_slot, buf);
-		if (old) {
-			delete_page_vars(old);
-			free_page(old);
-		}
-	} else if (buf_slot > 0 && (size_t)buf_slot < heap_size
-			&& heap[buf_slot].type == VM_PAGE && heap[buf_slot].page
-			&& heap[buf_slot].page->nr_vars >= 1) {
-		wrap_set_slot(buf_slot, 0, heap_alloc_page(buf));
-	} else {
+	if (!ok) {
 		WARNING("AnteaterADVLogList.Save: no array at slot %d", buf_slot);
-		free_page(buf);
 		return false;
 	}
 	if (adv_trace())
@@ -774,11 +755,8 @@ static bool v14_read_log(struct iarray_reader *r, struct adv_log *log)
 static bool AnteaterADVEngine_v14_Load(int buf_slot)
 {
 	ADVLogList_Clear();
-	struct page *buf = v14_buffer_is_array(buf_slot) ? heap[buf_slot].page
-		: wrap_get_page(buf_slot, 0);
 	struct iarray_reader r;
-	if (!buf || buf->type != ARRAY_PAGE || !buf->nr_vars
-			|| !iarray_init_reader(&r, buf, V14_LOG_HEADER)) {
+	if (!iarray_init_wrap_reader(&r, buf_slot, V14_LOG_HEADER)) {
 		if (adv_trace())
 			NOTICE("S2 backlog load: no saved log");
 		return true;

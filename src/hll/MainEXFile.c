@@ -40,6 +40,7 @@
 #include "vm/page.h"
 #include "xsystem4.h"
 #include "hll.h"
+#include "iarray.h"
 
 /*
  * SJIS→GBK string converter for .ex file loading.
@@ -76,6 +77,9 @@ struct string *sjis_to_gbk_string(const char *src, size_t len)
 static struct ex *ex;
 // AddEX or AddEXReader appended to the tables of `ex` since it was read.
 static bool ex_appended;
+// The paths AddEX appended, in order, as the script gave them (see Save).
+static struct string **added_paths;
+static int nr_added_paths;
 
 /*
  * Helpers — cached resolve to avoid O(n) linear scan per EX call
@@ -181,6 +185,26 @@ static struct ex_table *list_item_table(struct ex_list *list, int row)
 }
 
 /*
+ * Append `extra` to the main tables. Appending reallocates list items and
+ * tree children, so cached lookups may point at freed values: drop them.
+ */
+static void append_ex(struct ex *extra)
+{
+	ex_append(ex, extra);
+	ex_appended = true;
+	memset(resolve_cache, 0, sizeof(resolve_cache));
+}
+
+static void free_added_paths(void)
+{
+	for (int i = 0; i < nr_added_paths; i++)
+		free_string(added_paths[i]);
+	free(added_paths);
+	added_paths = NULL;
+	nr_added_paths = 0;
+}
+
+/*
  * Module lifecycle
  */
 static struct ex *load_ex_file(const char *path)
@@ -230,6 +254,7 @@ static void MainEXFile_ModuleFini(void)
 		ex_appended = false;
 		memset(resolve_cache, 0, sizeof(resolve_cache));
 	}
+	free_added_paths();
 }
 
 /*
@@ -253,8 +278,7 @@ static int MainEXFile_AddEXReader(struct string *path)
 		free(full);
 	}
 	if (extra) {
-		ex_append(ex, extra);
-		ex_appended = true;
+		append_ex(extra);
 		WARNING("MainEXFile.AddEXReader: loaded %u blocks", extra->nr_blocks);
 		return 1;  // Return non-zero ID
 	}
@@ -274,28 +298,24 @@ static void MainEXFile_EraseEXReader(int id)
  */
 static bool MainEXFile_AddEX(struct string *path)
 {
-	WARNING("MainEXFile.AddEX('%s') — attempting to load", display_game0(path->text));
 	struct ex *extra = load_ex_file(path->text);
-	if (extra) {
-		ex_append(ex, extra);
-		ex_appended = true;
-		WARNING("MainEXFile.AddEX: loaded %u blocks", extra->nr_blocks);
-		return true;
-	}
-	// Try relative to game dir
-	char *full = path_join(config.game_dir, path->text);
-	extra = load_ex_file(full);
-	if (extra) {
-		ex_append(ex, extra);
-		ex_appended = true;
-		WARNING("MainEXFile.AddEX('%s'): loaded %u blocks",
-			game_charset_is_gbk() ? display_game0(path->text) : full, extra->nr_blocks);
+	if (!extra) {
+		// Try relative to game dir
+		char *full = path_join(config.game_dir, path->text);
+		extra = load_ex_file(full);
 		free(full);
-		return true;
 	}
-	WARNING("MainEXFile.AddEX('%s'): file not found", display_game0(path->text));
-	free(full);
-	return false;
+	if (!extra) {
+		WARNING("MainEXFile.AddEX('%s'): file not found", display_game0(path->text));
+		return false;
+	}
+	append_ex(extra);
+	added_paths = xrealloc_array(added_paths, nr_added_paths, nr_added_paths + 1,
+			sizeof(struct string*));
+	added_paths[nr_added_paths++] = string_dup(path);
+	WARNING("MainEXFile.AddEX('%s'): loaded %u blocks", display_game0(path->text),
+			extra->nr_blocks);
+	return true;
 }
 
 /*
@@ -308,18 +328,87 @@ static bool MainEXFile_AddEXText(struct string *path)
 }
 
 /*
- * [ 5] bool Save(wrap image) — stub
- * [ 6] bool Load(wrap image) — stub
+ * [ 5] bool Save(wrap<array<int>> image)
+ * [ 6] bool Load(wrap<array<int>> image)
+ *
+ * gamesave::detail::セーブ実行 saves into a local array before
+ * system.ResumeSave, which keeps it with the rest of the frame, and
+ * セーブ実行_ロード後復帰処理 loads it back after the resume; either
+ * returning false is a system.Error. The FFI passes the wrap as an int heap
+ * slot.
+ *
+ * The data of the .ex file is read-only to the script: the only thing that
+ * changes is what AddEX/AddEXText append. In this game nothing does in
+ * play: AddEX's wrapper EX_AddEX is never called, AddEXText's EX_AddEXFile
+ * returns false outside system.IsDebugMode (and AddEXText is a stub here),
+ * and AddEXReader's files belong to editor tools that erase them again.
+ * So the image holds the
+ * paths AddEX appended, in this port's words (not the original's): the
+ * header "MEX14", the count, each path, and a closing 1. Load appends the
+ * ones that are not appended already. What was appended after the save
+ * cannot be taken back out; it stays, with a warning.
+ *
+ * An image without the header (a save made before this, or an empty array)
+ * appends nothing; both it and a damaged one return true.
  */
+#define MAIN_EX_IMAGE_HEADER "MEX14"
+
 static bool MainEXFile_Save(int image_slot)
 {
-	// No-op: ResumeSave is a stub so VM state (including EX data) stays in memory.
-	return true;
+	struct iarray_writer w;
+	iarray_init_writer(&w, MAIN_EX_IMAGE_HEADER);
+	iarray_write(&w, nr_added_paths);
+	for (int i = 0; i < nr_added_paths; i++)
+		iarray_write_string(&w, added_paths[i]);
+	iarray_write(&w, 1);
+	bool ok = iarray_store_wrap(image_slot, &w);
+	iarray_free_writer(&w);
+	if (!ok)
+		WARNING("MainEXFile.Save: no array at slot %d", image_slot);
+	return ok;
+}
+
+static bool path_added(struct string *path)
+{
+	for (int i = 0; i < nr_added_paths; i++) {
+		if (!strcmp(added_paths[i]->text, path->text))
+			return true;
+	}
+	return false;
 }
 
 static bool MainEXFile_Load(int image_slot)
 {
-	// No-op: data is still in memory since ResumeSave doesn't actually save/restore.
+	struct iarray_reader r;
+	if (!iarray_init_wrap_reader(&r, image_slot, MAIN_EX_IMAGE_HEADER))
+		return true;
+	int n = iarray_read(&r);
+	if (r.error || n < 0 || n > 10000)
+		goto error;
+	struct string **paths = xcalloc(n ? n : 1, sizeof(struct string*));
+	for (int i = 0; i < n; i++)
+		paths[i] = iarray_read_string(&r);
+	bool damaged = iarray_read(&r) != 1 || r.error;
+	if (!damaged) {
+		int nr_before = nr_added_paths, kept = 0;
+		for (int i = 0; i < n; i++) {
+			if (path_added(paths[i]))
+				kept++;
+			else
+				MainEXFile_AddEX(paths[i]);
+		}
+		if (kept < nr_before)
+			WARNING("MainEXFile.Load: EX files appended after the save stay appended");
+	}
+	for (int i = 0; i < n; i++) {
+		if (paths[i])
+			free_string(paths[i]);
+	}
+	free(paths);
+	if (!damaged)
+		return true;
+error:
+	WARNING("MainEXFile.Load: damaged image; nothing appended");
 	return true;
 }
 

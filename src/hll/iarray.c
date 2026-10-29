@@ -22,6 +22,7 @@
 #include "system4/utfsjis.h"
 #include "vm/heap.h"
 #include "vm/page.h"
+#include "hll.h"
 #include "iarray.h"
 
 /*
@@ -216,6 +217,46 @@ uint8_t *iarray_to_buffer(struct iarray_writer *w, size_t *size_out)
 		LittleEndian_putDW(buf, i * 4, w->data[i]);
 	}
 	return buf;
+}
+
+/*
+ * v14 Save/Load(wrap<array<int>>) functions get their buffer as an int heap
+ * slot: either the array's own (X_REF of an array<int> variable) or a wrap
+ * box holding it.
+ */
+static bool slot_is_array(int slot)
+{
+	return slot > 0 && (size_t)slot < heap_size && heap[slot].type == VM_PAGE
+		&& (!heap[slot].page || heap[slot].page->type == ARRAY_PAGE);
+}
+
+bool iarray_store_wrap(int slot, struct iarray_writer *w)
+{
+	struct page *buf = iarray_to_page(w);
+	if (slot_is_array(slot)) {
+		struct page *old = heap[slot].page;
+		heap_set_page(slot, buf);
+		if (old) {
+			delete_page_vars(old);
+			free_page(old);
+		}
+		return true;
+	}
+	if (slot > 0 && (size_t)slot < heap_size && heap[slot].type == VM_PAGE
+			&& heap[slot].page && heap[slot].page->nr_vars >= 1) {
+		wrap_set_slot(slot, 0, heap_alloc_page(buf));
+		return true;
+	}
+	free_page(buf);
+	return false;
+}
+
+bool iarray_init_wrap_reader(struct iarray_reader *r, int slot, const char *header)
+{
+	struct page *buf = slot_is_array(slot) ? heap[slot].page : wrap_get_page(slot, 0);
+	if (!buf || buf->type != ARRAY_PAGE || !buf->nr_vars)
+		return false;
+	return iarray_init_reader(r, buf, header);
 }
 
 bool iarray_init_reader(struct iarray_reader *r, struct page *a, const char *header)
