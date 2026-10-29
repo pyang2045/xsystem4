@@ -26,6 +26,7 @@
 
 #include "gfx/gfx.h"
 #include "gfx/font.h"
+#include "translation.h"
 #include "xsystem4.h"
 
 /*
@@ -259,6 +260,9 @@ static uint32_t char_to_code(const char *ch, enum charmap charmap)
 {
 	if (charmap == CHARMAP_SJIS)
 		return sjis_code(ch);
+	uint32_t translated = translation_sjis_to_unicode(sjis_code(ch));
+	if (translated)
+		return translated;
 	int c;
 	if (ain_is_gb18030) {
 		gb18030_char2unicode(ch, &c);

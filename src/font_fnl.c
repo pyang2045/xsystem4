@@ -14,6 +14,8 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
+#include <math.h>
+
 #include "system4.h"
 #include "system4/fnl.h"
 #include "system4/hashtable.h"
@@ -22,6 +24,7 @@
 
 #include "gfx/gfx.h"
 #include "gfx/font.h"
+#include "translation.h"
 #include "xsystem4.h"
 
 struct fnl_bitmap_glyph {
@@ -130,9 +133,46 @@ static struct fnl_bitmap_glyph *fnl_get_bitmap_glyph(struct fnl_bitmap_size *bit
 
 #define GLYPH_BORDER_SIZE 4
 
+static float fnl_font_size_char(struct font_size *_size, uint32_t code);
+
+/*
+ * A translated message's characters outside Shift-JIS (--locale) come from
+ * the translation's TrueType font. The .fnl size is the line height; its
+ * full-width characters are narrower (30.67 at size 40 in 母爛漫), so the
+ * TrueType font gets the width of 亜 as its size and advance, and is
+ * centred in the line: .fnl glyphs fill the line height, FreeType glyph
+ * blocks start at the top of the em.
+ */
+static float fnl_translation_em(struct fnl_font_size *size)
+{
+	float em = fnl_font_size_char(&size->super, 0x889F); // 亜
+	return em > 0 ? em : size->super.size;
+}
+
+static struct font_size *fnl_translation_size(struct fnl_font_size *size, struct font *font)
+{
+	return font->get_size(font, fnl_translation_em(size));
+}
+
+static bool fnl_translation_glyph(struct fnl_font_size *size, struct glyph *glyph,
+		uint32_t unicode, enum font_weight weight)
+{
+	struct font *font = translation_font();
+	if (!font)
+		return false;
+	struct font_size *fs = fnl_translation_size(size, font);
+	if (!font->get_glyph(fs, glyph, unicode, weight))
+		return false;
+	glyph->rect.y -= lroundf((size->super.size - fnl_translation_em(size)) / 2);
+	return true;
+}
+
 static bool fnl_font_get_glyph(struct font_size *_size, struct glyph *glyph, uint32_t code, enum font_weight weight)
 {
 	struct fnl_font_size *size = (struct fnl_font_size*)_size;
+	uint32_t unicode = translation_sjis_to_unicode(code);
+	if (unicode)
+		return fnl_translation_glyph(size, glyph, unicode, weight);
 	unsigned index = fnl_char_to_index(code);
 	if (index > size->bitmap_size->nr_glyphs)
 		return false;
@@ -180,6 +220,11 @@ static bool fnl_font_get_glyph(struct font_size *_size, struct glyph *glyph, uin
 static float fnl_font_size_char(struct font_size *_size, uint32_t code)
 {
 	struct fnl_font_size *size = (struct fnl_font_size*)_size;
+	uint32_t unicode = translation_sjis_to_unicode(code);
+	if (unicode && translation_font()) {
+		struct font *font = translation_font();
+		return font->size_char(fnl_translation_size(size, font), unicode);
+	}
 	unsigned index = fnl_char_to_index(code);
 	if (index > size->bitmap_size->nr_glyphs)
 		return 0.0;

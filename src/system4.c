@@ -37,6 +37,7 @@
 #include "system4/string.h"
 #include "system4/utfsjis.h"
 
+#include "translation.h"
 #include "xsystem4.h"
 #include "asset_manager.h"
 #include "debugger.h"
@@ -402,6 +403,9 @@ static void usage(void)
 	puts("        --font-gothic    Specify the path to the gothic font to use");
 	puts("        --font-fnl       Specify the path to a .fnl font library to use");
 	puts("        --font-x-scale   Specify the x scale for text rendering (1.0 = default scale)");
+	puts("        --locale         Show message translations from a .po file");
+	puts("        --locale-font    Specify the TrueType font for characters missing from the game font");
+	puts("        --dump-pot       Write the messages to a .pot translation template and exit");
 	puts("    -j, --joypad         Enable joypad");
 	puts("        --msgskip-delay  Specify the delay in ms to add when skipping messages with CTRL");
 	puts("        --save-folder    Override save folder location");
@@ -439,6 +443,9 @@ enum {
 	LOPT_SAVE_FOLDER,
 	LOPT_SAVE_FORMAT,
 	LOPT_SKIP_TITLE,
+	LOPT_LOCALE,
+	LOPT_LOCALE_FONT,
+	LOPT_DUMP_POT,
 #ifdef DEBUGGER_ENABLED
 	LOPT_NODEBUG,
 	LOPT_DEBUG,
@@ -493,6 +500,8 @@ int main(int argc, char *argv[])
 	char *font_mincho = NULL;
 	char *font_gothic = NULL;
 	char *font_fnl = NULL;
+	char *locale_po = NULL;
+	char *dump_pot = NULL;
 	char *joypad = NULL;
 	char *savedir = NULL;
 	char *debug_info_path = NULL;
@@ -511,6 +520,9 @@ int main(int argc, char *argv[])
 			{ "msgskip-delay", required_argument, 0, LOPT_MSGSKIP_DELAY },
 			{ "save-folder",   required_argument, 0, LOPT_SAVE_FOLDER },
 			{ "save-format",   required_argument, 0, LOPT_SAVE_FORMAT },
+			{ "locale",        required_argument, 0, LOPT_LOCALE },
+			{ "locale-font",   required_argument, 0, LOPT_LOCALE_FONT },
+			{ "dump-pot",      required_argument, 0, LOPT_DUMP_POT },
 			{ "skip-title",    no_argument,       0, LOPT_SKIP_TITLE },
 #ifdef DEBUGGER_ENABLED
 			{ "nodebug",       no_argument,       0, LOPT_NODEBUG },
@@ -550,6 +562,15 @@ int main(int argc, char *argv[])
 			break;
 		case LOPT_FONT_FNL:
 			font_fnl = optarg;
+			break;
+		case LOPT_LOCALE:
+			locale_po = optarg;
+			break;
+		case LOPT_LOCALE_FONT:
+			translation_font_path = optarg;
+			break;
+		case LOPT_DUMP_POT:
+			dump_pot = optarg;
 			break;
 		case LOPT_FONT_X_SCALE:
 			config.manual_text_x_scale = true;
@@ -702,6 +723,14 @@ int main(int argc, char *argv[])
 			WARNING("XSYS4_STRING_CHARSET=%s ignored (expected sjis or gbk)", charset_override);
 		}
 	}
+
+	if (dump_pot) {
+		bool ok = translation_write_pot(ain, dump_pot);
+		ain_free(ain);
+		return ok ? 0 : 1;
+	}
+	if (locale_po)
+		translation_apply(ain, locale_po);
 
 	if (audit) {
 		ain_audit(stdout, ain);
