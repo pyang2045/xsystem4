@@ -230,11 +230,8 @@ int ADVLogList_GetADVLogVoiceLast(int log_no)
 
 bool ADVLogList_Save(struct page **iarray)
 {
-	// v14: Save can receive invalid/NULL page references during auto-save.
-	// Return true (success) without serializing — save not needed for playback.
-	if (!iarray || ain->version >= 14) {
-		return true;
-	}
+	if (!iarray)
+		return false;
 	// 0x64 <- 'A'
 	// 0x68 <- 'D'
 	// 0x76 <- 'L'
@@ -279,13 +276,6 @@ bool ADVLogList_Save(struct page **iarray)
 
 bool ADVLogList_Load(struct page **data)
 {
-	// v14: Save writes nothing (above), so there is nothing to load; the
-	// backlog starts empty instead of failing the load (Haharanman's
-	// セーブ実行_ロード後復帰処理 reports a failure as an error).
-	if (ain->version >= 14) {
-		ADVLogList_Clear();
-		return true;
-	}
 	if (!data)
 		return false;
 	if (!(*data))
@@ -639,11 +629,7 @@ static void AnteaterADVEngine_v14_AddNewPage(void)
  * exists is drawn in the voice font and plays it when clicked
  * (CBackLogUnit@IsExistVoice). The original's GetADVLogVoice (0x447240) does
  * not check the index; here one out of range gives "".
- * Nothing of the log is saved in v14: Save returns true without writing and
- * Load returns false without reading or clearing (see both above), so the
- * pages and their voices are the ones in memory before a load. What the
- * original's Save and Load (cases 13 and 14, 0x4479c0 and 0x447b60) keep was
- * not read. */
+ * Save and Load (below) keep the voices with the lines. */
 static void AnteaterADVEngine_v14_AddVoice(struct string *voice_name, struct string *voice_filter)
 {
 	if (!enabled)
@@ -684,6 +670,143 @@ static struct string *AnteaterADVEngine_v14_GetADVLogVoiceFilter(int log_no, int
 	if (index < 0 || (unsigned)index >= log->nr_voice_names)
 		return string_ref(&EMPTY_STRING);
 	return string_ref(log->voice_filters[index]);
+}
+
+/*
+ * v14: bool Save(wrap<array<int>> pIVMArray), bool Load(wrap<array<int>>
+ * pIVMArray). gamesave::detail::セーブ実行 saves the log into
+ * g_GlobalObject.g_ADVLogListForSaveData before system.ResumeSave, which
+ * keeps the array with the rest of the heap, and セーブ実行_ロード後復帰処理
+ * loads it back after the resume (a false Load is reported with
+ * system.Error). The FFI passes the wrap as an int heap slot: the array's
+ * own (X_REF of the array<int> member) or a wrap box holding it.
+ *
+ * The words are this port's, not the original's (whose cases 13 and 14 were
+ * not read), as the parts save is: the header "ADL14", the number of pages,
+ * then for each page its lines (the count, then each string) and its voices
+ * (the count, then name and filter name of each), and a closing 1. All the
+ * pages are kept as they are, with the page being written and its empty
+ * last line, so that the counts of the v14 functions above come out the
+ * same after a load.
+ *
+ * A buffer without that header (a save made before the log was saved, or an
+ * empty array) loads an empty log; so does a damaged one, with a warning.
+ * Both return true: the game state matters more than the backlog.
+ */
+#define V14_LOG_HEADER "ADL14"
+
+static bool v14_buffer_is_array(int slot)
+{
+	return slot > 0 && (size_t)slot < heap_size && heap[slot].type == VM_PAGE
+		&& (!heap[slot].page || heap[slot].page->type == ARRAY_PAGE);
+}
+
+static bool AnteaterADVEngine_v14_Save(int buf_slot)
+{
+	struct iarray_writer w;
+	iarray_init_writer(&w, V14_LOG_HEADER);
+	int nr_pages = logs ? ADVLogList_GetNumofADVLog() : 0;
+	iarray_write(&w, nr_pages);
+	for (int i = 0; i < nr_pages; i++) {
+		struct adv_log *log = &logs[(log_first + i) % LOG_BUFFER_SIZE];
+		iarray_write(&w, log->nr_lines);
+		for (unsigned j = 0; j < log->nr_lines; j++)
+			iarray_write_string(&w, log->lines[j]);
+		iarray_write(&w, log->nr_voice_names);
+		for (unsigned j = 0; j < log->nr_voice_names; j++) {
+			iarray_write_string(&w, log->voice_names[j]);
+			iarray_write_string(&w, log->voice_filters[j]);
+		}
+	}
+	iarray_write(&w, 1);
+	struct page *buf = iarray_to_page(&w);
+	iarray_free_writer(&w);
+
+	if (v14_buffer_is_array(buf_slot)) {
+		struct page *old = heap[buf_slot].page;
+		heap_set_page(buf_slot, buf);
+		if (old) {
+			delete_page_vars(old);
+			free_page(old);
+		}
+	} else if (buf_slot > 0 && (size_t)buf_slot < heap_size
+			&& heap[buf_slot].type == VM_PAGE && heap[buf_slot].page
+			&& heap[buf_slot].page->nr_vars >= 1) {
+		wrap_set_slot(buf_slot, 0, heap_alloc_page(buf));
+	} else {
+		WARNING("AnteaterADVLogList.Save: no array at slot %d", buf_slot);
+		free_page(buf);
+		return false;
+	}
+	if (adv_trace())
+		NOTICE("S2 backlog saved pages=%d", nr_pages);
+	return true;
+}
+
+static struct string **v14_read_strings(struct iarray_reader *r, unsigned n)
+{
+	struct string **s = xcalloc(n ? n : 1, sizeof(struct string*));
+	for (unsigned i = 0; i < n; i++)
+		s[i] = iarray_read_string(r);
+	return s;
+}
+
+static bool v14_read_log(struct iarray_reader *r, struct adv_log *log)
+{
+	int nr_lines = iarray_read(r);
+	if (r->error || nr_lines < 1 || nr_lines > 100000)
+		return false;
+	log->nr_lines = nr_lines;
+	log->lines = v14_read_strings(r, nr_lines);
+	int nr_voices = iarray_read(r);
+	if (r->error || nr_voices < 0 || nr_voices > 100000)
+		return false;
+	log->voice_names = xcalloc(nr_voices ? nr_voices : 1, sizeof(struct string*));
+	log->voice_filters = xcalloc(nr_voices ? nr_voices : 1, sizeof(struct string*));
+	for (int i = 0; i < nr_voices; i++) {
+		log->voice_names[i] = iarray_read_string(r);
+		log->voice_filters[i] = iarray_read_string(r);
+		log->nr_voice_names++;
+	}
+	return !r->error;
+}
+
+static bool AnteaterADVEngine_v14_Load(int buf_slot)
+{
+	ADVLogList_Clear();
+	struct page *buf = v14_buffer_is_array(buf_slot) ? heap[buf_slot].page
+		: wrap_get_page(buf_slot, 0);
+	struct iarray_reader r;
+	if (!buf || buf->type != ARRAY_PAGE || !buf->nr_vars
+			|| !iarray_init_reader(&r, buf, V14_LOG_HEADER)) {
+		if (adv_trace())
+			NOTICE("S2 backlog load: no saved log");
+		return true;
+	}
+	int nr_pages = iarray_read(&r);
+	if (r.error || nr_pages < 0 || nr_pages > LOG_BUFFER_SIZE)
+		goto error;
+	if (!nr_pages)
+		return true;
+	logs = xcalloc(LOG_BUFFER_SIZE, sizeof(struct adv_log));
+	log_first = 0;
+	log_last = nr_pages - 1;
+	for (int i = 0; i < nr_pages; i++) {
+		if (!v14_read_log(&r, &logs[i])) {
+			// The pages after it were never read; let Clear see them.
+			log_last = i;
+			goto error;
+		}
+	}
+	if (iarray_read(&r) != 1 || r.error)
+		goto error;
+	if (adv_trace())
+		NOTICE("S2 backlog loaded pages=%d", nr_pages);
+	return true;
+error:
+	WARNING("AnteaterADVLogList.Load: damaged log; the backlog starts empty");
+	ADVLogList_Clear();
+	return true;
 }
 
 HLL_LIBRARY(AnteaterADVEngine,
@@ -742,6 +865,14 @@ static void AnteaterADVEngine_PreLink(void)
 		libno = ain_get_library(ain, "AnteaterADVLogList");
 	if (libno < 0)
 		return;
+
+	// v14: Save/Load(wrap<array<int>>) get the buffer as an int heap slot.
+	fun = get_fun(libno, "Save");
+	if (fun && fun->nr_arguments == 1 && fun->arguments[0].type.data == AIN_WRAP)
+		static_library_replace(&lib_AnteaterADVEngine, "Save", AnteaterADVEngine_v14_Save);
+	fun = get_fun(libno, "Load");
+	if (fun && fun->nr_arguments == 1 && fun->arguments[0].type.data == AIN_WRAP)
+		static_library_replace(&lib_AnteaterADVEngine, "Load", AnteaterADVEngine_v14_Load);
 
 	// Legacy: ADVLogList_AddText with window_no argument
 	fun = get_fun(libno, "ADVLogList_AddText");
