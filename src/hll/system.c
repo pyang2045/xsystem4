@@ -711,19 +711,13 @@ static struct string *system_Error(struct string *text)
 // [27] OpenWeb(url) -> void
 static void system_OpenWeb(struct string *url)
 {
-#ifdef __APPLE__
-	char cmd[2048];
-	snprintf(cmd, sizeof(cmd), "open '%s'", url->text);
-	system(cmd);
-#elif defined(_WIN32)
-	char cmd[2048];
-	snprintf(cmd, sizeof(cmd), "start \"\" \"%s\"", url->text);
-	system(cmd);
-#else
-	char cmd[2048];
-	snprintf(cmd, sizeof(cmd), "xdg-open '%s'", url->text);
-	system(cmd);
-#endif
+	// Through SDL, not a shell command: a quote in the URL ended the
+	// quoting of the old `open '%s'` and the rest ran as shell. The URL is
+	// in the game's encoding.
+	char *u = game_to_utf8(url->text, url->size);
+	if (SDL_OpenURL(u))
+		WARNING("OpenWeb: %s", SDL_GetError());
+	free(u);
 }
 
 // [28] GetSaveFolderName() -> string
