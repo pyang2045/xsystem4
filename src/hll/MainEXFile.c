@@ -27,6 +27,7 @@
 
 #define VM_PRIVATE
 
+#include <limits.h>
 #include <string.h>
 #include <iconv.h>
 
@@ -196,6 +197,22 @@ static float value_float(struct ex_value *v, float dflt)
 		return v->f;
 	if (v && v->type == EX_INT)
 		return v->i;
+	return dflt;
+}
+
+/*
+ * And the int getters read a float: ユニットピース.*.座標 = [-48.0, -87.0] is
+ * read with AInt by unitanimation::timelinepiece::SPiece@0; at the default 0
+ * each unit sprite of an action's animation had its corner, not its feet, on
+ * the unit's position and stood below the frame. Truncated towards 0 (the
+ * original's conversion was not traced; the game's values are whole).
+ */
+static int value_int(struct ex_value *v, int dflt)
+{
+	if (v && v->type == EX_INT)
+		return v->i;
+	if (v && v->type == EX_FLOAT && v->f > (float)INT_MIN && v->f < (float)INT_MAX)
+		return (int)v->f;
 	return dflt;
 }
 
@@ -525,7 +542,7 @@ static bool MainEXFile_A2Exists(struct string *name, int row, int col, int id)
 static int MainEXFile_Int(struct string *name, int dflt, int id)
 {
 	struct ex_value *v = resolve(name);
-	return (v && v->type == EX_INT) ? v->i : dflt;
+	return value_int(v, dflt);
 }
 
 /*
@@ -557,7 +574,7 @@ static int MainEXFile_AInt(struct string *name, int index, int dflt, int id)
 	struct ex_list *list = resolve_list(name);
 	if (!list) return dflt;
 	struct ex_value *v = ex_list_get(list, index);
-	return (v && v->type == EX_INT) ? v->i : dflt;
+	return value_int(v, dflt);
 }
 
 /*
@@ -595,10 +612,10 @@ static int MainEXFile_A2Int(struct string *name, int row, int col, int dflt, int
 		t = list_item_table(resolve_list(name), row);
 		if (!t) return dflt;
 		struct ex_value *v = ex_table_get(t, 0, col);
-		return (v && v->type == EX_INT) ? v->i : dflt;
+		return value_int(v, dflt);
 	}
 	struct ex_value *v = ex_table_get(t, row, col);
-	return (v && v->type == EX_INT) ? v->i : dflt;
+	return value_int(v, dflt);
 }
 
 /*
