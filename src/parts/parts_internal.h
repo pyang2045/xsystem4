@@ -953,6 +953,9 @@ void parts_message_window_free(struct parts_message_window *message);
 float parts_message_window_glyph_alpha(struct parts *parts, struct parts_text *text, int index);
 struct parts_text *parts_message_window_render_text(struct parts *parts, Point *position);
 struct texture *parts_message_window_key_wait(struct parts *parts, Point *position);
+int parts_message_window_nr_rubies(struct parts *parts);
+struct texture *parts_message_window_ruby(struct parts *parts, int i, Point position,
+		Point *pos, float *alpha);
 void parts_message_window_update(int passed_time);
 void parts_message_window_update_times(int passed_time, int scaled_passed_time);
 extern struct cg *(*parts_key_wait_load_cg)(const char *name);

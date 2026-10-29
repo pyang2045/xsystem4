@@ -39,6 +39,13 @@ void PE_SetMessageWindowTextFont(int parts_no, int type, int size,
 		int r, int g, int b, float bold_weight,
 		int edge_r, int edge_g, int edge_b, float edge_weight);
 void PE_SetMessageWindowTextSpace(int parts_no, int letter_space, int line_space);
+void PE_SetMessageWindowRubyFont(int parts_no, int type, int size,
+		int r, int g, int b, float bold_weight,
+		int edge_r, int edge_g, int edge_b, float edge_weight);
+void PE_SetMessageWindowRubyCharSpace(int parts_no, int space);
+int PE_GetMessageWindowRubyCharSpace(int parts_no);
+void PE_SetMessageWindowRubyLineSpace(int parts_no, int space);
+int PE_GetMessageWindowRubyLineSpace(int parts_no);
 void PE_SetKeyWaitShow(int parts_no, bool show);
 bool PE_IsKeyWaitShow(int parts_no);
 void PE_SetKeyWaitCGName(int parts_no, struct string *name, int start_no,

@@ -716,6 +716,29 @@ static bool pactex_apply_message_window(struct ex_tree *type_info, const char *p
 	// 0x4f0ee0: a missing key is 0, which shows the text at once.
 	PE_SetMessageWindowTextSpeed(parts_no,
 		pactex_message_number(type_info, PACTEX_MW_SPEED, 0));
+	// The ルビ branch: the reading's font and spacing, read like the
+	// window's own (SJIS spelling only).
+	for (unsigned i = 0; i < type_info->nr_children; i++) {
+		struct ex_tree *ruby = &type_info->children[i];
+		if (ruby->is_leaf || !ruby->name || strcmp(ruby->name->text, "\x83\x8b\x83\x72"))
+			continue;
+		PE_SetMessageWindowRubyFont(parts_no,
+			pactex_message_number(ruby, PACTEX_MW_FACE, 0),
+			pactex_message_number(ruby, PACTEX_MW_SIZE, 16),
+			pactex_message_item(ruby, PACTEX_MW_COLOR, 0, 255),
+			pactex_message_item(ruby, PACTEX_MW_COLOR, 1, 255),
+			pactex_message_item(ruby, PACTEX_MW_COLOR, 2, 255),
+			pactex_message_number(ruby, PACTEX_MW_WEIGHT, 0),
+			pactex_message_item(ruby, PACTEX_MW_EDGE_COLOR, 0, 0),
+			pactex_message_item(ruby, PACTEX_MW_EDGE_COLOR, 1, 0),
+			pactex_message_item(ruby, PACTEX_MW_EDGE_COLOR, 2, 0),
+			pactex_message_number(ruby, PACTEX_MW_EDGE, 0));
+		PE_SetMessageWindowRubyCharSpace(parts_no,
+			pactex_message_number(ruby, PACTEX_MW_CHAR_SPACE, 0));
+		PE_SetMessageWindowRubyLineSpace(parts_no,
+			pactex_message_number(ruby, PACTEX_MW_LINE_SPACE, 0));
+		break;
+	}
 	pactex_apply_key_wait(type_info, parts_no);
 	return true;
 }

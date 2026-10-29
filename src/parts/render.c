@@ -359,6 +359,37 @@ static void parts_render_text(struct parts *parts, struct parts_text *t, Point p
 	}
 }
 
+/* The readings over a message window's text, drawn like its glyphs. */
+static void parts_render_message_rubies(struct parts *parts, Point text_position)
+{
+	int n = parts_message_window_nr_rubies(parts);
+	if (!n)
+		return;
+	vec3 add_color;
+	parts_shader_add_color(parts, add_color);
+	vec3 multiply_color = {
+		parts->global.multiply_color.r / 255.0f,
+		parts->global.multiply_color.g / 255.0f,
+		parts->global.multiply_color.b / 255.0f,
+	};
+	mat4 anchor;
+	parts_anchor_transform(parts, glm_rad(parts->local.rotation.z), true, anchor);
+	for (int i = 0; i < n; i++) {
+		Point pos;
+		float alpha;
+		Texture *t = parts_message_window_ruby(parts, i, text_position, &pos, &alpha);
+		if (!t)
+			continue;
+		mat4 m;
+		glm_mat4_copy(anchor, m);
+		glm_translate(m, (vec3){ pos.x - parts->global.pos.x, pos.y - parts->global.pos.y, 0 });
+		glm_scale(m, (vec3){ t->w, t->h, 1.0f });
+		Rectangle r = { 0, 0, t->w, t->h };
+		parts_render_texture(parts, t, m, &r, parts->global.alpha / 255.0 * alpha,
+				add_color, multiply_color, 0, parts->alpha_clipper_parts_no);
+	}
+}
+
 /* A message window's key wait mark: one texture at a position in the owner's
  * anchor frame, with the owner's scale, alpha and colours like the glyphs of
  * its text. */
@@ -987,8 +1018,10 @@ void parts_render(struct parts *parts)
 	// Render it after the background, including when that background is empty.
 	Point position;
 	struct parts_text *text = parts_message_window_render_text(parts, &position);
-	if (text)
+	if (text) {
 		parts_render_text(parts, text, position);
+		parts_render_message_rubies(parts, position);
+	}
 	// The key wait mark is the last of the window's three private children
 	// (background, text, mark: 0x4f1d30), so it is drawn over the text.
 	Texture *mark = parts_message_window_key_wait(parts, &position);

@@ -591,6 +591,13 @@ void pe_v14_message_register(void)
 	static_library_register(lib, "GetMessageWindowTextArea", PE_GetMessageWindowTextArea);
 	static_library_register(lib, "SetMessageWindowTextFont", PE_v14_SetMessageWindowTextFont);
 	static_library_register(lib, "SetMessageWindowTextSpace", PE_v14_SetMessageWindowTextSpace);
+	// Ahead of the empty ones of pe_v14_prelink.h (GetMessageWindowRubyFont
+	// stays empty).
+	static_library_register(lib, "SetMessageWindowRubyFont", PE_SetMessageWindowRubyFont);
+	static_library_register(lib, "SetMessageWindowRubyCharSpace", PE_SetMessageWindowRubyCharSpace);
+	static_library_register(lib, "GetMessageWindowRubyCharSpace", PE_GetMessageWindowRubyCharSpace);
+	static_library_register(lib, "SetMessageWindowRubyLineSpace", PE_SetMessageWindowRubyLineSpace);
+	static_library_register(lib, "GetMessageWindowRubyLineSpace", PE_GetMessageWindowRubyLineSpace);
 	static_library_register(lib, "SetKeyWaitShow", PE_v14_SetKeyWaitShow);
 	static_library_register(lib, "IsKeyWaitShow", PE_IsKeyWaitShow);
 	// The rest of the key wait mark (native cases 513 to 520), ahead of the

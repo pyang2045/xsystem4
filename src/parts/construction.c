@@ -540,6 +540,44 @@ bool PE_AddFillEllipseWithAlphaToPartsConstructionProcess(int parts_no, int cx, 
 bool PE_AddDrawLineToPartsConstructionProcess(int parts_no, int x1, int y1, int x2, int y2,
 		int r, int g, int b, int a, int state);
 
+/* The composer's ${ruby text=...}, ${font ...} and ${time ...} tags and their
+ * ends, as v14 message text has them (母爛漫's backlog passes its log lines
+ * on unchanged): metadata, not glyphs. The base text of a ruby span stays;
+ * its reading is not drawn here. Other ${...} stay as text. */
+static bool cp_markup_tag_is(const char *tag, size_t size, const char *name)
+{
+	size_t length = strlen(name);
+	return size >= length && !memcmp(tag, name, length)
+		&& (size == length || tag[length] == ' ' || tag[length] == '\t');
+}
+
+static struct string *cp_text_strip_markup(struct string *text)
+{
+	if (!memmem(text->text, text->size, "${", 2))
+		return string_dup(text);
+	static const char *const tags[] = { "ruby", "/ruby", "font", "/font", "time", "/time" };
+	struct string *out = string_ref(&EMPTY_STRING);
+	const char *p = text->text, *end = p + text->size;
+	while (p < end) {
+		if (end - p >= 3 && p[0] == '$' && p[1] == '{') {
+			const char *close = memchr(p + 2, '}', end - (p + 2));
+			bool known = false;
+			for (unsigned i = 0; close && i < sizeof(tags) / sizeof(tags[0]); i++)
+				known = known || cp_markup_tag_is(p + 2, close - (p + 2), tags[i]);
+			if (known) {
+				p = close + 1;
+				continue;
+			}
+		}
+		int bytes = parts_text_char_bytes(p);
+		if (bytes > end - p)
+			bytes = end - p;
+		string_append_cstr(&out, p, bytes);
+		p += bytes;
+	}
+	return out;
+}
+
 static bool add_text_to_cproc(int parts_no, int x, int y, struct string *text,
 		int type, int size, int r, int g, int b, float bold_weight,
 		int edge_r, int edge_g, int edge_b, float edge_weight,
@@ -551,7 +589,7 @@ static bool add_text_to_cproc(int parts_no, int x, int y, struct string *text,
 	struct parts_cp_op *op = xcalloc(1, sizeof(struct parts_cp_op));
 	op->type = op_type;
 	op->text = (struct parts_cp_text) {
-		.text = string_dup(text),
+		.text = cp_text_strip_markup(text),
 		.x = x,
 		.y = y,
 		.line_space = line_space,

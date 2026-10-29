@@ -61,6 +61,14 @@ struct message_glyph_time {
 	bool fade;
 };
 
+/* A reading (ruby, furigana) over the characters [start, end) of the window
+ * text, counted as the glyph times are: a line break is no character. */
+struct message_ruby {
+	int start, end;
+	char *text;
+	Texture t;
+};
+
 /* A message window is a background and independent text, not two mutually
  * exclusive DEFAULT states. The sidecar dies with its owning parts object. */
 struct parts_message_window {
@@ -102,6 +110,14 @@ struct parts_message_window {
 	struct parts_key_wait key_wait;
 	// The text, font or spacing changed since the text was laid out.
 	bool text_changed;
+	// The readings of ${ruby text=...}base${/ruby} spans and their font
+	// (the activity's ルビ branch or SetMessageWindowRubyFont/Space). Not
+	// traced from the original: the layout below is this port's.
+	struct message_ruby *rubies;
+	int nr_rubies;
+	struct text_style ruby_ts;
+	bool ruby_font_set;
+	int ruby_line_space;
 };
 
 static struct parts_message_window *message_window_get(struct parts *parts)
@@ -120,6 +136,7 @@ static struct parts_message_window *message_window_get(struct parts *parts)
 		// A new window counts as changed until its first update or Fix
 		// (0x4ee71e sets +0x208).
 		mw->dirty = true;
+		mw->ruby_ts = mw->text.ts;
 		parts->message = mw;
 	}
 	return parts->message;
@@ -138,6 +155,17 @@ static struct parts *message_window_parts(int parts_no)
 	struct parts *parts = parts_get(parts_no);
 	message_window_get(parts);
 	return parts;
+}
+
+static void message_ruby_free(struct parts_message_window *mw)
+{
+	for (int i = 0; i < mw->nr_rubies; i++) {
+		free(mw->rubies[i].text);
+		gfx_delete_texture(&mw->rubies[i].t);
+	}
+	free(mw->rubies);
+	mw->rubies = NULL;
+	mw->nr_rubies = 0;
 }
 
 static void key_wait_free_frames(struct parts_key_wait *kw)
@@ -168,6 +196,7 @@ void parts_message_window_free(struct parts_message_window *mw)
 		free_string(mw->cg_name);
 	parts_text_free(&mw->text);
 	free(mw->glyph_times);
+	message_ruby_free(mw);
 	free(mw);
 }
 
@@ -188,8 +217,8 @@ static bool markup_tag_is(const char *tag, size_t size, const char *name)
  * ${time N} span has N as its interval, unscaled, and ${/time} takes the
  * previous one back (0x5c0a39, 0x5c0a6b; a ${/time} without a span is
  * dropped). A line break is no character and takes no slot (0x5bc785); a
- * full-width space does. Font and ruby tags are removed; font styling and
- * the ruby reading are not drawn here. */
+ * full-width space does. Font tags are removed and their styling is not
+ * done here; a ruby span keeps its reading in mw->rubies. */
 static struct string *message_window_plain_text(struct parts_message_window *mw, int interval)
 {
 	struct string *plain = string_ref(&EMPTY_STRING);
@@ -205,6 +234,8 @@ static struct string *message_window_plain_text(struct parts_message_window *mw,
 	mw->glyph_times = xcalloc(mw->raw_text->size + 1, sizeof(*mw->glyph_times));
 	int *saved = xcalloc(mw->raw_text->size + 1, sizeof(int));
 	int depth = 0;
+	message_ruby_free(mw);
+	int open_ruby = -1;
 	int64_t start = 0;
 	while (p < end) {
 		const char *close = NULL;
@@ -230,10 +261,33 @@ static struct string *message_window_plain_text(struct parts_message_window *mw,
 				p = close + 1;
 				continue;
 			}
-			// ${ruby text=...}base${/ruby}: the base text is drawn, the
-			// reading (furigana) is not.
-			if (markup_tag_is(tag, size, "font") || markup_tag_is(tag, size, "/font")
-					|| markup_tag_is(tag, size, "ruby") || markup_tag_is(tag, size, "/ruby")) {
+			// ${ruby text=READING }base${/ruby}: the base text is laid
+			// out as text, the reading is drawn over it.
+			if (markup_tag_is(tag, size, "ruby")) {
+				const char *t = memmem(tag, size, "text=", 5);
+				if (t) {
+					t += 5;
+					const char *e = close;
+					while (e > t && (e[-1] == ' ' || e[-1] == '\t'))
+						e--;
+					mw->rubies = xrealloc_array(mw->rubies, mw->nr_rubies,
+							mw->nr_rubies + 1, sizeof(*mw->rubies));
+					struct message_ruby *r = &mw->rubies[mw->nr_rubies];
+					r->start = r->end = mw->nr_glyph_times;
+					r->text = strndup(t, e - t);
+					open_ruby = mw->nr_rubies++;
+				}
+				p = close + 1;
+				continue;
+			}
+			if (markup_tag_is(tag, size, "/ruby")) {
+				if (open_ruby >= 0)
+					mw->rubies[open_ruby].end = mw->nr_glyph_times;
+				open_ruby = -1;
+				p = close + 1;
+				continue;
+			}
+			if (markup_tag_is(tag, size, "font") || markup_tag_is(tag, size, "/font")) {
 				p = close + 1;
 				continue;
 			}
@@ -362,6 +416,26 @@ static void message_window_layout(struct parts *parts, float rate, const SDL_Col
 	mw->plain_bytes = plain->size;
 	parts_text_append(parts, &mw->text, plain);
 	free_string(plain);
+	struct text_style ruby_ts = mw->ruby_ts;
+	if (!mw->ruby_font_set) {
+		// No ruby font given: a third of the text's size.
+		ruby_ts = style;
+		ruby_ts.size = roundf(style.size / 3);
+	}
+	if (color)
+		ruby_ts.color = *color;
+	ruby_ts.font_size = NULL;
+	for (int i = 0; i < mw->nr_rubies; i++) {
+		struct message_ruby *r = &mw->rubies[i];
+		if (r->end <= r->start || !*r->text)
+			continue;
+		int w = ceilf(gfx_size_text(&ruby_ts, r->text) + ruby_ts.edge_left + ruby_ts.edge_right);
+		int h = ceilf(text_style_height(&ruby_ts));
+		if (w <= 0 || h <= 0)
+			continue;
+		gfx_init_texture_rgba(&r->t, w, h, (SDL_Color){0,0,0,0});
+		gfx_render_textf(&r->t, 0, 0, r->text, &ruby_ts, false);
+	}
 	mw->text.ts.color = style.color;
 	mw->text_changed = false;
 	mw->build_pending = false;
@@ -646,6 +720,65 @@ void PE_SetMessageWindowTextSpace(int parts_no, int letter_space, int line_space
 	mw->text.ts.font_spacing = letter_space;
 	mw->text.line_space = line_space;
 	message_window_rebuild(parts);
+}
+
+void PE_SetMessageWindowRubyFont(int parts_no, int type, int size,
+		int r, int g, int b, float bold_weight,
+		int edge_r, int edge_g, int edge_b, float edge_weight)
+{
+	if (parts_no <= 0)
+		return;
+	struct parts *parts = parts_get(parts_no);
+	struct parts_message_window *mw = message_window_get(parts);
+	struct text_style *ts = &mw->ruby_ts;
+	ts->face = type;
+	ts->size = size;
+	ts->color = (SDL_Color){r, g, b, 255};
+	ts->weight = bold_weight * 1000;
+	ts->bold_weight = bold_weight;
+	ts->edge_color = (SDL_Color){edge_r, edge_g, edge_b, 255};
+	text_style_set_edge_width(ts, edge_weight);
+	ts->scale_x = 1;
+	ts->space_scale_x = 1;
+	ts->font_size = NULL;
+	mw->ruby_font_set = true;
+	message_window_rebuild(parts);
+}
+
+void PE_SetMessageWindowRubyCharSpace(int parts_no, int space)
+{
+	if (parts_no <= 0)
+		return;
+	struct parts *parts = parts_get(parts_no);
+	struct parts_message_window *mw = message_window_get(parts);
+	if (mw->ruby_ts.font_spacing == space)
+		return;
+	mw->ruby_ts.font_spacing = space;
+	message_window_rebuild(parts);
+}
+
+int PE_GetMessageWindowRubyCharSpace(int parts_no)
+{
+	struct parts *parts = parts_no > 0 ? parts_try_get(parts_no) : NULL;
+	return parts && parts->message ? parts->message->ruby_ts.font_spacing : 0;
+}
+
+void PE_SetMessageWindowRubyLineSpace(int parts_no, int space)
+{
+	if (parts_no <= 0)
+		return;
+	struct parts *parts = parts_get(parts_no);
+	struct parts_message_window *mw = message_window_get(parts);
+	if (mw->ruby_line_space == space)
+		return;
+	mw->ruby_line_space = space;
+	message_window_dirty(parts);
+}
+
+int PE_GetMessageWindowRubyLineSpace(int parts_no)
+{
+	struct parts *parts = parts_no > 0 ? parts_try_get(parts_no) : NULL;
+	return parts && parts->message ? parts->message->ruby_line_space : 0;
 }
 
 /* Key wait mark properties. Like the other message window calls of the
@@ -993,4 +1126,48 @@ struct parts_text *parts_message_window_render_text(struct parts *parts, Point *
 	// message-window comparison). Keep the mode for future layout support;
 	// applying generic parts anchoring here would shift mode 7 incorrectly.
 	return &mw->text;
+}
+
+/* Reading i of the window's text, laid out by this port (the original's
+ * ruby layout is not traced): centred over its base characters on the line
+ * of the first one, its bottom ruby_line_space + its height above that
+ * line's top, so a negative space brings it down into the line. A reading
+ * fades with its first character. position is the text's, as
+ * parts_message_window_render_text gives it. */
+Texture *parts_message_window_ruby(struct parts *parts, int i, Point position,
+		Point *pos, float *alpha)
+{
+	struct parts_message_window *mw = parts->message;
+	if (!mw || i < 0 || i >= mw->nr_rubies)
+		return NULL;
+	struct message_ruby *r = &mw->rubies[i];
+	if (!r->t.handle)
+		return NULL;
+	int glyph = 0;
+	int y = position.y;
+	for (unsigned l = 0; l < mw->text.nr_lines; l++) {
+		struct parts_text_line *line = &mw->text.lines[l];
+		if (r->start < glyph + line->nr_chars) {
+			float x = position.x, x0 = 0, x1 = 0;
+			for (int c = 0; c < line->nr_chars; c++, glyph++) {
+				if (glyph == r->start)
+					x0 = x;
+				x += line->chars[c].advance;
+				if (glyph < r->end)
+					x1 = x - mw->text.ts.font_spacing;
+			}
+			pos->x = lroundf((x0 + x1 - r->t.w) / 2);
+			pos->y = y - mw->ruby_line_space - r->t.h;
+			*alpha = parts_message_window_glyph_alpha(parts, &mw->text, r->start);
+			return &r->t;
+		}
+		glyph += line->nr_chars;
+		y += line->height + mw->text.line_space;
+	}
+	return NULL;
+}
+
+int parts_message_window_nr_rubies(struct parts *parts)
+{
+	return parts->message ? parts->message->nr_rubies : 0;
 }
