@@ -682,13 +682,49 @@ static void build_create_pixel_only(struct parts *parts, struct parts_constructi
  * 0x50ac80 also scales a CG whose two rates (its vtable +0x2c, +0x30) are
  * not 100; what sets them was not read, and nothing is scaled here.
  */
+/*
+ * The CGs CreateCG decoded last, kept decoded (port strategy: the original's
+ * CG cache was not read). A v14 game rebuilds a standing picture's
+ * construction for every line it shows; 母爛漫 builds two parts from the same
+ * 1280x820 or 1380x820 CG per line, and decoding it (QNT, 35 to 90 ms) each
+ * time made message skipping crawl and slow to stop. The archives do not
+ * change while the game runs, so a CG of a number is always the same.
+ */
+#define CP_CG_CACHE_SIZE 8
+static struct { int no; struct cg *cg; unsigned used; } cp_cg_cache[CP_CG_CACHE_SIZE];
+static unsigned cp_cg_cache_clock;
+
+// The CG of a number, owned by the cache (not to be freed or changed); NULL
+// when it cannot be loaded.
+static struct cg *cp_cg_cached(int no)
+{
+	int victim = 0;
+	for (int i = 0; i < CP_CG_CACHE_SIZE; i++) {
+		if (cp_cg_cache[i].cg && cp_cg_cache[i].no == no) {
+			cp_cg_cache[i].used = ++cp_cg_cache_clock;
+			return cp_cg_cache[i].cg;
+		}
+		// An empty slot, else the one used longest ago.
+		if (cp_cg_cache[victim].cg
+				&& (!cp_cg_cache[i].cg || cp_cg_cache[i].used < cp_cg_cache[victim].used))
+			victim = i;
+	}
+	struct cg *cg = asset_cg_load(no);
+	if (!cg)
+		return NULL;
+	if (cp_cg_cache[victim].cg)
+		cg_free(cp_cg_cache[victim].cg);
+	cp_cg_cache[victim].no = no;
+	cp_cg_cache[victim].cg = cg;
+	cp_cg_cache[victim].used = ++cp_cg_cache_clock;
+	return cg;
+}
+
 static bool build_cg(struct parts *parts, struct parts_construction_process *cproc, struct parts_cp_cg *op)
 {
-	struct cg *cg = asset_cg_load(op->no);
+	struct cg *cg = cp_cg_cached(op->no);
 	if (ain->version >= 14 && (!cg || cg->metrics.w <= 0 || cg->metrics.h <= 0)) {
 		WARNING("construction: CG %d cannot be loaded", op->no);
-		if (cg)
-			cg_free(cg);
 		gfx_delete_texture(&cproc->common.texture);
 		parts_set_dims(parts, &cproc->common, 0, 0);
 		return false;
@@ -697,7 +733,6 @@ static bool build_cg(struct parts *parts, struct parts_construction_process *cpr
 	gfx_delete_texture(&cproc->common.texture);
 	gfx_init_texture_with_cg(&cproc->common.texture, cg);
 	parts_set_dims(parts, &cproc->common, cg->metrics.w, cg->metrics.h);
-	cg_free(cg);
 	return true;
 }
 
