@@ -138,13 +138,14 @@ void parts_widget_type_changed(struct parts *parts, int old_type)
 		checkbox_free(parts);
 	if (old_type == PARTS_COMPONENT_RADIO_BOX)
 		radio_box_free(parts);
-	if (old_type == PARTS_COMPONENT_VSCROLLBAR || old_type == PARTS_COMPONENT_HSCROLLBAR)
+	if (old_type == PARTS_COMPONENT_VSCROLLBAR || old_type == PARTS_COMPONENT_HSCROLLBAR
+			|| old_type == PARTS_COMPONENT_HSLIDERBAR)
 		parts_scrollbar_look_free(parts);
 	if (type == PARTS_COMPONENT_CHECKBOX)
 		parts_get_checkbox(parts);
 	if (type == PARTS_COMPONENT_RADIO_BOX)
 		parts_get_radio_box(parts);
-	if (type == PARTS_COMPONENT_HSCROLLBAR)
+	if (type == PARTS_COMPONENT_HSCROLLBAR || type == PARTS_COMPONENT_HSLIDERBAR)
 		parts_scrollbar_construct(parts);
 }
 
@@ -164,18 +165,28 @@ void parts_checkbox_set_string(struct parts *parts, char **field, const char *va
  * that is empty, and the state's suffix. 0x529dc0 .. 0x52a150 for a checked
  * one: nothing without a ＣＧ名; else 覆蓋檢查ＣＧ名, or ＣＧ名 with ／檢查
  * when that is empty, and the suffix. The suffixes are the GBK strings of
- * the CN executable (0x7d863c ..); an SJIS release's ／檢查 is not known, and
- * neither are its pactex keys, so a box is only ever named by a GBK pactex.
+ * the CN executable (0x7d863c ..) in a GBK game; an SJIS game (母爛漫) has
+ * ／通常, ／オン, ／ダウン, ／無効 and ／チェック, as its CG archive names them.
  */
 static void checkbox_cg_name(const struct parts_checkbox *cb, bool checked, int state,
 		char *out, size_t size)
 {
-	static const char *const suffix[] = {
+	static const char *const suffix_gbk[] = {
 		"\xa3\xaf\xc6\xd5\xcd\xa8",         // ／普通
 		"\xa3\xaf\xa5\xaa\xa5\xf3",         // ／オン
 		"\xa3\xaf\xa5\xc0\xa5\xa6\xa5\xf3", // ／ダウン
 		"\xa3\xaf\x9f\x6f\x84\xbf",         // ／無効
 	};
+	// The Japanese release (母爛漫): ／通常, ／オン, ／ダウン, ／無効 and
+	// ／チェック in SJIS (its CG archive).
+	static const char *const suffix_sjis[] = {
+		"\x81\x5e\x92\xca\x8f\xed", // ／通常
+		"\x81\x5e\x83\x49\x83\x93", // ／オン
+		"\x81\x5e\x83\x5f\x83\x45\x83\x93", // ／ダウン
+		"\x81\x5e\x96\xb3\x8c\xf8", // ／無効
+	};
+	const bool gbk = game_charset_is_gbk();
+	const char *const *suffix = gbk ? suffix_gbk : suffix_sjis;
 	out[0] = '\0';
 	if (!cb->cg_name)
 		return;
@@ -185,7 +196,9 @@ static void checkbox_cg_name(const struct parts_checkbox *cb, bool checked, int 
 	else if (cb->over_checked_cg_name)
 		snprintf(out, size, "%s%s", cb->over_checked_cg_name, suffix[state]);
 	else
-		snprintf(out, size, "%s\xa3\xaf\x99\x7a\xb2\xe9%s", cb->cg_name, suffix[state]); // ／檢查
+		snprintf(out, size, "%s%s%s", cb->cg_name,
+				gbk ? "\xa3\xaf\x99\x7a\xb2\xe9" : "\x81\x5e\x83\x60\x83\x46\x83\x62\x83\x4e", // ／檢查, ／チェック
+				suffix[state]);
 }
 
 static struct text_style widget_text_style(const struct parts_widget_font *font, int char_space)
@@ -227,9 +240,28 @@ void parts_widget_measure_text(const struct parts_widget_font *font, const char 
 	if (!text || !text[0])
 		return;
 	if (!gfx_text_cn_gdi()) {
+		// Line by line, as the construction text draws it
+		// (cp_text_each_line): the widest line, and each "\n" moves down
+		// by the font's line and the line spacing (母爛漫's check box
+		// texts have two lines).
 		struct text_style ts = widget_text_style(font, char_space);
-		*w = ceilf(gfx_size_text(&ts, text));
-		*h = ceilf(ts.size + ts.edge_up + ts.edge_down);
+		const int size = lroundf(ts.size);
+		const int step = size + (size & 1) + 2 * gfx_text_cn_style_edge(&ts) + line_space;
+		float width = 0;
+		int lines = 0;
+		char *copy = xstrdup(text);
+		for (char *p = copy;; lines++) {
+			char *nl = strchr(p, '\n');
+			if (nl)
+				*nl = '\0';
+			width = max(width, gfx_size_text(&ts, p));
+			if (!nl)
+				break;
+			p = nl + 1;
+		}
+		free(copy);
+		*w = ceilf(width);
+		*h = lines * step + ceilf(ts.size + ts.edge_up + ts.edge_down);
 		return;
 	}
 	const int size = font->size;

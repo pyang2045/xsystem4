@@ -881,22 +881,34 @@ void channel_close(struct channel *ch)
  * presumably reads it back when the engine is rebuilt, which was not traced).
  */
 // The group table of the main EX file and its columns, by their names in the
-// CN game's file (GBK): the table, the group number (an indexed int), the
-// voice group (int) and the default volume (float).
-#define GROUP_TABLE   "\xa3\xc5\xa3\xdf\xc2\x95\xd2\xf4\xc8\xba\xbd\x4d\xd4\x4f\xb6\xa8"
-#define GROUP_NUMBER  "\xc8\xba\xbd\x4d\xbe\x8e\xcc\x96"
-#define GROUP_VOICE   "\x8c\x9d\x8f\xea\xd5\x5a\xd2\xf4\xc8\xba\xbd\x4d\xbe\x8e\xcc\x96"
-#define GROUP_DEFAULT "\xc4\xac\xd5\x4a\xa5\xdc\xa5\xea\xa5\xe5\xa9\x60\xa5\xe0"
+// CN game's file (GBK) and in the Japanese one (SJIS, 母爛漫): the table, the
+// group number (an indexed int), the voice group (int) and the default volume
+// (float).
+#define GROUP_TABLE_GBK   "\xa3\xc5\xa3\xdf\xc2\x95\xd2\xf4\xc8\xba\xbd\x4d\xd4\x4f\xb6\xa8"
+#define GROUP_NUMBER_GBK  "\xc8\xba\xbd\x4d\xbe\x8e\xcc\x96"
+#define GROUP_VOICE_GBK   "\x8c\x9d\x8f\xea\xd5\x5a\xd2\xf4\xc8\xba\xbd\x4d\xbe\x8e\xcc\x96"
+#define GROUP_DEFAULT_GBK "\xc4\xac\xd5\x4a\xa5\xdc\xa5\xea\xa5\xe5\xa9\x60\xa5\xe0"
+#define GROUP_TABLE_SJIS   "\x82\x64\x81\x51\x83\x54\x83\x45\x83\x93\x83\x68\x83\x4f\x83\x8b\x81\x5b\x83\x76\x90\xdd\x92\xe8" /* Ｅ＿サウンドグループ設定 */
+#define GROUP_NUMBER_SJIS  "\x83\x4f\x83\x8b\x81\x5b\x83\x76\x94\xd4\x8d\x86" /* グループ番号 */
+#define GROUP_VOICE_SJIS   "\x91\xce\x89\x9e\x89\xb9\x90\xba\x83\x4f\x83\x8b\x81\x5b\x83\x76\x94\xd4\x8d\x86" /* 対応音声グループ番号 */
+#define GROUP_DEFAULT_SJIS "\x83\x66\x83\x74\x83\x48\x83\x8b\x83\x67\x83\x7b\x83\x8a\x83\x85\x81\x5b\x83\x80" /* デフォルトボリューム */
+#define GROUP_NAME(n) (game_charset_is_gbk() ? GROUP_##n##_GBK : GROUP_##n##_SJIS)
 #define VOLUME_SAV "Volume.sav"
 
 // The internal volumes of the main EX file (top-level floats; their names in
-// the CN game's file, GBK): a common prefix, then the movies', the BGM's, the
-// sound effects' and the voices'.
-#define INTERNAL_PREFIX "\xa3\xc5\xa3\xdf\xc2\x95\xd2\xf4\xa3\xdf\x83\xc8\xb2\xbf\xa5\xdc\xa5\xea\xa5\xe5\xa9\x60\xa5\xe0\xa3\xdf"
-#define INTERNAL_MOVIE INTERNAL_PREFIX "\xa5\xe0\xa9\x60\xa5\xd3\xa9\x60"
-#define INTERNAL_BGM   INTERNAL_PREFIX "\xa3\xc2\xa3\xc7\xa3\xcd"
-#define INTERNAL_SE    INTERNAL_PREFIX "\xd2\xf4\xd0\xa7"
-#define INTERNAL_VOICE INTERNAL_PREFIX "\xd5\x5a\xd2\xf4"
+// the CN game's file, GBK, and in the Japanese one, SJIS): a common prefix,
+// then the movies', the BGM's, the sound effects' and the voices'.
+#define INTERNAL_PREFIX_GBK "\xa3\xc5\xa3\xdf\xc2\x95\xd2\xf4\xa3\xdf\x83\xc8\xb2\xbf\xa5\xdc\xa5\xea\xa5\xe5\xa9\x60\xa5\xe0\xa3\xdf"
+#define INTERNAL_MOVIE_GBK INTERNAL_PREFIX_GBK "\xa5\xe0\xa9\x60\xa5\xd3\xa9\x60"
+#define INTERNAL_BGM_GBK   INTERNAL_PREFIX_GBK "\xa3\xc2\xa3\xc7\xa3\xcd"
+#define INTERNAL_SE_GBK    INTERNAL_PREFIX_GBK "\xd2\xf4\xd0\xa7"
+#define INTERNAL_VOICE_GBK INTERNAL_PREFIX_GBK "\xd5\x5a\xd2\xf4"
+#define INTERNAL_PREFIX_SJIS "\x82\x64\x81\x51\x83\x54\x83\x45\x83\x93\x83\x68\x81\x51\x93\xe0\x95\x94\x83\x7b\x83\x8a\x83\x85\x81\x5b\x83\x80\x81\x51" /* Ｅ＿サウンド＿内部ボリューム＿ */
+#define INTERNAL_MOVIE_SJIS INTERNAL_PREFIX_SJIS "\x83\x80\x81\x5b\x83\x72\x81\x5b" /* ムービー */
+#define INTERNAL_BGM_SJIS   INTERNAL_PREFIX_SJIS "\x82\x61\x82\x66\x82\x6c" /* ＢＧＭ */
+#define INTERNAL_SE_SJIS    INTERNAL_PREFIX_SJIS "\x8c\xf8\x89\xca\x89\xb9" /* 効果音 */
+#define INTERNAL_VOICE_SJIS INTERNAL_PREFIX_SJIS "\x89\xb9\x90\xba" /* 音声 */
+#define INTERNAL_NAME(n) (game_charset_is_gbk() ? INTERNAL_##n##_GBK : INTERNAL_##n##_SJIS)
 
 struct groups_config {
 	int nr;
@@ -928,12 +940,12 @@ static float groups_internal_key(struct ex *ex, const char *key, float dflt)
  */
 static void groups_read_internal(struct ex *ex, struct groups_config *gc)
 {
-	float bgm = groups_internal_key(ex, INTERNAL_BGM, 0.5f);
-	float se = groups_internal_key(ex, INTERNAL_SE, 0.5f);
-	float voice = groups_internal_key(ex, INTERNAL_VOICE, 1.0f);
+	float bgm = groups_internal_key(ex, INTERNAL_NAME(BGM), 0.5f);
+	float se = groups_internal_key(ex, INTERNAL_NAME(SE), 0.5f);
+	float voice = groups_internal_key(ex, INTERNAL_NAME(VOICE), 1.0f);
 	for (int g = 0; g < GROUPS_MAX; g++)
 		gc->internal[g] = g == 0 ? 1.0f : g == 1 ? bgm : g == 2 ? se : voice;
-	gc->movie_internal = groups_internal_key(ex, INTERNAL_MOVIE, 0.5f);
+	gc->movie_internal = groups_internal_key(ex, INTERNAL_NAME(MOVIE), 0.5f);
 }
 
 static int groups_row(struct ex_table *t, int col, int key)
@@ -947,16 +959,16 @@ static int groups_row(struct ex_table *t, int col, int key)
 
 static bool groups_read_config(struct groups_config *gc)
 {
-	if (!ain || ain->version != 14 || !game_charset_is_gbk() || ain_get_library(ain, "MainEXFile") < 0)
+	if (!ain || ain->version != 14 || ain_get_library(ain, "MainEXFile") < 0)
 		return false;
 	struct ex *ex = main_ex_file();
-	struct ex_value *v = ex ? ex_get(ex, GROUP_TABLE) : NULL;
+	struct ex_value *v = ex ? ex_get(ex, GROUP_NAME(TABLE)) : NULL;
 	if (!v || v->type != EX_TABLE || !v->t)
 		return false;
 	struct ex_table *t = v->t;
-	int c_no = ex_col_from_name(t, GROUP_NUMBER);
-	int c_voice = ex_col_from_name(t, GROUP_VOICE);
-	int c_default = ex_col_from_name(t, GROUP_DEFAULT);
+	int c_no = ex_col_from_name(t, GROUP_NAME(NUMBER));
+	int c_voice = ex_col_from_name(t, GROUP_NAME(VOICE));
+	int c_default = ex_col_from_name(t, GROUP_NAME(DEFAULT));
 	if (c_no < 0 || c_voice < 0 || c_default < 0 || !t->nr_rows
 	    || t->fields[c_no].type != EX_INT || !t->fields[c_no].is_index
 	    || t->fields[c_voice].type != EX_INT || t->fields[c_default].type != EX_FLOAT)

@@ -587,6 +587,12 @@ struct parts_scrollbar {
 // vertical one (parts_scrollbar_update); its knob is drawn and dragged the
 // same way, along x.
 #define PARTS_COMPONENT_HSCROLLBAR 3
+// v14 横スライダーバー (component type 13): kept and drawn as a 橫滾動條
+// without end buttons, which is what its pactex describes (長さ, 幅,
+// 全体スライダー量, 表示量, スクロール位置, スライダーレート, ＣＧ名). 母爛漫's
+// message windows have one for their transparency on the system bar. Not
+// traced from the original's widget.
+#define PARTS_COMPONENT_HSLIDERBAR 13
 
 // v14: the knob (バー, native +0xb0) and the track (背景, +0xa4) of a scroll
 // bar of either kind, which the original makes as two inner parts

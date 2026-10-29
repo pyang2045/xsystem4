@@ -145,7 +145,7 @@ static int scrollbar_linked(const struct parts *bar, int link, int amount)
 	if (!linked)
 		return amount;
 	const struct parts_common *shown = &linked->states[linked->state].common;
-	return bar->component_type == PARTS_COMPONENT_HSCROLLBAR ? shown->w : shown->h;
+	return bar->component_type != PARTS_COMPONENT_VSCROLLBAR ? shown->w : shown->h;
 }
 
 // GetVScrollbarTotalSize and GetVScrollbarViewSize (0x591b30, 0x591b60) give
@@ -204,7 +204,8 @@ void parts_scrollbar_update(void)
 	struct parts *parts;
 	PARTS_LIST_FOREACH(parts) {
 		if (parts->component_type != PARTS_COMPONENT_VSCROLLBAR
-				&& parts->component_type != PARTS_COMPONENT_HSCROLLBAR)
+				&& parts->component_type != PARTS_COMPONENT_HSCROLLBAR
+				&& parts->component_type != PARTS_COMPONENT_HSLIDERBAR)
 			continue;
 		struct parts_scrollbar *sb = &parts->scrollbar;
 		if (parts->scrollbar_look && parts->scrollbar_look->dirty)
@@ -247,13 +248,23 @@ void parts_scrollbar_update(void)
  * computed length, 0x574670, and makes a construction surface for the
  * track, 0x574470); no state of the bar's parts changes the pictures.
  */
-static const char *const scrollbar_state_suffix[3] = {
+static const char *const scrollbar_state_suffix_gbk[3] = {
 	"\xa3\xaf\xc6\xd5\xcd\xa8",         // ／普通 (0x7dc59c)
 	"\xa3\xaf\xa5\xaa\xa5\xf3",         // ／オン (0x7dc5a4)
 	"\xa3\xaf\xa5\xc0\xa5\xa6\xa5\xf3", // ／ダウン (0x7dc50c)
 };
-#define SCROLLBAR_BAR_SUFFIX "\xa3\xaf\xa5\xd0\xa9\x60"	// ／バー (0x7d9cf8)
-#define SCROLLBAR_BG_SUFFIX "\xa3\xaf\xb1\xb3\xbe\xb0"		// ／背景 (0x7d9cf0)
+// The Japanese release (母爛漫) names them in SJIS: ／通常, ／オン, ／ダウン,
+// ／バー, ／背景 (its CG archive).
+static const char *const scrollbar_state_suffix_sjis[3] = {
+	"\x81\x5e\x92\xca\x8f\xed", // ／通常
+	"\x81\x5e\x83\x49\x83\x93", // ／オン
+	"\x81\x5e\x83\x5f\x83\x45\x83\x93", // ／ダウン
+};
+#define scrollbar_state_suffix (game_charset_is_gbk() ? scrollbar_state_suffix_gbk : scrollbar_state_suffix_sjis)
+#define SCROLLBAR_BAR_SUFFIX_GBK "\xa3\xaf\xa5\xd0\xa9\x60"	// ／バー (0x7d9cf8)
+#define SCROLLBAR_BG_SUFFIX_GBK "\xa3\xaf\xb1\xb3\xbe\xb0"		// ／背景 (0x7d9cf0)
+#define SCROLLBAR_BAR_SUFFIX (game_charset_is_gbk() ? SCROLLBAR_BAR_SUFFIX_GBK : "\x81\x5e\x83\x6f\x81\x5b")
+#define SCROLLBAR_BG_SUFFIX (game_charset_is_gbk() ? SCROLLBAR_BG_SUFFIX_GBK : "\x81\x5e\x94\x77\x8c\x69")
 
 static bool scrollbar_vertical(const struct parts *parts)
 {
@@ -263,7 +274,8 @@ static bool scrollbar_vertical(const struct parts *parts)
 static bool scrollbar_is_bar(const struct parts *parts)
 {
 	return parts->component_type == PARTS_COMPONENT_VSCROLLBAR
-		|| parts->component_type == PARTS_COMPONENT_HSCROLLBAR;
+		|| parts->component_type == PARTS_COMPONENT_HSCROLLBAR
+		|| parts->component_type == PARTS_COMPONENT_HSLIDERBAR;
 }
 
 static void scrollbar_textures_free(struct parts_scrollbar_look *look)
@@ -347,7 +359,7 @@ static void scrollbar_look_build(struct parts *parts)
 	if (look->over_bar_name)
 		snprintf(base, sizeof base, "%s", look->over_bar_name);
 	else
-		snprintf(base, sizeof base, "%s" SCROLLBAR_BAR_SUFFIX, look->cg_name);
+		snprintf(base, sizeof base, "%s%s", look->cg_name, SCROLLBAR_BAR_SUFFIX);
 	snprintf(name, sizeof name, "%s%s", base, scrollbar_state_suffix[0]);
 	if (scrollbar_load(&look->bar[0], name)) {
 		look->bar_cg_length = scrollbar_vertical(parts) ? look->bar[0].h : look->bar[0].w;
@@ -359,7 +371,7 @@ static void scrollbar_look_build(struct parts *parts)
 	if (look->over_bg_name)
 		snprintf(name, sizeof name, "%s", look->over_bg_name);
 	else
-		snprintf(name, sizeof name, "%s" SCROLLBAR_BG_SUFFIX, look->cg_name);
+		snprintf(name, sizeof name, "%s%s", look->cg_name, SCROLLBAR_BG_SUFFIX);
 	scrollbar_load(&look->bg, name);
 }
 

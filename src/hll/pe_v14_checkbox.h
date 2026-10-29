@@ -105,6 +105,43 @@ static int PE_v14_GetHScrollbarScrollPos(int number)
 	return parts ? parts->scrollbar.pos : 0;
 }
 
+/* The 横スライダーバー functions: the bar is kept as a 橫滾動條
+ * (PARTS_COMPONENT_HSLIDERBAR, parts/scrollbar.c), so these are its scroll
+ * bar's rate and position. A component of another type becomes a slider
+ * bar. Not traced from the original. Each message window frame sets its
+ * transparency slider with SetHSliderBarScrollRate and reads it back for its
+ * gauge; the stubs had left the knob at 0. */
+static struct parts *pe_v14_hsliderbar(int number)
+{
+	if (number <= 0)
+		return NULL;
+	struct parts *parts = parts_get(number);
+	if (parts->component_type != PARTS_COMPONENT_HSLIDERBAR)
+		PE_SetComponentType(number, PARTS_COMPONENT_HSLIDERBAR, 1);
+	return parts;
+}
+static void PE_v14_SetHSliderBarScrollRate(int number, float rate)
+{
+	struct parts *parts = pe_v14_hsliderbar(number);
+	if (parts)
+		parts_scrollbar_set_rate(parts, rate);
+}
+static float PE_v14_GetHSliderBarScrollRate(int number)
+{
+	struct parts *parts = pe_v14_hsliderbar(number);
+	return parts ? parts->scrollbar.rate : 0.0f;
+}
+static void PE_v14_SetHSliderBarScrollPos(int number, int pos)
+{
+	struct parts *parts = pe_v14_hsliderbar(number);
+	if (parts)
+		parts_scrollbar_set_pos(parts, pos);
+}
+static int PE_v14_GetHSliderBarScrollPos(int number)
+{
+	struct parts *parts = pe_v14_hsliderbar(number);
+	return parts ? parts->scrollbar.pos : 0;
+}
 /* Only the declarations these were written for get them; any other keeps
  * the binding it has (a stub), rather than a C function of another shape. */
 static void pe_v14_register_checkbox(int libno)
@@ -126,6 +163,10 @@ static void pe_v14_register_checkbox(int libno)
 		{ "GetHScrollbarScrollRate", PE_v14_GetHScrollbarScrollRate, AIN_FLOAT, 1, { AIN_INT } },
 		{ "SetHScrollbarScrollPos", PE_v14_SetHScrollbarScrollPos, AIN_VOID, 2, { AIN_INT, AIN_INT } },
 		{ "GetHScrollbarScrollPos", PE_v14_GetHScrollbarScrollPos, AIN_INT, 1, { AIN_INT } },
+		{ "SetHSliderBarScrollRate", PE_v14_SetHSliderBarScrollRate, AIN_VOID, 2, { AIN_INT, AIN_FLOAT } },
+		{ "GetHSliderBarScrollRate", PE_v14_GetHSliderBarScrollRate, AIN_FLOAT, 1, { AIN_INT } },
+		{ "SetHSliderBarScrollPos", PE_v14_SetHSliderBarScrollPos, AIN_VOID, 2, { AIN_INT, AIN_INT } },
+		{ "GetHSliderBarScrollPos", PE_v14_GetHSliderBarScrollPos, AIN_INT, 1, { AIN_INT } },
 	};
 	for (size_t i = 0; i < sizeof(bindings) / sizeof(bindings[0]); i++) {
 		struct ain_hll_function *fun = get_fun(libno, bindings[i].name);
