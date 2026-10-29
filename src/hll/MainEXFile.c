@@ -185,6 +185,21 @@ static struct ex_table *list_item_table(struct ex_list *list, int row)
 }
 
 /*
+ * The float getters read an int too: the game's .ex writes whole numbers as
+ * ints where the script asks for floats (ＡＤＶ.立ち絵.定義.*.座標 = [640, 770],
+ * read with AFloat by advscene::CStand@GetExPosX/Y; at the default 0 every
+ * standing CG sat with its bottom centre at the top left of the screen).
+ */
+static float value_float(struct ex_value *v, float dflt)
+{
+	if (v && v->type == EX_FLOAT)
+		return v->f;
+	if (v && v->type == EX_INT)
+		return v->i;
+	return dflt;
+}
+
+/*
  * Append `extra` to the main tables. Appending reallocates list items and
  * tree children, so cached lookups may point at freed values: drop them.
  */
@@ -519,7 +534,7 @@ static int MainEXFile_Int(struct string *name, int dflt, int id)
 static float MainEXFile_Float(struct string *name, float dflt, int id)
 {
 	struct ex_value *v = resolve(name);
-	return (v && v->type == EX_FLOAT) ? v->f : dflt;
+	return value_float(v, dflt);
 }
 
 /*
@@ -553,7 +568,7 @@ static float MainEXFile_AFloat(struct string *name, int index, float dflt, int i
 	struct ex_list *list = resolve_list(name);
 	if (!list) return dflt;
 	struct ex_value *v = ex_list_get(list, index);
-	return (v && v->type == EX_FLOAT) ? v->f : dflt;
+	return value_float(v, dflt);
 }
 
 /*
@@ -596,10 +611,10 @@ static float MainEXFile_A2Float(struct string *name, int row, int col, float dfl
 		t = list_item_table(resolve_list(name), row);
 		if (!t) return dflt;
 		struct ex_value *v = ex_table_get(t, 0, col);
-		return (v && v->type == EX_FLOAT) ? v->f : dflt;
+		return value_float(v, dflt);
 	}
 	struct ex_value *v = ex_table_get(t, row, col);
-	return (v && v->type == EX_FLOAT) ? v->f : dflt;
+	return value_float(v, dflt);
 }
 
 /*
