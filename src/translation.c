@@ -34,12 +34,14 @@
 char *translation_font_path = NULL;
 
 /*
- * Assigned codes. Rows F0..F9 are the CP932 user-defined area; 85, 86, EB,
- * EC and EF are unassigned in CP932. The .fnl has no glyphs in any of them.
+ * Assigned codes: every SJIS row outside JIS X 0208, which is all the game
+ * text uses. F0..F9 are the CP932 user-defined area, 87 / ED, EE / FA..FC
+ * the NEC and IBM extensions, 85, 86, EB, EC and EF unassigned. The .fnl has
+ * no glyphs in any of them.
  */
 static const uint8_t slot_rows[] = {
 	0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9,
-	0x85, 0x86, 0xEB, 0xEC, 0xEF
+	0x85, 0x86, 0xEB, 0xEC, 0xEF, 0x87, 0xED, 0xEE, 0xFA, 0xFB, 0xFC
 };
 #define NR_SLOT_ROWS (sizeof(slot_rows) / sizeof(slot_rows[0]))
 #define SLOTS_PER_ROW 188
@@ -140,6 +142,18 @@ static bool unicode_to_sjis(uint32_t c, uint8_t out[2], int *len)
 	return true;
 }
 
+/*
+ * Translated text draws its ideographs with the TrueType font even where
+ * the .fnl has the character: the two fonts differ in weight and shape, and
+ * the .fnl draws Japanese forms, so a line mixing them looks patchy. Kana
+ * and punctuation stay in the .fnl (the layout looks at 「, 、 and such).
+ */
+static bool is_ideograph(uint32_t c)
+{
+	return (c >= 0x3400 && c <= 0x4DBF) || (c >= 0x4E00 && c <= 0x9FFF)
+		|| (c >= 0xF900 && c <= 0xFAFF) || (c >= 0x20000 && c <= 0x3134F);
+}
+
 static int find_slot(uint32_t c)
 {
 	int lo = 0, hi = nr_slots - 1;
@@ -168,15 +182,15 @@ static char *encode_message(const char *utf8)
 			continue;
 		}
 		c = prefer_sjis_form(c);
-		uint8_t b[2];
-		int len;
-		if (unicode_to_sjis(c, b, &len)) {
+		int k = find_slot(c);
+		if (k < 0) {
+			uint8_t b[2];
+			int len;
+			if (!unicode_to_sjis(c, b, &len))
+				ERROR("translation: U+%04X has no code", c); // collected in the first pass
 			buffer_write_bytes(&out, b, len);
 			continue;
 		}
-		int k = find_slot(c);
-		if (k < 0)
-			ERROR("translation: U+%04X has no code", c); // collected in the first pass
 		uint16_t code = slot_to_sjis(k);
 		buffer_write_int8(&out, code >> 8);
 		buffer_write_int8(&out, code & 0xFF);
@@ -329,9 +343,10 @@ void translation_apply(struct ain *ain, const char *po_path)
 	struct po_entry *entries = po_read(po_path, &nr, &fuzzy);
 
 	// first pass: check each entry against the .ain, collect the characters
-	// SJIS lacks
+	// SJIS lacks and the ideographs SJIS has
 	uint8_t *needed = xcalloc(0x110000 / 8, 1);
-	int nr_needed = 0, bad_no = 0, changed = 0;
+	uint8_t *ideographs = xcalloc(0x110000 / 8, 1);
+	int nr_needed = 0, nr_ideographs = 0, bad_no = 0, changed = 0;
 	for (int i = 0; i < nr; i++) {
 		struct po_entry *e = &entries[i];
 		if (e->no >= ain->nr_messages || !ain->messages[e->no]) {
@@ -358,15 +373,30 @@ void translation_apply(struct ain *ain, const char *po_path)
 			c = prefer_sjis_form(c);
 			uint8_t b[2];
 			int len;
-			if ((needed[c/8] & (1 << (c%8))) || unicode_to_sjis(c, b, &len))
+			if ((needed[c/8] | ideographs[c/8]) & (1 << (c%8)))
 				continue;
-			needed[c/8] |= 1 << (c%8);
-			nr_needed++;
+			if (!unicode_to_sjis(c, b, &len)) {
+				needed[c/8] |= 1 << (c%8);
+				nr_needed++;
+			} else if (is_ideograph(c)) {
+				ideographs[c/8] |= 1 << (c%8);
+				nr_ideographs++;
+			}
 		}
 	}
 	if (nr_needed > (int)MAX_SLOTS)
 		ERROR("%s: %d characters outside Shift-JIS; at most %d fit",
 		      po_path, nr_needed, (int)MAX_SLOTS);
+	if (nr_needed + nr_ideographs <= (int)MAX_SLOTS) {
+		for (int i = 0; i < 0x110000 / 8; i++)
+			needed[i] |= ideographs[i];
+		nr_needed += nr_ideographs;
+	} else {
+		WARNING("%s: %d + %d characters do not fit in %d codes; ideographs in"
+			" Shift-JIS keep the game font", po_path, nr_needed, nr_ideographs,
+			(int)MAX_SLOTS);
+	}
+	free(ideographs);
 
 	// assign codes in Unicode order, so a .po edit moves few of them
 	slots = xcalloc(nr_needed ? nr_needed : 1, sizeof(uint32_t));
@@ -395,7 +425,7 @@ void translation_apply(struct ain *ain, const char *po_path)
 	free(entries);
 	translation_loaded = true;
 
-	NOTICE("Translation: %d of %d messages from '%s' (%d characters outside Shift-JIS)",
+	NOTICE("Translation: %d of %d messages from '%s' (%d characters in the translation font)",
 	       applied, ain->nr_messages, po_path, nr_slots);
 	if (bad_no || changed || fuzzy)
 		WARNING("Translation: skipped %d unknown, %d changed, %d fuzzy entries",
