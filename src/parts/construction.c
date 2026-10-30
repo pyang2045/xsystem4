@@ -541,9 +541,11 @@ bool PE_AddDrawLineToPartsConstructionProcess(int parts_no, int x1, int y1, int 
 		int r, int g, int b, int a, int state);
 
 /* The composer's ${ruby text=...}, ${font ...} and ${time ...} tags and their
- * ends, as v14 message text has them (母爛漫's backlog passes its log lines
- * on unchanged): metadata, not glyphs. The base text of a ruby span stays;
- * its reading is not drawn here. Other ${...} stay as text. */
+ * ends, as v14 message text has them: metadata, not glyphs. The base text of
+ * a ruby span stays; its reading is not drawn. 母爛漫's backlog removes every
+ * ${...} before logging a line (backlog::detail::SYS_EraseTag,
+ * String.ReplaceRegex), and the native command 23 (0x4fc4f0) draws its string
+ * as is, so this is only a fallback for other text. Other ${...} stay. */
 static bool cp_markup_tag_is(const char *tag, size_t size, const char *name)
 {
 	size_t length = strlen(name);

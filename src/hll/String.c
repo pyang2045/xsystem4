@@ -505,11 +505,15 @@ static struct string *String_Replace(struct string **self, struct string *from, 
 	return result;
 }
 
-// [20] string ReplaceRegex(ref string self, string regex, string replacer) — stub
+static struct string *string_regex_replace(struct string *subject, struct string *pattern,
+		struct string *replacer);
+
+// [20] string ReplaceRegex(ref string self, string regex, string replacer):
+// the replaced text; self is left as it is.
 static struct string *String_ReplaceRegex(struct string **self, struct string *regex, struct string *replacer)
 {
 	struct string *s = SELF_STR(self);
-	return s ? string_ref(s) : string_ref(&EMPTY_STRING);
+	return s ? string_regex_replace(s, regex, replacer) : string_ref(&EMPTY_STRING);
 }
 
 /*
@@ -1412,34 +1416,146 @@ static bool rx_run(const struct rx *rx, const uint32_t *s, int n, bool full)
 	return matched;
 }
 
+/* Where the highest-priority thread anchored at start ends, as the native
+ * wregex's backtracking would find it (ECMAScript: alternatives and greedy
+ * repeats in order), or -1. Threads sit in clist in priority order (rx_add
+ * pushes a SPLIT's x after its y), so a MATCH drops the threads behind it
+ * and the ones ahead of it may still find a longer, preferred match. */
+static int rx_match_end(const struct rx *rx, const uint32_t *s, int n, int start)
+{
+	int np = rx->nr_prog;
+	int *clist = xcalloc(np, sizeof(int)), *nlist = xcalloc(np, sizeof(int));
+	int *mark = xcalloc(np, sizeof(int));
+	int *stack = xcalloc(np * 2 + 2, sizeof(int));
+	int nc = 0, nn = 0, end = -1;
+	rx_add(rx, clist, &nc, mark, 1, stack, 0, s, n, start);
+	for (int pos = start; nc > 0; pos++) {
+		nn = 0;
+		for (int i = 0; i < nc; i++) {
+			const struct rx_inst *in = &rx->prog[clist[i]];
+			bool step = false;
+			if (in->op == RX_MATCH) {
+				end = pos;
+				break;
+			}
+			switch (in->op) {
+			case RX_CHAR:
+				step = pos < n && s[pos] == (uint32_t)in->x;
+				break;
+			case RX_ANY:
+				step = pos < n && s[pos] != '\n' && s[pos] != '\r';
+				break;
+			case RX_CLASS:
+				step = pos < n && rx_class_match(&rx->cls[in->x], s[pos]);
+				break;
+			default:
+				break;
+			}
+			if (step)
+				rx_add(rx, nlist, &nn, mark, pos - start + 2, stack, clist[i] + 1, s, n, pos + 1);
+		}
+		int *t = clist; clist = nlist; nlist = t;
+		nc = nn;
+	}
+	free(clist);
+	free(nlist);
+	free(mark);
+	free(stack);
+	return end;
+}
+
+// Compiles pattern into rx; false if it is rejected. rx_free releases it.
+static bool rx_build(struct rx *rx, const struct string *pattern)
+{
+	*rx = (struct rx) { 0 };
+	int pn;
+	uint32_t *p = rx_decode(pattern, &pn);
+	rx->p = p;
+	rx->n = pn;
+	if (pn > RX_MAX_PATTERN)
+		rx->error = true;
+	int root = rx->error ? -1 : rx_parse_alt(rx);
+	if (!rx->error && rx->pos != rx->n)
+		rx->error = true; // unbalanced ')'
+	rx_compile(rx, root);
+	rx_emit(rx, RX_MATCH, 0, 0);
+	return !rx->error;
+}
+
+static void rx_free(struct rx *rx)
+{
+	for (int i = 0; i < rx->nr_cls; i++)
+		free(rx->cls[i].r);
+	free(rx->cls);
+	free(rx->nodes);
+	free(rx->prog);
+	free((uint32_t *)rx->p);
+}
+
 // Returns 1 = match, 0 = no match, -1 = pattern rejected.
 static int string_regex(const struct string *subject, const struct string *pattern, bool full)
 {
-	struct rx rx = { 0 };
-	int pn, sn;
-	uint32_t *p = rx_decode(pattern, &pn);
-	rx.p = p;
-	rx.n = pn;
-	if (pn > RX_MAX_PATTERN)
-		rx.error = true;
-	int root = rx.error ? -1 : rx_parse_alt(&rx);
-	if (!rx.error && rx.pos != rx.n)
-		rx.error = true; // unbalanced ')'
-	rx_compile(&rx, root);
-	rx_emit(&rx, RX_MATCH, 0, 0);
+	struct rx rx;
 	int result = -1;
-	if (!rx.error) {
+	if (rx_build(&rx, pattern)) {
+		int sn;
 		uint32_t *s = rx_decode(subject, &sn);
 		result = rx_run(&rx, s, sn, full) ? 1 : 0;
 		free(s);
 	}
-	for (int i = 0; i < rx.nr_cls; i++)
-		free(rx.cls[i].r);
-	free(rx.cls);
-	free(rx.nodes);
-	free(rx.prog);
-	free(p);
+	rx_free(&rx);
 	return result;
+}
+
+/* std::regex_replace: each leftmost match, left to right, becomes replacer.
+ * An empty match inserts replacer and the next character is copied. replacer
+ * is inserted as is: its $& $1 $` $' formats are not expanded (母爛漫's only
+ * call, backlog::detail::SYS_EraseTag, removes every ${...} tag with
+ * "\$\{[^\}]+\}" and ""). Lazy repeats match greedily here. A rejected
+ * pattern leaves the text as it is. */
+static struct string *string_regex_replace(struct string *subject, struct string *pattern,
+		struct string *replacer)
+{
+	struct rx rx;
+	if (!rx_build(&rx, pattern)) {
+		WARNING("String.ReplaceRegex: unsupported or invalid regex \"%s\"",
+			pattern ? display_game0(pattern->text) : "");
+		rx_free(&rx);
+		return string_ref(subject);
+	}
+	int sn;
+	uint32_t *s = rx_decode(subject, &sn);
+	// byte offset of each decoded character, and of the end
+	int *at = xcalloc(sn + 1, sizeof(int));
+	for (int i = 0, b = 0, k = 0; k <= sn; k++) {
+		at[k] = i;
+		if (k < sn) {
+			string_lib_char_code((const uint8_t *)subject->text + i, subject->size - i, &b);
+			i += b;
+		}
+	}
+	struct string *out = string_ref(&EMPTY_STRING);
+	int copied = 0; // characters of subject already in out
+	for (int pos = 0; pos <= sn; pos++) {
+		int end = rx_match_end(&rx, s, sn, pos);
+		if (end < 0)
+			continue;
+		string_append_cstr(&out, subject->text + at[copied], at[pos] - at[copied]);
+		if (replacer)
+			string_append_cstr(&out, replacer->text, replacer->size);
+		copied = end;
+		if (end > pos)
+			pos = end - 1;
+		else if (pos < sn) {
+			string_append_cstr(&out, subject->text + at[pos], at[pos + 1] - at[pos]);
+			copied = pos + 1;
+		}
+	}
+	string_append_cstr(&out, subject->text + at[copied], at[sn] - at[copied]);
+	free(at);
+	free(s);
+	rx_free(&rx);
+	return out;
 }
 
 static bool string_regex_bool(struct string **self, struct string *regex, bool full)
