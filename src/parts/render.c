@@ -312,6 +312,12 @@ static void parts_render_texture(struct parts *parts, struct texture *texture, m
 		glUniformMatrix4fv(parts_shader.inv_clipper_transform, 1, GL_FALSE, clip_inv[0]);
 	} else {
 		glUniform1i(parts_shader.use_clipper, 0);
+		// The sampler stays on the program: left on unit 1, it names the
+		// texture of an earlier clipper, which may be gone. The draw does
+		// not read it, but Apple's GL on Apple Silicon checks every
+		// sampler and logs "unit 1 GLD_TEXTURE_INDEX_2D is unloadable".
+		// Unit 0 holds this draw's own texture.
+		glUniform1i(parts_shader.clipper_tex, 0);
 	}
 
 	gfx_run_job(&job);
