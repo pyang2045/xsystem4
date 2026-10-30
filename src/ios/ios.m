@@ -5,6 +5,8 @@
  * - The game is the app's Documents folder (shared in the Files app), or a folder in it,
  *   that holds a .ain file.
  * - Chinese dialogue (locale/zh_CN.po) when the device's first language is Chinese.
+ * - Save files put in Documents/SaveData are moved into the save folder at start-up;
+ *   files they replace are kept as NAME.bak-YYYYmmdd-HHMMSS.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,5 +84,38 @@ char *ios_setup(const char **locale)
 		}
 		NOTICE("Game: %s", game);
 		return game;
+	}
+}
+
+void ios_import_saves(const char *save_dir)
+{
+	@autoreleasepool {
+		NSFileManager *fm = NSFileManager.defaultManager;
+		NSString *src = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+				NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"SaveData"];
+		NSArray<NSString *> *names = [fm contentsOfDirectoryAtPath:src error:nil];
+		if (!names.count)
+			return;
+		NSString *dest = [fm stringWithFileSystemRepresentation:save_dir length:strlen(save_dir)];
+		[fm createDirectoryAtPath:dest withIntermediateDirectories:YES attributes:nil error:nil];
+		NSDateFormatter *fmt = [NSDateFormatter new];
+		fmt.dateFormat = @"yyyyMMdd-HHmmss";
+		NSString *stamp = [fmt stringFromDate:NSDate.date];
+		for (NSString *name in names) {
+			NSString *from = [src stringByAppendingPathComponent:name];
+			NSString *to = [dest stringByAppendingPathComponent:name];
+			BOOL is_dir;
+			if ([name hasPrefix:@"."] || ![fm fileExistsAtPath:from isDirectory:&is_dir] || is_dir)
+				continue;
+			if ([fm fileExistsAtPath:to])
+				[fm moveItemAtPath:to toPath:[to stringByAppendingFormat:@".bak-%@", stamp] error:nil];
+			NSError *err = nil;
+			if ([fm moveItemAtPath:from toPath:to error:&err])
+				NOTICE("Imported save %s", name.UTF8String);
+			else
+				WARNING("Importing save %s: %s", name.UTF8String, err.localizedDescription.UTF8String);
+		}
+		if (![fm contentsOfDirectoryAtPath:src error:nil].count)
+			[fm removeItemAtPath:src error:nil];
 	}
 }

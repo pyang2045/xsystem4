@@ -642,6 +642,7 @@ int main(int argc, char *argv[])
 #endif
 		if (!config_init_with_dir(game_dir))
 			ERROR("Failed to find game in '%s'", game_dir);
+		ios_import_saves(config.save_dir);
 	} else
 #endif
 	if (argc < 1) {
