@@ -1,3 +1,4 @@
 option('debugger', type : 'feature', value : 'auto')
+option('metal', type : 'feature', value : 'disabled', description : 'macOS/iOS: render with Metal (2D only; no OpenGL)')
 option('opengles', type : 'feature', value : 'auto', description : 'Target OpenGL ES 3.0')
 option('angle_dir', type : 'string', value : '../angle', description : 'macOS: ANGLE from tools/fetch_angle.sh, relative to the source dir')

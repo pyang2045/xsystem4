@@ -17,7 +17,9 @@
 #ifndef SYSTEM4_GFX_GL_H
 #define SYSTEM4_GFX_GL_H
 
-#ifdef USE_GLES
+#ifdef USE_METAL
+#include "gfx/gl_metal.h"
+#elif defined(USE_GLES)
 #include <GLES3/gl3.h>
 #else
 #include <GL/glew.h>

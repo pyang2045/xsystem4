@@ -1049,7 +1049,7 @@ static void mouse_event(SDL_MouseButtonEvent *e)
 	if (input_stage2_trace() && trace_count++ < 40) {
 		int ww, wh, dw, dh, mx, my;
 		SDL_GetWindowSize(sdl.window, &ww, &wh);
-		SDL_GL_GetDrawableSize(sdl.window, &dw, &dh);
+		gfx_drawable_size(&dw, &dh);
 		SDL_GetMouseState(&mx, &my);
 		bool set = pointer.source != MOUSE_POS_SDL;
 		WARNING("S2 mouse t=%u state=%d event=(%d,%d) polled=(%d,%d) override=(%d,%d) window=%dx%d drawable=%dx%d logical=%dx%d viewport=%d,%d,%d,%d pointer=%s",

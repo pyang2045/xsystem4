@@ -77,6 +77,16 @@ static bool vsync_active = false;
 
 static GLchar *read_shader_file(const char *path)
 {
+#ifdef USE_METAL
+	// shaders/X.glsl -> shaders/metal/X.metal (see shaders/metal/glsl2msl.py)
+	char metal_path[PATH_MAX];
+	const char *rel = strncmp(path, "shaders/", 8) ? path : path + 8;
+	size_t len = strlen(rel);
+	if (len < 5 || strcmp(rel + len - 5, ".glsl"))
+		ERROR("Not a shader: %s", path);
+	snprintf(metal_path, sizeof(metal_path), "shaders/metal/%.*s.metal", (int)(len - 5), rel);
+	path = metal_path;
+#endif
 	GLchar *source = SDL_LoadFile(path, NULL);
 	if (!source) {
 		char full_path[PATH_MAX];
@@ -92,11 +102,17 @@ GLuint gfx_load_shader_file(const char *path, GLenum type, const char *defines)
 {
 	GLint shader_compiled;
 	GLuint shader;
+#ifdef USE_METAL
+	if (defines)
+		ERROR("Shader defines are not supported on Metal: %s", path);
+	const GLchar *source[3] = { "", "", read_shader_file(path) };
+#else
 	const GLchar *source[3] = {
 		glsl_preamble,
 		defines ? defines : "",
 		read_shader_file(path)
 	};
+#endif
 	shader = glCreateShader(type);
 	glShaderSource(shader, 3, source, NULL);
 	glCompileShader(shader);
@@ -269,7 +285,8 @@ int gfx_init(void)
 	if (SDL_Init(flags) < 0)
 		ERROR("SDL_Init failed: %s", SDL_GetError());
 
-#ifdef USE_GLES
+#ifdef USE_METAL
+#elif defined(USE_GLES)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -285,12 +302,24 @@ int gfx_init(void)
 				       SDL_WINDOWPOS_UNDEFINED,
 				       config.view_width,
 				       config.view_height,
-				       SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+#ifdef USE_METAL
+				       SDL_WINDOW_METAL |
+#else
+				       SDL_WINDOW_OPENGL |
+#endif
+				       SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (!sdl.window)
 		ERROR("SDL_CreateWindow failed: %s", SDL_GetError());
 
 	set_window_title();
 
+#ifdef USE_METAL
+	metal_init(sdl.window);
+	metal_set_vsync(wait_vsync);
+	vsync_active = metal_vsync();
+	NOTICE("Renderer: %s | %s", (const char *)glGetString(GL_VERSION),
+		(const char *)glGetString(GL_RENDERER));
+#else
 	sdl.gl.context = SDL_GL_CreateContext(sdl.window);
 	if (!sdl.gl.context)
 		ERROR("SDL_GL_CreateContext failed: %s", SDL_GetError());
@@ -307,6 +336,7 @@ int gfx_init(void)
 	// Which GL is drawing: Apple's OpenGL, or ANGLE (OpenGL ES on Metal).
 	NOTICE("GL: %s | %s", (const char *)glGetString(GL_VERSION),
 		(const char *)glGetString(GL_RENDERER));
+#endif
 	gl_initialize();
 	gfx_draw_init();
 	gfx_set_window_logical_size(config.view_width, config.view_height);
@@ -321,6 +351,9 @@ int gfx_init(void)
 void gfx_fini(void)
 {
 	glDeleteProgram(default_shader.program);
+#ifdef USE_METAL
+	metal_fini();
+#endif
 	SDL_DestroyWindow(sdl.window);
 	SDL_FreeFormat(sdl.format);
 	SDL_Quit();
@@ -383,7 +416,7 @@ void gfx_toggle_fullscreen(void)
 void gfx_update_screen_scale(void)
 {
 	int display_w, display_h;
-	SDL_GL_GetDrawableSize(sdl.window, &display_w, &display_h);
+	gfx_drawable_size(&display_w, &display_h);
 
 	if (display_w * sdl.h == display_h * sdl.w) {
 		// The aspect ratios are the same, just scale appropriately.
@@ -415,8 +448,13 @@ void gfx_set_wait_vsync(bool wait)
 {
 	wait_vsync = wait;
 	if (gfx_initialized) {
+#ifdef USE_METAL
+		metal_set_vsync(wait);
+		vsync_active = metal_vsync();
+#else
 		SDL_GL_SetSwapInterval(wait ? 1 : 0);
 		vsync_active = SDL_GL_GetSwapInterval() != 0;
+#endif
 	}
 }
 
@@ -558,7 +596,7 @@ static void gfx_stage2_perf_presented(uint64_t swap_start, uint64_t presented)
 		stage2_perf.intervals[p95] * ms_per_tick, stage2_perf.max_interval * ms_per_tick,
 		stage2_perf.total_swap * ms_per_tick / stage2_perf.frames,
 		stage2_perf.swaps[p95] * ms_per_tick, stage2_perf.max_swap * ms_per_tick,
-		stage2_perf.over33, stage2_perf.over50, SDL_GetWindowFlags(sdl.window), SDL_GL_GetSwapInterval());
+		stage2_perf.over33, stage2_perf.over50, SDL_GetWindowFlags(sdl.window), vsync_active);
 	stage2_perf.window_start = presented;
 	stage2_perf.frames = stage2_perf.total_swap = 0;
 	stage2_perf.max_interval = stage2_perf.max_swap = 0;
@@ -631,13 +669,26 @@ void gfx_swap(void)
 	gfx_render(&job);
 
 	uint64_t perf_swap_start = gfx_stage2_perf_begin_swap();
+#ifdef USE_METAL
+	metal_present();
+#else
 	SDL_GL_SwapWindow(sdl.window);
+#endif
 	if (stage2_perf.enabled)
 		gfx_stage2_perf_presented(perf_swap_start, SDL_GetPerformanceCounter());
 	glBindFramebuffer(GL_FRAMEBUFFER, main_surface_fb);
 	glViewport(0, 0, sdl.w, sdl.h);
 
 	gfx_update_frame_rate_counter();
+}
+
+void gfx_drawable_size(int *w, int *h)
+{
+#ifdef USE_METAL
+	metal_drawable_size(w, h);
+#else
+	SDL_GL_GetDrawableSize(sdl.window, w, h);
+#endif
 }
 
 void gfx_set_view(struct texture *t)

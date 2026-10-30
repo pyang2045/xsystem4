@@ -81,6 +81,8 @@ bool gfx_set_fullscreen(bool enable);
 bool gfx_is_fullscreen(void);
 void gfx_toggle_fullscreen(void);
 void gfx_update_screen_scale(void);
+// The window's size in pixels.
+void gfx_drawable_size(int *w, int *h);
 void gfx_set_wait_vsync(bool wait);
 void gfx_flush(void);
 bool gfx_vsync_active(void);
