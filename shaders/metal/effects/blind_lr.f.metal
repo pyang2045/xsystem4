@@ -42,8 +42,8 @@ fragment main0_out main0(main0_in in [[stage_in]], constant _RESERVED_IDENTIFIER
     float p = in.tex_coord.x * _12.resolution.x;
     float band_no = (p - lhs) / 15.0;
     float offset = mod(p - lhs, 15.0);
-    float new = step(band_no, offset);
-    float3 col = mix(old.sample(oldSmplr, in.tex_coord).xyz, tex.sample(texSmplr, in.tex_coord).xyz, float3(new));
+    float use_new = step(band_no, offset);
+    float3 col = mix(old.sample(oldSmplr, in.tex_coord).xyz, tex.sample(texSmplr, in.tex_coord).xyz, float3(use_new));
     out.frag_color = float4(col, 1.0);
     return out;
 }

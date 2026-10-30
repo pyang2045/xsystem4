@@ -16,6 +16,10 @@ program introspection:
   // @in NAME LOCATION / @out NAME LOCATION   varyings, checked when linking
 Vertex shaders also take `constant float4 &xs4_flip [[buffer(30)]]`: gl_Position.y is
 multiplied by xs4_flip.x, so that offscreen targets keep GL's row order.
+
+Every output is then compiled with the system's Metal compiler (through swift), the way
+the engine compiles it at run time: GLSL names that are reserved in Metal, such as `new`,
+fail here rather than when a scene first uses the shader.
 """
 import json, os, re, subprocess, sys, tempfile
 
@@ -86,8 +90,34 @@ def translate(src, dst, tmp):
     os.replace(dst + '.new', dst)
 
 
+# Compiles the files given on the command line as gl_metal.m does (MSL 2.1, safe math).
+CHECK_SWIFT = r'''
+import Metal
+import Foundation
+let dev = MTLCreateSystemDefaultDevice()!
+let opts = MTLCompileOptions()
+opts.languageVersion = .version2_1
+opts.mathMode = .safe
+var bad = 0
+for p in CommandLine.arguments.dropFirst() {
+    do { _ = try dev.makeLibrary(source: try String(contentsOfFile: p, encoding: .utf8), options: opts) }
+    catch { bad += 1; print("\(p): \(error)") }
+}
+exit(bad == 0 ? 0 : 1)
+'''
+
+
+def check(paths, tmp):
+    script = os.path.join(tmp, 'check.swift')
+    with open(script, 'w') as f:
+        f.write(CHECK_SWIFT)
+    if subprocess.run(['xcrun', 'swift', script] + paths).returncode != 0:
+        sys.exit('Metal rejected the shaders above')
+
+
 def main():
     n = 0
+    outputs = []
     with tempfile.TemporaryDirectory() as tmp:
         for sub in ('', 'effects'):
             d = os.path.join(SHADERS, sub)
@@ -96,8 +126,10 @@ def main():
                     continue
                 dst = os.path.join(HERE, sub, name[:-len('.glsl')] + '.metal')
                 translate(os.path.join(d, name), dst, tmp)
+                outputs.append(dst)
                 n += 1
-    print(f'{n} shaders')
+        check(outputs, tmp)
+    print(f'{n} shaders, all compile')
 
 
 if __name__ == '__main__':
