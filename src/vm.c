@@ -5791,16 +5791,27 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 
 static int vm_execute_depth = 0;
 
+/*
+ * vm_execute nests once per bytecode function run from C: NEW with an
+ * explicit constructor, vm_call (member constructors, HLL callbacks) and
+ * delegates. Constructors that build objects which build objects nest deep:
+ * the clinic (invasionhex) scene reaches 11 levels through CInvasionHexScene,
+ * CActivity, CRepairHeart, CUnit, CHero, CUnitAnimation, CSpriteParts, CParts
+ * and CPartsFunctionSet. The original has no such limit. A level costs about
+ * 12 KB of C stack in a -O0 build and under 1 KB at -O2, so 200 levels stay
+ * far inside the 8 MB main-thread stack. Refusing a level must stop the VM:
+ * returning without running the frame leaves it on the call stack, and the
+ * caller's bytecode then runs inside it (the clinic used to assert in
+ * invasionhex::CActivity@CreateHexConditionList with a CUnit as `this`).
+ */
+#define VM_EXECUTE_MAX_DEPTH 200
+
 static void vm_execute(void)
 {
 	vm_execute_depth++;
-	if (vm_execute_depth > 10) {
-		static int ved_warn = 0;
-		if (ved_warn++ < 3)
-			WARNING("vm_execute: recursion depth %d (ip=0x%lX csp=%d)",
-				vm_execute_depth, (unsigned long)instr_ptr, call_stack_ptr);
-		vm_execute_depth--;
-		return;
+	if (unlikely(vm_execute_depth > VM_EXECUTE_MAX_DEPTH)) {
+		VM_ERROR("vm_execute: nested %d levels deep (ip=0x%lX csp=%d)",
+			vm_execute_depth, (unsigned long)instr_ptr, call_stack_ptr);
 	}
 	for (;;) {
 		uint16_t opcode;
