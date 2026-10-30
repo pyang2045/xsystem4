@@ -1,4 +1,4 @@
 [submodule "subprojects/libsys4"]
 	path = subprojects/libsys4
-	url = https://github.com/USADA-KARROT/libsys4
-	branch = cn-on-upstream
+	url = https://github.com/pyang2045/libsys4
+	branch = haharanman
