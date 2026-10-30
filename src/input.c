@@ -181,6 +181,14 @@ static SDL_FRect long_touch_finger_rect;
 static float scroll_gesture_y;
 #define SCROLL_GESTURE_SENSITIVITY 0.02f  // 2% of screen height
 
+// A two-finger tap (both fingers down and up again without scrolling, within
+// TWO_FINGER_TAP_DURATION) is a right click: the button is held from the last
+// finger's release for RIGHT_CLICK_HOLD ms, so that the game polls it down.
+static uint32_t two_finger_tap_start;
+static uint32_t right_click_release;
+#define TWO_FINGER_TAP_DURATION 400
+#define RIGHT_CLICK_HOLD 100
+
 static enum sact_keycode sdl_to_sact_button(int button)
 {
 	switch (button) {
@@ -1370,6 +1378,10 @@ static void fire_deferred_events(void)
 		key_state[VK_LBUTTON] = false;
 		key_state[VK_CONTROL] = true;
 	}
+	if (right_click_release && now >= right_click_release) {
+		key_state[VK_RBUTTON] = false;
+		right_click_release = 0;
+	}
 
 #ifdef __ANDROID__
 	// Fire the deferred keyboard and text input events.
@@ -1667,6 +1679,8 @@ void handle_events(void)
 				deferred_synthetic_mouse_event.timestamp = 0;
 				long_touch_start_timestamp = 0;
 				scroll_gesture_y = -1.0f;
+				two_finger_tap_start = SDL_GetNumTouchFingers(e.tfinger.touchId) == 2
+					? e.tfinger.timestamp : 0;
 				break;
 			}
 			long_touch_start_timestamp = e.tfinger.timestamp;
@@ -1689,6 +1703,13 @@ void handle_events(void)
 		case SDL_FINGERUP:
 			long_touch_start_timestamp = 0;
 			key_state[VK_CONTROL] = false;
+			if (two_finger_tap_start && SDL_GetNumTouchFingers(e.tfinger.touchId) == 0) {
+				if (e.tfinger.timestamp - two_finger_tap_start <= TWO_FINGER_TAP_DURATION) {
+					key_state[VK_RBUTTON] = true;
+					right_click_release = SDL_GetTicks() + RIGHT_CLICK_HOLD;
+				}
+				two_finger_tap_start = 0;
+			}
 			break;
 		case SDL_MULTIGESTURE:
 			if (e.mgesture.numFingers == 2) {
@@ -1703,8 +1724,10 @@ void handle_events(void)
 					else
 						wheel_dir = dy < 0 ? 1 : -1;
 					scroll_gesture_y = e.mgesture.y;
+					two_finger_tap_start = 0;  // a scroll, not a tap
 				}
 			}
+			break;
 		case SDL_CONTROLLERDEVICEADDED:
 			if (e.cdevice.which < MAX_CONTROLLERS)
 				controllers[e.cdevice.which] = SDL_GameControllerOpen(e.cdevice.which);

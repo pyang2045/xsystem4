@@ -12,6 +12,13 @@ static_libs = false
 if host_machine.system() == 'windows'
     static_libs = true
 endif
+# iOS / iPadOS: a darwin cross build with subsystem ios or ios-simulator (the port's
+# tools/ios/ makes the cross file and the libraries, all static).
+is_ios = host_machine.system() == 'darwin' and host_machine.subsystem().startswith('ios')
+if is_ios
+    static_libs = true
+    add_project_arguments('-DXSYS4_IOS', language : ['c', 'objc'])
+endif
 
 zlib = dependency('zlib', static : static_libs)
 libm = meson.get_compiler('c').find_library('m', required: false)

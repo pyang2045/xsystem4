@@ -270,6 +270,9 @@ int gfx_init(void)
 				       SDL_WINDOWPOS_UNDEFINED,
 				       config.view_width,
 				       config.view_height,
+#ifdef XSYS4_IOS
+				       SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN |
+#endif
 #ifdef USE_METAL
 				       SDL_WINDOW_METAL |
 #else
@@ -385,30 +388,36 @@ void gfx_update_screen_scale(void)
 	int display_w, display_h;
 	gfx_drawable_size(&display_w, &display_h);
 
+	SDL_Rect *v = &sdl.viewport_px;
 	if (display_w * sdl.h == display_h * sdl.w) {
 		// The aspect ratios are the same, just scale appropriately.
-		sdl.viewport.x = 0;
-		sdl.viewport.y = 0;
-		sdl.viewport.w = display_w;
-		sdl.viewport.h = display_h;
-		return;
-	}
-
-	double logical_aspect = (double)sdl.w / sdl.h;
-	double display_aspect = (double)display_w / display_h;
-	if (logical_aspect > display_aspect) {
+		*v = (SDL_Rect){ 0, 0, display_w, display_h };
+	} else if ((double)sdl.w / sdl.h > (double)display_w / display_h) {
 		// letterbox
-		sdl.viewport.w = display_w;
-		sdl.viewport.h = sdl.h * display_w / sdl.w;
-		sdl.viewport.x = 0;
-		sdl.viewport.y = (display_h - sdl.viewport.h) / 2;
+		v->w = display_w;
+		v->h = sdl.h * display_w / sdl.w;
+		v->x = 0;
+		v->y = (display_h - v->h) / 2;
 	} else {
 		// pillarbox (side bars)
-		sdl.viewport.w = sdl.w * display_h / sdl.h;
-		sdl.viewport.h = display_h;
-		sdl.viewport.x = (display_w - sdl.viewport.w) / 2;
-		sdl.viewport.y = 0;
+		v->w = sdl.w * display_h / sdl.h;
+		v->h = display_h;
+		v->x = (display_w - v->w) / 2;
+		v->y = 0;
 	}
+
+	// The same rectangle in window coordinates, which input events use: they
+	// differ from pixels on a high-density display (iOS).
+	int window_w, window_h;
+	SDL_GetWindowSize(sdl.window, &window_w, &window_h);
+	if (display_w <= 0 || display_h <= 0 || (window_w == display_w && window_h == display_h)) {
+		sdl.viewport = *v;
+		return;
+	}
+	sdl.viewport.x = v->x * window_w / display_w;
+	sdl.viewport.y = v->y * window_h / display_h;
+	sdl.viewport.w = v->w * window_w / display_w;
+	sdl.viewport.h = v->h * window_h / display_h;
 }
 
 void gfx_set_wait_vsync(bool wait)
@@ -617,7 +626,7 @@ void gfx_swap(void)
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(sdl.viewport.x, sdl.viewport.y, sdl.viewport.w, sdl.viewport.h);
+	glViewport(sdl.viewport_px.x, sdl.viewport_px.y, sdl.viewport_px.w, sdl.viewport_px.h);
 	gfx_clear();
 
 	static mat4 wv_transform = MAT4(

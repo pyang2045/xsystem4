@@ -36,7 +36,8 @@ struct sdl_private {
 		GLuint line_ibo;
 	} gl;
 	int w, h;
-	SDL_Rect viewport;
+	SDL_Rect viewport;     /* the game's picture, in window coordinates */
+	SDL_Rect viewport_px;  /* the same in drawable pixels */
 	bool ms_active; /* mouse is active */
 };
 extern struct sdl_private sdl;

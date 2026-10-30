@@ -46,6 +46,9 @@
 #include "vm.h"
 
 #include "version.h"
+#ifdef XSYS4_IOS
+#include "ios/ios.h"
+#endif
 
 void set_msgskip_delay(struct ain *ain, unsigned ms);
 void apply_game_specific_hacks(struct ain *ain);
@@ -627,6 +630,20 @@ int main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+#ifdef XSYS4_IOS
+	// No command line: the game comes from the app's Documents folder.
+	if (argc < 1) {
+		const char *ios_locale;
+		char *game_dir = ios_setup(&ios_locale);
+		if (!locale_po && ios_locale)
+			locale_po = (char *)ios_locale;
+#ifdef DEBUGGER_ENABLED
+		dbg_enabled = false;
+#endif
+		if (!config_init_with_dir(game_dir))
+			ERROR("Failed to find game in '%s'", game_dir);
+	} else
+#endif
 	if (argc < 1) {
 		if (!config_init_with_dir(".")) {
 			if (!config_init_with_dir(".."))

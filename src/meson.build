@@ -216,6 +216,10 @@ xsystem4_deps = [libm, zlib, sdl2, ft2, ffi, cglm, sndfile, libsys4_dep] + gl_de
 if use_metal
     xsystem4 += 'metal/gl_metal.m'
 endif
+if is_ios
+    xsystem4 += 'ios/ios.m'
+    xsystem4_deps += meson.get_compiler('c').find_library('SDL2main', dirs : [sdl2.get_variable(pkgconfig : 'libdir')])
+endif
 
 if avcodec.found() and avformat.found() and avutil.found() and swscale.found()
     xsystem4 += 'movie_ffmpeg.c'
