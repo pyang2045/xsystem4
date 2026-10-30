@@ -2734,6 +2734,21 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 			(int)pos->items[0].value.f : pos->items[0].value.i;
 		int y = (pos->items[1].value.type == EX_FLOAT) ?
 			(int)pos->items[1].value.f : pos->items[1].value.i;
+		/* 座標をレートとして認識する = 1: the position is a fraction of the
+		 * screen. The CG mode viewer puts its event CG and cut-in at
+		 * (0.5, 0.5) with a centred origin; read as pixels they were centred
+		 * on the top-left corner and only a quarter showed. Not checked
+		 * against the original: taken relative to the screen, which is what
+		 * both parts of this game that set it need (the other, the plot
+		 * message window, sits at (0, 0)). The script never moves them. */
+		if (pactex_get_int(node, "\x8d\xc0\x95\x57\x82\xf0\x83\x8c\x81\x5b\x83\x67\x82\xc6\x82\xb5\x82\xc4\x94\x46\x8e\xaf\x82\xb7\x82\xe9", 0) == 1) {
+			float rx = (pos->items[0].value.type == EX_FLOAT) ?
+				pos->items[0].value.f : (float)pos->items[0].value.i;
+			float ry = (pos->items[1].value.type == EX_FLOAT) ?
+				pos->items[1].value.f : (float)pos->items[1].value.i;
+			x = (int)lroundf(rx * config.view_width);
+			y = (int)lroundf(ry * config.view_height);
+		}
 		PE_SetPos(parts_no, x, y);
 		/* Z order from position list item 2 */
 		if (pos->nr_items >= 3) {
