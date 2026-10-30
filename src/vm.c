@@ -1336,11 +1336,27 @@ static int ain_return_slots_type(struct ain_type *type)
 	// is changed here.
 	case AIN_OPTION:
 		return ss_type_slot_count(type);
-	// AIN_REF_TYPE as RETURN type = 1-slot (heap reference/struct page).
-	// As a PARAMETER, REF_TYPE is 2-slot (page+slot), but return values
-	// only carry the object reference, not a variable binding.
+	// A reference to a scalar is returned as [page, index], like the
+	// delegate return of 0x6537e0: map<int, int>@Find/Insert push both
+	// (X_DUP 1; SP_INC on the page) and their callers take two
+	// (X_MOV 4, 2; X_ASSIGN 2). Counted as one slot, the balance check
+	// kept only the index, the caller's own struct page slid into the
+	// reference and its later DELETE freed that page (CG mode click:
+	// ExtraPlayParam@Add released g_cExtraPlayParam, then SaveGroupData
+	// found a local page in its slot).
+	// Other AIN_REF_TYPE returns are 1 slot (heap reference/struct page,
+	// or the string of a ref string). As a PARAMETER, REF_TYPE is 2-slot
+	// (page+slot), but these return values carry only the object.
 	case AIN_REF_TYPE:
-		return 1;
+		switch (type->data) {
+		case AIN_REF_INT:
+		case AIN_REF_FLOAT:
+		case AIN_REF_BOOL:
+		case AIN_REF_LONG_INT:
+			return 2;
+		default:
+			return 1;
+		}
 	case AIN_WRAP:
 		// v14: wrap<T> slot count varies.
 		// Reference wraps (wrap<struct>) = 1 slot (heap ref, -1 for none).
