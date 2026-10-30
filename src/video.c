@@ -242,45 +242,11 @@ static void init_window_size(void)
 #endif
 }
 
-#if defined(__APPLE__) && defined(USE_GLES)
-/*
- * macOS has no OpenGL ES of its own: a GLES build runs on ANGLE, whose
- * libEGL/libGLESv2 a release keeps in lib/ beside the executable. SDL is
- * pointed at those (SDL_VIDEO_EGL_DRIVER, SDL_VIDEO_GL_DRIVER) and ANGLE
- * at its Metal backend; without that an older ANGLE picks its OpenGL
- * backend, i.e. Apple's deprecated OpenGL again. Variables already set
- * win (other ANGLE builds can be tried). CEF 151's ANGLE has no usable
- * OpenGL backend (ANGLE_DEFAULT_PLATFORM=gl crashes at start), so Metal
- * is the only renderer of such a build.
- */
-static void angle_setup(void)
-{
-	setenv("ANGLE_DEFAULT_PLATFORM", "metal", 0);
-	char *base = SDL_GetBasePath();
-	if (!base)
-		return;
-	static const struct { const char *var, *lib; } libs[] = {
-		{ "SDL_VIDEO_EGL_DRIVER", "lib/libEGL.dylib" },
-		{ "SDL_VIDEO_GL_DRIVER", "lib/libGLESv2.dylib" },
-	};
-	for (unsigned i = 0; i < sizeof(libs) / sizeof(libs[0]); i++) {
-		char path[PATH_MAX];
-		snprintf(path, sizeof(path), "%s%s", base, libs[i].lib);
-		if (file_exists(path))
-			setenv(libs[i].var, path, 0);
-	}
-	SDL_free(base);
-}
-#endif
-
 int gfx_init(void)
 {
 	if (gfx_initialized)
 		return true;
 
-#if defined(__APPLE__) && defined(USE_GLES)
-	angle_setup();
-#endif
 	uint32_t flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
 	if (config.joypad)
 		flags |= SDL_INIT_GAMECONTROLLER;
@@ -335,7 +301,6 @@ int gfx_init(void)
 
 	SDL_GL_SetSwapInterval(wait_vsync ? 1 : 0);
 	vsync_active = SDL_GL_GetSwapInterval() != 0;
-	// Which GL is drawing: Apple's OpenGL, or ANGLE (OpenGL ES on Metal).
 	NOTICE("GL: %s | %s", (const char *)glGetString(GL_VERSION),
 		(const char *)glGetString(GL_RENDERER));
 #endif

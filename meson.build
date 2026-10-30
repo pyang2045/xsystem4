@@ -29,44 +29,27 @@ avformat = dependency('libavformat', required: false, static : static_libs)
 avutil = dependency('libavutil', version : '>=57.28.100', required: false, static : static_libs)
 swscale = dependency('libswscale', required: false, static : static_libs)
 
-if get_option('metal').enabled()
-    # The GL subset of include/gfx/gl_metal.h on Metal (src/metal/gl_metal.m).
-    # No 3D: the 3D and dungeon HLLs stop with an error when used.
+# macOS (and iOS) render with Metal: the GL subset of include/gfx/gl_metal.h
+# on Metal (src/metal/gl_metal.m); no 3D, the 3D and dungeon HLLs stop with
+# an error when used. Elsewhere, or with -Dmetal=disabled: OpenGL ES 3.0
+# (-Dopengles) or OpenGL with GLEW.
+use_metal = get_option('metal').enabled() or \
+    (get_option('metal').auto() and host_machine.system() == 'darwin')
+if use_metal
     add_languages('objc', native : false)
-    gles = dependency('', required : false)
     gl_deps = [dependency('appleframeworks', modules : ['Metal', 'QuartzCore', 'Foundation'])]
     add_project_arguments('-DUSE_METAL', language : ['c', 'objc'])
     add_project_arguments('-D_DEFAULT_SOURCE', '-fobjc-arc', language : 'objc')
-elif host_machine.system() == 'darwin' and not get_option('opengles').disabled()
-    # macOS has no OpenGL ES of its own and its OpenGL is deprecated, so the
-    # default build targets OpenGL ES on ANGLE, which runs on Metal (see
-    # angle_setup in src/video.c). ANGLE comes from pkg-config (glesv2) or from
-    # angle_dir as laid out by the port's tools/fetch_angle.sh. Apple's OpenGL:
-    # -Dopengles=disabled.
-    gles = dependency('glesv2', version : '>=3', required : false)
-    if not gles.found()
-        angle_dir = meson.project_source_root() / get_option('angle_dir')
-        angle_lib = angle_dir / (host_machine.cpu_family() == 'aarch64' ? 'arm64-dev' : 'x86_64-dev')
-        glesv2 = meson.get_compiler('c').find_library('GLESv2', dirs : [angle_lib], required : false)
-        if not glesv2.found()
-            error('no ANGLE in ' + angle_lib + ': run tools/fetch_angle.sh in the haharanman-port repo, '
-                  + 'set -Dangle_dir=DIR, or build for Apple OpenGL with -Dopengles=disabled')
-        endif
-        gles = declare_dependency(dependencies : glesv2,
-                                  compile_args : ['-I' + angle_dir / 'include'],
-                                  link_args : ['-Wl,-rpath,' + angle_lib])
-    endif
 else
     gles = dependency('glesv2', version : '>=3', required: get_option('opengles'))
-endif
-if get_option('metal').enabled()
-elif gles.found()
-    gl_deps = [gles]
-    add_project_arguments('-DUSE_GLES', language : 'c')
-else
-    gl = dependency('GL')
-    glew = dependency('glew')
-    gl_deps = [gl, glew]
+    if gles.found()
+        gl_deps = [gles]
+        add_project_arguments('-DUSE_GLES', language : 'c')
+    else
+        gl = dependency('GL')
+        glew = dependency('glew')
+        gl_deps = [gl, glew]
+    endif
 endif
 
 chibi = dependency('chibi-scheme', required : false, static : static_libs)

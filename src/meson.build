@@ -213,7 +213,7 @@ xsystem4 = [version_h,
 ]
 
 xsystem4_deps = [libm, zlib, sdl2, ft2, ffi, cglm, sndfile, libsys4_dep] + gl_deps
-if get_option('metal').enabled()
+if use_metal
     xsystem4 += 'metal/gl_metal.m'
 endif
 
