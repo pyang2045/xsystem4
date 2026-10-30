@@ -36,6 +36,7 @@
 
 struct sdl_private sdl;
 
+#ifndef USE_METAL
 static const GLchar glsl_preamble[] =
 #ifdef USE_GLES
 	"#version 300 es\n"
@@ -43,6 +44,7 @@ static const GLchar glsl_preamble[] =
 	"precision highp int;\n";
 #else
 	"#version 140\n";
+#endif
 #endif
 
 /*
