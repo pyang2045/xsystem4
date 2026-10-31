@@ -4,7 +4,7 @@
     python3 -I ios/app.py get CONFIG KEY             name, display_name, bundle_id, version, assets
     python3 -I ios/app.py plist CONFIG [BUILD PLATFORM]
     python3 -I ios/app.py resources CONFIG           "BUNDLE_PATH<TAB>SOURCE" lines
-    python3 -I ios/app.py xcodeproj CONFIG MESON_BUILD_DIR
+    python3 -I ios/app.py xcodeproj CONFIG [MESON_BUILD_DIR]
 
 CONFIG is a JSON file; relative paths in it are relative to its folder, which is also where
 the Xcode project (NAME.xcodeproj) and its Info.plist (NAME/Info.plist) are written:
@@ -24,8 +24,9 @@ the Xcode project (NAME.xcodeproj) and its Info.plist (NAME/Info.plist) are writ
 ios/xsystem4.json is the plain app: no icon, no translation; any game in Documents.
 `plist` without BUILD prints the Info.plist for Xcode (with $(...) build variables); with
 BUILD (CFBundleVersion) and PLATFORM (iPhoneOS or iPhoneSimulator) one for make_app.sh.
-`xcodeproj` takes its source lists from an iOS meson build (ios/cross.sh, -Ddebugger=disabled):
-rerun it when source files are added or removed.
+`xcodeproj` takes its source lists from ios/xsystem4.xcodeproj, or from an iOS meson build
+(ios/cross.sh, -Ddebugger=disabled) when one is given: regenerate ios/xsystem4.xcodeproj that
+way when source files are added or removed, then the projects made from it.
 """
 import hashlib
 import json
@@ -130,9 +131,17 @@ def resources(cfg):
 # --- Xcode project -----------------------------------------------------------------------
 
 class Project:
-    def __init__(self, cfg, bld):
+    def __init__(self, cfg, bld=None):
         self.cfg = cfg
         self.objects = {}
+        if bld:
+            self.from_meson(bld)
+        else:
+            self.from_xcodeproj(os.path.join(XS, "ios", "xsystem4.xcodeproj"))
+        self.engine_h = self.headers("include", "src")
+        self.sys4_h = self.headers("subprojects/libsys4/include", "subprojects/libsys4/src")
+
+    def from_meson(self, bld):
         targets = json.load(open(os.path.join(bld, "meson-info", "intro-targets.json")))
         self.src_root = json.load(open(os.path.join(bld, "meson-info", "meson-info.json")))["directories"]["source"]
         if os.path.realpath(self.src_root) != os.path.realpath(XS):
@@ -149,8 +158,22 @@ class Project:
             return sorted(set(out))
         self.engine = sources("xsystem4")
         self.sys4 = sources("sys4") + ["subprojects/libsys4/src/ini_lexer.l", "subprojects/libsys4/src/ini_parser.y"]
-        self.engine_h = self.headers("include", "src")
-        self.sys4_h = self.headers("subprojects/libsys4/include", "subprojects/libsys4/src")
+
+    def from_xcodeproj(self, proj):  # the source lists of an earlier project, made from meson
+        r = subprocess.run(["plutil", "-convert", "json", "-o", "-", os.path.join(proj, "project.pbxproj")],
+                           capture_output=True, text=True)
+        if r.returncode:
+            sys.exit("%s: %s" % (proj, r.stderr.strip()))
+        o = json.loads(r.stdout)["objects"]
+        base = os.path.dirname(proj)  # paths are SOURCE_ROOT-relative: the project folder
+
+        def sources(name):
+            t = next(t for t in o.values() if t["isa"] == "PBXNativeTarget" and t["productName"] == name)
+            phase = next(o[p] for p in t["buildPhases"] if o[p]["isa"] == "PBXSourcesBuildPhase")
+            return [os.path.relpath(os.path.normpath(os.path.join(base, o[o[f]["fileRef"]]["path"])), XS)
+                    for f in phase["files"]]
+        self.engine = sources("xsystem4")
+        self.sys4 = sources("sys4")
 
     def headers(self, *dirs):
         out = []
@@ -506,7 +529,7 @@ def main():
         for dest, src in resources(cfg):
             print("%s\t%s" % (dest, src))
     else:
-        print(Project(cfg, os.path.abspath(sys.argv[3])).write())
+        print(Project(cfg, os.path.abspath(sys.argv[3]) if len(sys.argv) > 3 else None).write())
 
 
 if __name__ == "__main__":

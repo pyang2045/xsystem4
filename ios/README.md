@@ -67,13 +67,15 @@ language starts with the prefix, the dialogue comes from that file (Info.plist k
 1024×1024 PNG is enough).
 
 ```sh
-python3 -I ios/app.py xcodeproj path/to/mygame.json build-ios-device   # writes MyGame.xcodeproj beside the config
+python3 -I ios/app.py xcodeproj path/to/mygame.json   # writes MyGame.xcodeproj beside the config
 ios/make_app.sh path/to/mygame.json build-ios-device OUT
 ```
 
-The Xcode project takes its source lists from a meson iOS build (`-Ddebugger=disabled`):
-regenerate it, and `ios/xsystem4.xcodeproj` from `ios/xsystem4.json`, when source files are
-added or removed.
+A game's project takes its source lists from `ios/xsystem4.xcodeproj`, so it can stay out of
+the game's repository and be generated after a checkout or an engine update (choose the team
+again afterwards). When engine source files are added or removed, regenerate
+`ios/xsystem4.xcodeproj` from a meson iOS build (`-Ddebugger=disabled`):
+`python3 -I ios/app.py xcodeproj ios/xsystem4.json build-ios-device`.
 
 ## Notes
 
