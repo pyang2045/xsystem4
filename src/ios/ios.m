@@ -4,7 +4,7 @@
  * - Saves go to Library/Application Support/xsystem4 ($XSYSTEM4_HOME, unless set).
  * - The game is the app's Documents folder (shared in the Files app), or a folder in it,
  *   that holds a .ain file.
- * - Chinese dialogue (locale/zh_CN.po) when the device's first language is Chinese.
+ * - Chinese dialogue (locale/haharanman_zh_CN.po) when the device's first language is Chinese.
  * - Save files put in Documents/SaveData are moved into the save folder at start-up;
  *   files they replace are kept as NAME.bak-YYYYmmdd-HHMMSS.
  *
@@ -70,8 +70,8 @@ char *ios_setup(const char **locale)
 
 		*locale = NULL;
 		NSString *lang = NSLocale.preferredLanguages.firstObject;
-		if ([lang hasPrefix:@"zh"] && [fm fileExistsAtPath:@"locale/zh_CN.po"])
-			*locale = "locale/zh_CN.po";
+		if ([lang hasPrefix:@"zh"] && [fm fileExistsAtPath:@"locale/haharanman_zh_CN.po"])
+			*locale = "locale/haharanman_zh_CN.po";
 
 		NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
 				NSUserDomainMask, YES).firstObject;
