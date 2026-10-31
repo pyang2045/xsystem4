@@ -944,6 +944,7 @@ extern struct static_library lib_KiwiSoundEngine;
 extern struct static_library lib_LoadCG;
 extern struct static_library lib_MADLoader;
 extern struct static_library lib_MainEXFile;
+extern struct static_library lib_MainEXFile_v7;
 extern struct static_library lib_MainSurface;
 extern struct static_library lib_MamanyoDemo;
 extern struct static_library lib_MamanyoSDemo;
@@ -1081,6 +1082,7 @@ static struct static_library *static_libraries[] = {
 	&lib_LoadCG,
 	&lib_MADLoader,
 	&lib_MainEXFile,
+	&lib_MainEXFile_v7,
 	&lib_MainSurface,
 	&lib_MamanyoDemo,
 	&lib_MamanyoSDemo,
@@ -1277,11 +1279,28 @@ static struct hll_function *link_static_library(struct ain_library *ainlib, stru
 	return dst;
 }
 
-// v14 AIN uses different library names; map them to xsystem4 names
+// Older games declare MainEXFile's getters as bool Int(string, ref int, int)
+// (妻みぐい３); v14 games as int Int(string, int Default, int ID).
+static bool main_ex_file_is_v7(void)
+{
+	int libno = ain_get_library(ain, "MainEXFile");
+	if (libno < 0)
+		return false;
+	int fno = ain_get_library_function(ain, libno, "Int");
+	if (fno < 0)
+		return false;
+	struct ain_hll_function *f = &ain->libraries[libno].functions[fno];
+	return f->nr_arguments >= 2 && f->arguments[1].type.data == AIN_REF_INT;
+}
+
+// Map AIN library names to xsystem4 names: v14 renamed some libraries, and
+// some libraries changed their declarations between engine versions.
 static const char *resolve_library_name(const char *name)
 {
 	if (!strcmp(name, "AnteaterADVLogList"))
 		return "AnteaterADVEngine";
+	if (!strcmp(name, "MainEXFile") && main_ex_file_is_v7())
+		return "MainEXFile_v7";
 	return name;
 }
 

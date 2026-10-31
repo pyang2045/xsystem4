@@ -708,6 +708,14 @@ int main(int argc, char *argv[])
 		if (!view_height_from_ini)
 			config.view_height = 720;
 	}
+	// Executables with a fixed window size of their own.
+	int default_width, default_height;
+	if (game_default_view_size(&default_width, &default_height)) {
+		if (!view_width_from_ini)
+			config.view_width = default_width;
+		if (!view_height_from_ini)
+			config.view_height = default_height;
+	}
 
 	// Auto-detect GB18030 encoding: check if STR0 strings contain
 	// GB18030 byte patterns (lead byte 0xA1-0xDF followed by valid second byte)
@@ -721,7 +729,13 @@ int main(int argc, char *argv[])
 	if (ain->nr_strings > 0) {
 		struct gb18030_scores sc;
 		bool strict = gb18030_detect_strings(ain->strings, ain->nr_strings, &sc);
-		if (sc.legacy > 5) {
+		// UTF-8 releases: the legacy GB18030 score fires on UTF-8 too (it
+		// scored 85 on 妻みぐい３), so check UTF-8 first. Real SJIS or GBK
+		// tables are never all well-formed UTF-8.
+		if (sc.nonascii >= 16 && sc.utf8_valid == sc.nonascii) {
+			ain_is_utf8 = true;
+			WARNING("Detected UTF-8 strings in AIN (utf8=%d/%d)", sc.utf8_valid, sc.nonascii);
+		} else if (sc.legacy > 5) {
 			ain_is_gb18030 = true;
 			WARNING("Detected GB18030 encoding in AIN (score=%d), enabling Chinese text support", sc.legacy);
 	WARNING("AINCHECK: msgf=%d nr_messages=%d messages=%p", ain->msgf, ain->nr_messages, (void*)ain->messages);
@@ -762,8 +776,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	// get_save_path ran before the AIN told us the game is GBK.
-	if (!save_dir_from_user && game_charset_is_gbk()) {
+	// get_save_path ran before the AIN told us the game is GBK or UTF-8.
+	if (!save_dir_from_user && game_charset_is_not_sjis()) {
 		char *save_dir = save_dir_for_game_charset(config.home_dir, config.game_name,
 				save_folder_name, config.save_dir);
 		free(config.save_dir);

@@ -40,6 +40,7 @@ bool game_rance8 = false;
 bool game_rance8_mg = false;
 bool game_dungeons_and_dolls = false;
 bool ain_is_gb18030 = false;
+bool ain_is_utf8 = false;
 
 static bool gb_sjis_boundary_hit(const uint8_t *s)
 {
@@ -328,7 +329,34 @@ static const struct { const char *boot_name, *text; } game_version_texts[] = {
 	// 母爛漫: Haharanman.exe's startup code (0x72ef50). main() requires the
 	// digits at index 6 and 17 to match and retries forever otherwise.
 	{ "Haharanman", "bmjr78365hd5ghd2337fh2jf" },
+	// 妻みぐい３ (UTF-8 Chinese build): Tsumamigui3.exe .rdata, file offset
+	// 0x321d1c. main() requires the digits at index 5 and 32 to match and
+	// text[6..8] + text[13..15] + text[20..24] == "]:77d66sadc", and retries
+	// forever otherwise.
+	{ "Tsumamigui3", "786u87]:78[]87d68sd86sadcfgsdfh87ni" },
 };
+
+/*
+ * Executables that create their window at a fixed size and ignore the
+ * ini's 800x600 default. Keyed by BootName.
+ */
+static const struct { const char *boot_name; int width, height; } game_view_sizes[] = {
+	// 妻みぐい３: Tsumamigui3.exe 0x629500 calls the window setup 0x62d5c0
+	// with 1024x768; the ini parser's default (0x628e40) is 800x600.
+	{ "Tsumamigui3", 1024, 768 },
+};
+
+bool game_default_view_size(int *width, int *height)
+{
+	for (size_t i = 0; config.boot_name && i < sizeof(game_view_sizes) / sizeof(*game_view_sizes); i++) {
+		if (!strcmp(config.boot_name, game_view_sizes[i].boot_name)) {
+			*width = game_view_sizes[i].width;
+			*height = game_view_sizes[i].height;
+			return true;
+		}
+	}
+	return false;
+}
 
 const char *game_version_text(void)
 {

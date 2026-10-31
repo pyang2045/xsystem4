@@ -3156,6 +3156,24 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 			heap_unref(slot);
 		break;
 	}
+	// Named CHECKUDO by libsys4, but in 妻みぐい３ (ain v7) it releases the old
+	// object of a struct variable before the new one is assigned:
+	//   REF old; CHECKUDO; PUSHLOCALPAGE SWAP PUSH n SWAP ... ASSIGN
+	// Tsumamigui3.exe dispatcher 0x5f2c60 (opcode -> case table 0x5f4acc,
+	// 0x78 -> 0x69) -> 0x60b5b0: pop a slot; -1 does nothing; otherwise one
+	// reference is dropped and the object deleted at zero, with "ページ%dを
+	// デクリメントできません" for an invalid slot.
+	case CHECKUDO: {
+		int slot = stack_pop().i;
+		if (slot == -1)
+			break;
+		if (!heap_index_valid(slot)) {
+			WARNING("CHECKUDO: invalid page %d", slot);
+			break;
+		}
+		heap_unref(slot);
+		break;
+	}
 	case SP_INC: {
 		heap_ref(stack_pop().i);
 		break;

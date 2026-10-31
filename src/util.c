@@ -54,6 +54,20 @@ bool game_charset_is_gbk(void)
 	return ain_is_gb18030 && sys4_get_string_charset() == SYS4_CHARSET_GBK;
 }
 
+/*
+ * UTF-8 releases keep every game string in UTF-8 (see ain_is_utf8): game
+ * strings need no conversion for display, file names or the save folder.
+ */
+bool game_charset_is_utf8(void)
+{
+	return ain_is_utf8;
+}
+
+bool game_charset_is_not_sjis(void)
+{
+	return game_charset_is_gbk() || game_charset_is_utf8();
+}
+
 static char *iconv_strict(const char *s, size_t len, const char *to, const char *from)
 {
 	iconv_t cd = iconv_open(to, from);
@@ -74,11 +88,13 @@ static char *iconv_strict(const char *s, size_t len, const char *to, const char 
 	return out;
 }
 
-// Game string -> UTF-8. GB18030 in GBK mode; a string that does not decode
+// Game string -> UTF-8. Unchanged in UTF-8 mode, GB18030 in GBK mode; a string that does not decode
 // cleanly, and every string of an SJIS game, goes through sjis2utf as before.
 // len 0 means strlen, as for sjis2utf.
 char *game_to_utf8(const char *s, size_t len)
 {
+	if (game_charset_is_utf8())
+		return strndup(s, len ? len : strlen(s));
 	if (game_charset_is_gbk()) {
 		char *utf = iconv_strict(s, len ? len : strlen(s), "UTF-8", "GB18030");
 		if (utf)
@@ -91,6 +107,8 @@ char *game_to_utf8(const char *s, size_t len)
 // through unix_path; SJIS games use utf2sjis as before.
 char *utf8_to_game(const char *s, size_t len)
 {
+	if (game_charset_is_utf8())
+		return strndup(s, len ? len : strlen(s));
 	if (game_charset_is_gbk()) {
 		char *gbk = iconv_strict(s, len ? len : strlen(s), "GB18030", "UTF-8");
 		if (gbk)

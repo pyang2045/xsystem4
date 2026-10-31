@@ -638,6 +638,14 @@ static struct string *SystemService_GetGameVersionByText(void)
 	return cstr_to_string(game_version_text());
 }
 
+// Older games (妻みぐい３, ain v7) declare it with a ref string out-parameter.
+static void SystemService_GetGameVersionByText_ref(struct string **text)
+{
+	if (*text)
+		free_string(*text);
+	*text = cstr_to_string(game_version_text());
+}
+
 // Rance 9
 static void SystemService_Rance96161988(struct string **text) {
 	*text = cstr_to_string("=Rance99/RANCE99=");
@@ -974,5 +982,11 @@ static void SystemService_PreLink(void)
 	if (fun && fun->nr_arguments == 1) {
 		static_library_replace(&lib_SystemService, "IsResetOnce",
 				SystemService_IsResetOnce_Drapeko);
+	}
+
+	fun = get_fun(libno, "GetGameVersionByText");
+	if (fun && fun->nr_arguments == 1) {
+		static_library_replace(&lib_SystemService, "GetGameVersionByText",
+				SystemService_GetGameVersionByText_ref);
 	}
 }

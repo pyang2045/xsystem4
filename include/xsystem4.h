@@ -71,6 +71,9 @@ const char *display_game1(const char *s);
 const char *display_game2(const char *s);
 
 bool game_charset_is_gbk(void);
+bool game_charset_is_utf8(void);
+// GBK or UTF-8: game strings are not SJIS and must be decoded with game_to_utf8.
+bool game_charset_is_not_sjis(void);
 char *game_to_utf8(const char *s, size_t len);
 char *utf8_to_game(const char *s, size_t len);
 int rename_noreplace(const char *from, const char *to);
@@ -132,11 +135,18 @@ extern bool game_dungeons_and_dolls;
 
 /* The string SystemService.GetGameVersionByText returns for this game (hacks.c). */
 const char *game_version_text(void);
+// The view size an executable uses when AliceStart.ini sets none; false when
+// the game has no such default (keyed by BootName, see hacks.c).
+bool game_default_view_size(int *width, int *height);
 
 /* CN (GBK/GB18030) text support. Auto-detected in system4.c; consumed by the
  * text/encoding paths. Originally declared in the fork's libsys4 header, which
  * is no longer available, so it lives here and is defined in hacks.c. */
 extern bool ain_is_gb18030;
+/* UTF-8 releases (the Chinese 妻みぐい３): every non-ASCII AIN string is
+ * well-formed UTF-8, and so are GameName, the .ex and the archive names.
+ * Detected in system4.c before the GB18030 check; defined in hacks.c. */
+extern bool ain_is_utf8;
 
 /*
  * GB18030/GBK detection over an AIN string table (hacks.c).
