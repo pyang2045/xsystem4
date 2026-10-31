@@ -106,6 +106,20 @@ void screenshot_save(void);
 #define XSYS4_DATA_DIR "/usr/local/share/xsystem4"
 #endif
 
+/*
+ * The XSYS4_* test and trace variables (auto input, screenshots, traces, ...).
+ * Builds with -Ddev_hooks=false (releases) read none of them: dev_getenv is
+ * NULL there, and the code behind it compiles away.
+ */
+#ifndef XSYS4_DEV_HOOKS
+#define XSYS4_DEV_HOOKS 1
+#endif
+#if XSYS4_DEV_HOOKS
+#define dev_getenv(name) getenv(name)
+#else
+#define dev_getenv(name) ((void)(name), (char *)NULL)
+#endif
+
 #define MMAP_IF_64BIT (sizeof(void*) >= 8 ? ARCHIVE_MMAP : 0)
 
 extern bool game_daibanchou_en;

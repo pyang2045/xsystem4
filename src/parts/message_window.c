@@ -17,6 +17,7 @@
 #include "vm/page.h"
 #include "parts.h"
 #include "parts_internal.h"
+#include "xsystem4.h"
 
 /* The key wait mark (キー待ちマーク), the NEXT sign of a message window.
  * The original keeps it as the third private child of the window object
@@ -1104,7 +1105,7 @@ struct parts_text *parts_message_window_render_text(struct parts *parts, Point *
 	*position = (Point){parts->global.pos.x + background.x + mw->text_area.x,
 		parts->global.pos.y + background.y + mw->text_area.y};
 	static unsigned trace_count;
-	if (getenv("XSYS4_STAGE2_TRACE") && mw->raw_text && mw->raw_text->size
+	if (dev_getenv("XSYS4_STAGE2_TRACE") && mw->raw_text && mw->raw_text->size
 			&& trace_count < 12) {
 		trace_count++;
 		unsigned chars = 0;

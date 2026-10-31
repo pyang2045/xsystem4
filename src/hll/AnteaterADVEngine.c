@@ -53,7 +53,7 @@ static bool adv_trace(void)
 {
 	static int on = -1;
 	if (on < 0) {
-		const char *v = getenv("XSYS4_STAGE2_TRACE");
+		const char *v = dev_getenv("XSYS4_STAGE2_TRACE");
 		on = v && *v && strcmp(v, "0");
 	}
 	return on;

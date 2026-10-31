@@ -77,7 +77,7 @@ void ss_trace(const char *fmt, ...)
 {
 	static int enabled = -1, lines;
 	if (enabled < 0) {
-		const char *e = getenv("XSYS4_TRACE_SAVE");
+		const char *e = dev_getenv("XSYS4_TRACE_SAVE");
 		enabled = e && !strcmp(e, "1");
 	}
 	if (!enabled || lines >= 200)

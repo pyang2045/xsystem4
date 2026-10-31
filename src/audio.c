@@ -77,7 +77,7 @@ static bool audio_trace(void)
 {
 	static int enabled = -1;
 	if (enabled < 0) {
-		const char *v = getenv("XSYS4_STAGE2_TRACE");
+		const char *v = dev_getenv("XSYS4_STAGE2_TRACE");
 		enabled = v && *v && strcmp(v, "0");
 	}
 	return enabled;

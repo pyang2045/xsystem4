@@ -1373,7 +1373,7 @@ static bool delegate_trace_enabled(void)
 {
 	static int enabled = -1;
 	if (enabled < 0)
-		enabled = getenv("XSYS4_STAGE2_TRACE") != NULL;
+		enabled = dev_getenv("XSYS4_STAGE2_TRACE") != NULL;
 	return enabled;
 }
 

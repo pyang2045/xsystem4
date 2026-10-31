@@ -118,7 +118,7 @@ static bool activity_trace(void)
 {
 	static int on = -1;
 	if (on < 0)
-		on = getenv("XSYS4_ACT_TRACE") != NULL;
+		on = dev_getenv("XSYS4_ACT_TRACE") != NULL;
 	return on;
 }
 
@@ -3399,7 +3399,7 @@ static bool pactex_load(struct activity *act, struct ex *ex)
 	struct parts *root = parts_get(root_no);
 	{
 		static unsigned traced;
-		if (getenv("XSYS4_STAGE2_TRACE") && traced++ < 200)
+		if (dev_getenv("XSYS4_STAGE2_TRACE") && traced++ < 200)
 			WARNING("S2 layer-root load: activity '%s' root %d on controller %d (active %d)",
 				display_game0(act->name), root_no, root->controller_no, PE_get_active_controller());
 	}

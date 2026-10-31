@@ -1,3 +1,4 @@
 option('debugger', type : 'feature', value : 'auto')
 option('metal', type : 'feature', value : 'auto', description : 'Render with Metal (default on macOS; 2D only)')
+option('dev_hooks', type : 'boolean', value : true, description : 'Read the XSYS4_* test and trace environment variables (off for releases)')
 option('opengles', type : 'feature', value : 'auto', description : 'Target OpenGL ES 3.0')

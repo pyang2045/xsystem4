@@ -291,7 +291,7 @@ bool input_stage2_trace(void)
 {
 	static int on = -1;
 	if (on < 0) {
-		const char *v = getenv("XSYS4_STAGE2_TRACE");
+		const char *v = dev_getenv("XSYS4_STAGE2_TRACE");
 		on = v && *v && strcmp(v, "0");
 	}
 	return on;
@@ -676,22 +676,22 @@ static void auto_input_load_env(void)
 {
 	if (auto_input.loaded)
 		return;
-	const char *nw = getenv("XSYS4_NO_DESKTOP_WARP");
+	const char *nw = dev_getenv("XSYS4_NO_DESKTOP_WARP");
 	no_desktop_warp = nw && *nw && strcmp(nw, "0");
 	if (no_desktop_warp)
 		WARNING("Auto-input: XSYS4_NO_DESKTOP_WARP: a move of the HLLs moves the program's pointer, not the desktop cursor");
-	const char *senv = getenv("XSYS4_AUTO_CLICK_SEQ");
+	const char *senv = dev_getenv("XSYS4_AUTO_CLICK_SEQ");
 	if (senv && *senv) {
 		if (!input_auto_load(senv))
 			WARNING("Auto-input: no step understood; the desktop cursor is not moved all the same");
 		return;
 	}
 	input_auto_load(NULL);
-	const char *env = getenv("XSYS4_AUTO_CLICK");
+	const char *env = dev_getenv("XSYS4_AUTO_CLICK");
 	auto_input.interval = env ? atoi(env) : 0;
-	const char *cx = getenv("XSYS4_AUTO_CLICK_X");
-	const char *cy = getenv("XSYS4_AUTO_CLICK_Y");
-	const char *cn = getenv("XSYS4_AUTO_CLICK_COUNT");
+	const char *cx = dev_getenv("XSYS4_AUTO_CLICK_X");
+	const char *cy = dev_getenv("XSYS4_AUTO_CLICK_Y");
+	const char *cn = dev_getenv("XSYS4_AUTO_CLICK_COUNT");
 	if (cx) auto_input.x = atoi(cx);
 	if (cy) auto_input.y = atoi(cy);
 	if (cn) auto_input.max = atoi(cn);
@@ -1563,7 +1563,7 @@ void handle_events(void)
 		static int hold_keys_len = -1;
 		if (hold_keys_len < 0) {
 			hold_keys_len = 0;
-			const char *env = getenv("XSYS4_HOLD_KEYS");
+			const char *env = dev_getenv("XSYS4_HOLD_KEYS");
 			if (env && *env) {
 				char buf[256];
 				strncpy(buf, env, sizeof(buf)-1);

@@ -163,7 +163,7 @@ static void system_Reset(void)
 // Normal component updates are registered outside this game's debug gate.
 static bool system_IsDebugMode(void)
 {
-	const char *value = getenv("XSYS4_GAME_DEBUG");
+	const char *value = dev_getenv("XSYS4_GAME_DEBUG");
 	return value && !strcmp(value, "1");
 }
 
@@ -665,7 +665,7 @@ static struct string *system_OutputLine(struct string *text)
 {
 	static int trace = -1;
 	if (trace < 0) {
-		const char *env = getenv("XSYS4_TRACE_OUTPUTLINE");
+		const char *env = dev_getenv("XSYS4_TRACE_OUTPUTLINE");
 		trace = env && !strcmp(env, "1") ? 1 : 0;
 	}
 	if (trace && text)
