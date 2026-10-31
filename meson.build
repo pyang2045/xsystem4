@@ -13,9 +13,14 @@ static_libs = false
 if host_machine.system() == 'windows'
     static_libs = true
 endif
-# iOS / iPadOS: a darwin cross build with subsystem ios or ios-simulator (the port's
-# tools/ios/ makes the cross file and the libraries, all static).
-is_ios = host_machine.system() == 'darwin' and host_machine.subsystem().startswith('ios')
+# iOS / iPadOS: a darwin cross build for the iOS SDK (ios/cross.sh makes the cross file and
+# ios/build_deps.sh the libraries, all static). Asked of the compiler: subsystem() fails on
+# cross files that do not set it, such as a macOS arm64 one.
+is_ios = false
+if host_machine.system() == 'darwin'
+    is_ios = meson.get_compiler('c').get_define('TARGET_OS_IOS',
+        prefix : '#include <TargetConditionals.h>') == '1'
+endif
 if is_ios
     static_libs = true
     add_project_arguments('-DXSYS4_IOS', language : ['c', 'objc'])
