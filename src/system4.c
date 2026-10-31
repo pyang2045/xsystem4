@@ -642,7 +642,13 @@ int main(int argc, char *argv[])
 #endif
 		if (!config_init_with_dir(game_dir))
 			ERROR("Failed to find game in '%s'", game_dir);
-		ios_import_saves(config.save_dir);
+		// Saves in Documents, visible in the Files app.
+		char *folder = save_folder_name ? sjis2utf(save_folder_name, strlen(save_folder_name))
+			: xstrdup("SaveData");
+		free(config.save_dir);
+		config.save_dir = ios_save_dir(folder);
+		free(folder);
+		save_dir_from_user = true;
 	} else
 #endif
 	if (argc < 1) {

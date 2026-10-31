@@ -19,7 +19,7 @@
 // (malloc'd) and in *locale the .po to load, or NULL. See src/ios/ios.m.
 char *ios_setup(const char **locale);
 
-// Moves the files of Documents/SaveData, if any, into save_dir (see src/ios/ios.m).
-void ios_import_saves(const char *save_dir);
+// The save folder: Documents/folder (malloc'd).
+char *ios_save_dir(const char *folder);
 
 #endif /* SYSTEM4_IOS_H */

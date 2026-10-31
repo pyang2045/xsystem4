@@ -1,14 +1,14 @@
 /* iOS start-up: what the command line and the working directory give on macOS.
  *
  * - The working directory becomes the app bundle, where shaders/, fonts/ and locale/ are.
- * - Saves go to Library/Application Support/xsystem4 ($XSYSTEM4_HOME, unless set).
+ * - $XSYSTEM4_HOME (config files), unless set, is Library/Application Support/xsystem4.
  * - The game is the app's Documents folder (shared in the Files app), or a folder in it,
  *   that holds a .ain file.
+ * - Saves go to Documents/SAVE FOLDER (the .ini's SaveFolder, SaveData by default), where
+ *   the Files app and Finder show them.
  * - A translation when the device's first language starts with a key of the Info.plist
  *   dictionary XSys4Translations (language prefix -> .po file in the bundle, e.g. "zh" ->
  *   "locale/zh_CN.po"); the app's packaging sets it.
- * - Save files put in Documents/SaveData are moved into the save folder at start-up;
- *   files they replace are kept as NAME.bak-YYYYmmdd-HHMMSS.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,35 +97,12 @@ char *ios_setup(const char **locale)
 	}
 }
 
-void ios_import_saves(const char *save_dir)
+char *ios_save_dir(const char *folder)
 {
 	@autoreleasepool {
-		NSFileManager *fm = NSFileManager.defaultManager;
-		NSString *src = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
-				NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"SaveData"];
-		NSArray<NSString *> *names = [fm contentsOfDirectoryAtPath:src error:nil];
-		if (!names.count)
-			return;
-		NSString *dest = [fm stringWithFileSystemRepresentation:save_dir length:strlen(save_dir)];
-		[fm createDirectoryAtPath:dest withIntermediateDirectories:YES attributes:nil error:nil];
-		NSDateFormatter *fmt = [NSDateFormatter new];
-		fmt.dateFormat = @"yyyyMMdd-HHmmss";
-		NSString *stamp = [fmt stringFromDate:NSDate.date];
-		for (NSString *name in names) {
-			NSString *from = [src stringByAppendingPathComponent:name];
-			NSString *to = [dest stringByAppendingPathComponent:name];
-			BOOL is_dir;
-			if ([name hasPrefix:@"."] || ![fm fileExistsAtPath:from isDirectory:&is_dir] || is_dir)
-				continue;
-			if ([fm fileExistsAtPath:to])
-				[fm moveItemAtPath:to toPath:[to stringByAppendingFormat:@".bak-%@", stamp] error:nil];
-			NSError *err = nil;
-			if ([fm moveItemAtPath:from toPath:to error:&err])
-				NOTICE("Imported save %s", name.UTF8String);
-			else
-				WARNING("Importing save %s: %s", name.UTF8String, err.localizedDescription.UTF8String);
-		}
-		if (![fm contentsOfDirectoryAtPath:src error:nil].count)
-			[fm removeItemAtPath:src error:nil];
+		NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+				NSUserDomainMask, YES).firstObject;
+		NSString *name = [NSString stringWithUTF8String:folder];
+		return strdup([docs stringByAppendingPathComponent:name].fileSystemRepresentation);
 	}
 }
