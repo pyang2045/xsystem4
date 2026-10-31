@@ -319,6 +319,28 @@ static void apply_daibanchou_hacks(struct ain *ain)
 	}
 }
 
+/*
+ * SystemService.GetGameVersionByText: each executable returns a string set up
+ * in its startup code, and the game's scripts check characters of it. Keyed by
+ * BootName in the game's ini.
+ */
+static const struct { const char *boot_name, *text; } game_version_texts[] = {
+	// 母爛漫: Haharanman.exe's startup code (0x72ef50). main() requires the
+	// digits at index 6 and 17 to match and retries forever otherwise.
+	{ "Haharanman", "bmjr78365hd5ghd2337fh2jf" },
+};
+
+const char *game_version_text(void)
+{
+	for (size_t i = 0; config.boot_name && i < sizeof(game_version_texts) / sizeof(*game_version_texts); i++) {
+		if (!strcmp(config.boot_name, game_version_texts[i].boot_name))
+			return game_version_texts[i].text;
+	}
+	// JAST English edition (dohnadohna.exe): the game reads the characters at
+	// index 2 and 24 to determine edition and language.
+	return "sd4gv86sdf834fs68f63qvna4";
+}
+
 void apply_game_specific_hacks(struct ain *ain)
 {
 	char *game_name = game_to_utf8(config.game_name, 0);

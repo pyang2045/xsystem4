@@ -635,14 +635,7 @@ static void SystemService_DRPKT(struct string **text)
 
 static struct string *SystemService_GetGameVersionByText(void)
 {
-	// 母爛漫 (Haharanman): string set up in Haharanman.exe's startup code
-	// (0x72ef50). main() requires the digits at index 6 and 17 to match and
-	// retries forever otherwise.
-	if (config.boot_name && !strcmp(config.boot_name, "Haharanman"))
-		return cstr_to_string("bmjr78365hd5ghd2337fh2jf");
-	// JAST English edition version string (extracted from dohnadohna.exe).
-	// Game reads chars at index 2 and 24 to determine edition/language.
-	return cstr_to_string("sd4gv86sdf834fs68f63qvna4");
+	return cstr_to_string(game_version_text());
 }
 
 // Rance 9
