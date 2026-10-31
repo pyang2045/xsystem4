@@ -4,7 +4,9 @@
  * - Saves go to Library/Application Support/xsystem4 ($XSYSTEM4_HOME, unless set).
  * - The game is the app's Documents folder (shared in the Files app), or a folder in it,
  *   that holds a .ain file.
- * - Chinese dialogue (locale/haharanman_zh_CN.po) when the device's first language is Chinese.
+ * - A translation when the device's first language starts with a key of the Info.plist
+ *   dictionary XSys4Translations (language prefix -> .po file in the bundle, e.g. "zh" ->
+ *   "locale/zh_CN.po"); the app's packaging sets it.
  * - Save files put in Documents/SaveData are moved into the save folder at start-up;
  *   files they replace are kept as NAME.bak-YYYYmmdd-HHMMSS.
  *
@@ -70,15 +72,23 @@ char *ios_setup(const char **locale)
 
 		*locale = NULL;
 		NSString *lang = NSLocale.preferredLanguages.firstObject;
-		if ([lang hasPrefix:@"zh"] && [fm fileExistsAtPath:@"locale/haharanman_zh_CN.po"])
-			*locale = "locale/haharanman_zh_CN.po";
+		NSDictionary *translations = [NSBundle.mainBundle objectForInfoDictionaryKey:@"XSys4Translations"];
+		if ([translations isKindOfClass:NSDictionary.class]) {
+			for (NSString *prefix in translations) {
+				NSString *po = translations[prefix];
+				if ([lang hasPrefix:prefix] && [po isKindOfClass:NSString.class] && [fm fileExistsAtPath:po]) {
+					*locale = strdup(po.fileSystemRepresentation);
+					break;
+				}
+			}
+		}
 
 		NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
 				NSUserDomainMask, YES).firstObject;
 		char *game = find_game(docs);
 		if (!game) {
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Game files not found",
-				"Copy the game folder (the one holding Haharanman.ain) into this app's "
+				"Copy the game folder (the one holding the .ain file) into this app's "
 				"folder in the Files app (On My iPad), then start the app again.", NULL);
 			exit(1);
 		}

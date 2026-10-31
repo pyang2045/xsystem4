@@ -51,6 +51,11 @@ Finally install it to your system (optional),
 
     ninja -C build install
 
+### iPad
+
+xsystem4 builds as an iPadOS app (Xcode project or meson cross build); the player copies a
+game into the app with the Files app. See [ios/README.md](ios/README.md).
+
 ### Windows
 
 xsystem4 can be built on Windows using MSYS2.

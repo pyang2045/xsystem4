@@ -1,0 +1,4799 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+		011E9E94C6568F3043195D40 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = input.c;
+			path = ../src/input.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		016D4AE8E07A955ABCB1E167 = {
+			isa = PBXBuildFile;
+			fileRef = C6CA0684B7FFDA25B41138D0;
+		};
+		01A9B9067DE6351E20F1A93E = {
+			isa = PBXGroup;
+			children = (
+				E8E92E94C89D6BC6E2C8380C,
+				B39B8D63F242DAD59587808A,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		01FBAC4611D0674444EB37AA = {
+			isa = PBXGroup;
+			children = (
+				FCBD9A91EE8A7E659E0F2F02,
+				CCD52F105181D2767DAF4FDC,
+				4E53F9ACA240435A576198CD,
+				03DB17B2DCB0D06A2D155183,
+				8FEF0C6515FA0E9AAC1B49C6,
+				D42AB59EE99005ABBCD0D905,
+				EA8B187580C482823F5D5244,
+				266E0F70C48C9627357E6F88,
+				C825B5C335885602C727C286,
+				AC879512E7EDE1F928B7102D,
+				D828F722037CD7E3868AD939,
+				6FEEB3CA2827F41155AD4125,
+				AA583076D10F6D8076077CE8,
+				3C207ACEA2ABB2A28DFB11EE,
+				5835617540DC2FD2CE141D05,
+				D3EC06D38540311E30CD2A9E,
+				B91AF22907A89D9AAB6D3C35,
+				18F32EA23D1FA5EB64111C39,
+				99C5FF516FD16E2DF1FD68D4,
+				E7BBD58337225BE53271DF3A,
+				AA06008B25C883669DA8E6AA,
+				A16258689020C200D847F798,
+				687AE573EC49E8FB26B57AFB,
+				26D7DDAAF124F4840DC20B5A,
+				011E9E94C6568F3043195D40,
+				F1FEB27DE7B6A065DAFFBD54,
+				764C653C6B8A6E9A40695282,
+				C94F780998AC8DB6E1211CD5,
+				7BD0BAC155258BFAE68D0730,
+				4B4AF9174141E21816CE9CE9,
+				55BA28FBCD816E97AD54790D,
+				FC6C3ECE5E823792C380E2D4,
+				10E6428B34C14179F0B3AF0B,
+				F423B9FEC0904C92310D53CF,
+				6E69FD3F1C6B5805CFF3E486,
+				FD4AE2F82DE7615001C25D82,
+				BE09DBB059ACB93ADC32CDC8,
+				FAB27513E189BD75DF82445F,
+				334B3D928B1733331DF3266E,
+				C6738FDF27524FD163F22038,
+				A10A9AEED341B8D84CDC9885,
+				0C97B9ED477E743C772C7A3E,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		029AB9C18980C6A65EA0E24E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = dgn.c;
+			path = ../src/dungeon/dgn.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		03DB17B2DCB0D06A2D155183 = {
+			isa = PBXGroup;
+			children = (
+				9C820CAB6423D8A74CAE175E,
+				6ED8A2686C14872D50252AA8,
+			);
+			name = ios;
+			sourceTree = "<group>";
+		};
+		0439198DDB201468751817DA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = xsystem4.h;
+			path = ../include/xsystem4.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		047597549D03DC7114B412AE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Cursor.c;
+			path = ../src/hll/Cursor.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		04898F630720D8C7818D08CE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = layoutbox.c;
+			path = ../src/parts/layoutbox.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0555A88090C99CB8CCC46990 = {
+			isa = PBXGroup;
+			children = (
+				415C63917C381E2627D0EC1B,
+				25FFD5CF74F75C2AFD165EDF,
+			);
+			name = vm;
+			sourceTree = "<group>";
+		};
+		05DA03F62EBD5FE557AC2AEC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = render.c;
+			path = ../src/parts/render.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		06396B917B693C71C029B78E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ADVEngine.c;
+			path = ../src/hll/ADVEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		066AE867A1ED89EADC946EE1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Sound2ex.c;
+			path = ../src/hll/Sound2ex.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0689755516842A4D7BFA19D6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = little_endian.h;
+			path = ../subprojects/libsys4/include/system4/little_endian.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		069433672A3E564EFC5BF7C2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = P3SquareSprite.c;
+			path = ../src/hll/P3SquareSprite.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0747C6D6DE6D45BF94471F47 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = rou.c;
+			path = ../subprojects/libsys4/src/rou.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		07928CF1F0B7B92B853A976D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = P3MapSprite.c;
+			path = ../src/hll/P3MapSprite.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		08856F2D772776C8D58460B4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MapLoader.c;
+			path = ../src/hll/MapLoader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		08919447D0C4E1F44EED4CC3 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ald.h;
+			path = ../subprojects/libsys4/include/system4/ald.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		08FA4E28D16AA38EFCC35F49 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmString.c;
+			path = ../src/hll/vmString.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		092A00A37D7A53189B285189 = {
+			isa = PBXBuildFile;
+			fileRef = B36A2BCED105CB88A63E6464;
+		};
+		09A44987BA56F911788766C6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = OutputLog.c;
+			path = ../src/hll/OutputLog.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0BA27652F2216E24365936AC = {
+			isa = PBXBuildFile;
+			fileRef = 687AE573EC49E8FB26B57AFB;
+		};
+		0BCA27E5E08249A019AE9B2D = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = Foundation.framework;
+			path = System/Library/Frameworks/Foundation.framework;
+			sourceTree = SDKROOT;
+		};
+		0BE08BFD5C6B2F807E4A2E05 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = msgqueue.h;
+			path = ../include/msgqueue.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		0C3EC4D4E54DFBC80014AB50 = {
+			isa = PBXBuildFile;
+			fileRef = C6C4F18F08966E01DAE250CE;
+		};
+		0C4A8885F7329D67427D6476 = {
+			isa = PBXBuildFile;
+			fileRef = 76A69B12FC1058CB1E18DD7A;
+		};
+		0C6A03744EE242610D0AF806 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = system.c;
+			path = ../subprojects/libsys4/src/system.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0C7F97EFCC50B69FFAF0D807 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = s2utbl.h;
+			path = ../subprojects/libsys4/include/system4/s2utbl.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		0C8DDB6AE468CB0381D5DF04 = {
+			isa = PBXBuildFile;
+			fileRef = 7999010451EB0CBC26C1485D;
+		};
+		0C97B9ED477E743C772C7A3E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vm.c;
+			path = ../src/vm.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0CD49AB62D34F2767002C51C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawMovie.c;
+			path = ../src/hll/DrawMovie.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0CE50FBE3D390886DC942D13 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreGraphics.framework;
+			path = System/Library/Frameworks/CoreGraphics.framework;
+			sourceTree = SDKROOT;
+		};
+		0CF77899360B22B922C7F154 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = acx.h;
+			path = ../subprojects/libsys4/include/system4/acx.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		0D6D4A19C4142C6800025A9F = {
+			isa = PBXBuildFile;
+			fileRef = D3EC06D38540311E30CD2A9E;
+		};
+		0DF8067C7F498880DAAC1078 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Toushin3Loader.c;
+			path = ../src/hll/Toushin3Loader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		0E86DE4ECBAC328948D8BF5D = {
+			isa = PBXBuildFile;
+			fileRef = F7EECE5EA0B9B45EE40613DD;
+		};
+		0ED055F97CAA0D68482DB417 = {
+			isa = PBXBuildFile;
+			fileRef = 6F91BEA025353CAB686E13A1;
+		};
+		0F085C060964DB9FC0C4C8E9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = kvec.h;
+			path = ../subprojects/libsys4/src/kvec.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		0F18D3EC87DC58642AB227DE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_stubs.h;
+			path = ../src/hll/pe_v14_stubs.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		0F8B3A1EC5724D1BCB85F94D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = AnteaterADVEngine.h;
+			path = ../src/hll/AnteaterADVEngine.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		0FC38FEE84B66A1FFDAC73DA = {
+			isa = PBXBuildFile;
+			fileRef = 18F32EA23D1FA5EB64111C39;
+		};
+		1039E3E96B01E125623BACA2 = {
+			isa = PBXBuildFile;
+			fileRef = 764C653C6B8A6E9A40695282;
+		};
+		10555048B2CE8052B40057DA = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = AVFoundation.framework;
+			path = System/Library/Frameworks/AVFoundation.framework;
+			sourceTree = SDKROOT;
+		};
+		10DF8E857153EB9716CD623A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = jpeg.c;
+			path = ../subprojects/libsys4/src/jpeg.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		10E6428B34C14179F0B3AF0B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = screenshot.c;
+			path = ../src/screenshot.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1160928D380AC23C348270E9 = {
+			isa = PBXBuildFile;
+			fileRef = CD43A2085E7E9139ACFBB39C;
+		};
+		1173231F823BBCC90F3D5815 = {
+			isa = PBXBuildFile;
+			fileRef = E6B2429FC2C9CC7092F3FE6A;
+		};
+		119F309A49230416516CDBA6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = alk.c;
+			path = ../subprojects/libsys4/src/alk.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		11CDD8F6A731A932A7A768A7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = png.c;
+			path = ../subprojects/libsys4/src/png.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1271017ABB5385E89B6E9228 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = cg.c;
+			path = ../subprojects/libsys4/src/cg.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		130B844746364712FA5B648A = {
+			isa = PBXBuildFile;
+			fileRef = E379EC12A80E1A8E31DB0897;
+		};
+		132172509667368445AC4BF0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = file.c;
+			path = ../subprojects/libsys4/src/file.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1355035F0CFC84468B172E17 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = CommonSystemData.c;
+			path = ../src/hll/CommonSystemData.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		13F6E49B669C631632A84556 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_DEFAULT_SOURCE,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(XS_SRC)/subprojects/libsys4/include",
+					"$(XS_SRC)/subprojects/libsys4/src",
+					"$(DERIVED_FILE_DIR)",
+					"$(XS_DEPS)/include",
+					"$(XS_DEPS)/include/webp",
+					"$(XS_DEPS)/include/libpng16",
+				);
+				PRODUCT_NAME = sys4;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		1444DA1805E2878DE13738A0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_sound_name.h;
+			path = ../src/hll/pe_v14_sound_name.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		14B1AFC24D4183DD58C67EB6 = {
+			isa = PBXGroup;
+			children = (
+				B0D9F4E8B358685D5B622741,
+				8D9B2DF23A62DF0A2BF4CA42,
+			);
+			name = libsys4;
+			sourceTree = "<group>";
+		};
+		14B55023690FE572A07B3AF8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = dungeon.c;
+			path = ../src/dungeon/dungeon.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		150296BA70F017DBD9F87A2F = {
+			isa = PBXBuildFile;
+			fileRef = 8596427766CABDCC2FCA48A1;
+		};
+		153E355D46A295BC5F3699EB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = aar.h;
+			path = ../subprojects/libsys4/include/system4/aar.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		1558B621C536C95A4874D2B8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = skybox.h;
+			path = ../include/dungeon/skybox.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		15A506391627DCBA654B1C06 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = icon.h;
+			path = ../include/icon.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		1627BCE9B19251080EB4F47E = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder;
+			name = metal;
+			path = ../shaders/metal;
+			sourceTree = SOURCE_ROOT;
+		};
+		165F6F1622969F689E989D25 = {
+			isa = PBXBuildFile;
+			fileRef = EF80E0B240B54E1E5E1C3BB8;
+		};
+		1672F62BC18A6AABAB9506B4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = sact.h;
+			path = ../include/sact.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		16793BAD38755EC611E39E93 = {
+			isa = PBXBuildFile;
+			fileRef = 70DD609E0CCE937D890F4334;
+		};
+		168C645F315196B608996A1C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = message.c;
+			path = ../src/parts/message.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		169DE2852E48234896C528CA = {
+			isa = PBXBuildFile;
+			fileRef = C7ECA2D6A191BBF2DDEB2BDC;
+		};
+		1721C15459B91BD9B9287B1B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ajp.h;
+			path = ../subprojects/libsys4/include/system4/ajp.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		177068BF4CC27C4250E75BA2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = SengokuRanceFont.c;
+			path = ../src/hll/SengokuRanceFont.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1783A90CED35F1F3CDF890CF = {
+			isa = PBXBuildFile;
+			fileRef = 3301BB2F408C0E3D520E70BF;
+		};
+		17A93BDF5AE4F88F700C5C86 = {
+			isa = PBXBuildFile;
+			fileRef = 5848B3F5F530A8A111FB954B;
+		};
+		1827A7F06190E9450EA61C61 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = dungeon.h;
+			path = ../include/dungeon/dungeon.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		1873815047920B580E5A794F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = utfsjis.c;
+			path = ../subprojects/libsys4/src/utfsjis.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		18F32EA23D1FA5EB64111C39 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = font_freetype.c;
+			path = ../src/font_freetype.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		19121DEE21AA3B1A13D34D61 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmMsgLog.c;
+			path = ../src/hll/vmMsgLog.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		19B1BB81E90EDB1A6E83DA63 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmSystem.c;
+			path = ../src/hll/vmSystem.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		19F49E80EF4810D34E4E9C59 = {
+			isa = PBXBuildFile;
+			fileRef = D152B2214541DBC3BC14E783;
+		};
+		1A0E6690ECDBE63982BB034B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ain.h;
+			path = ../subprojects/libsys4/include/system4/ain.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		1A7EC7F6C468D05C8265D07E = {
+			isa = PBXGroup;
+			children = (
+				71B522227EA10477A7D02BDE,
+				3E432FAA16FAE33121353F1F,
+				1827A7F06190E9450EA61C61,
+				ABD5CD2E5B9074D28EF88664,
+				3E50B43EB2A8ADD20B4ABA55,
+				E7D9321F5F2AC93DB0ECFA7C,
+				57E1EF0D9F8D8F58FE01F16B,
+				A0A27642472F77192BDAE982,
+				1558B621C536C95A4874D2B8,
+				BCAFE9E88DDDBA15229EDB48,
+			);
+			name = dungeon;
+			sourceTree = "<group>";
+		};
+		1AEA78A3C5169A153D3B7E32 = {
+			isa = PBXBuildFile;
+			fileRef = 0BCA27E5E08249A019AE9B2D;
+		};
+		1B7263E19A2F63E3AE8B6BB9 = {
+			isa = PBXBuildFile;
+			fileRef = 06396B917B693C71C029B78E;
+		};
+		1C480201D7AC422BC8886413 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = asset_manager.h;
+			path = ../include/asset_manager.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		1C5E9361C3B9BFAD7E87A8BD = {
+			isa = PBXBuildFile;
+			fileRef = 08FA4E28D16AA38EFCC35F49;
+		};
+		1C6DF5CEE2546B33200D26D7 = {
+			isa = PBXBuildFile;
+			fileRef = 5CB048DF1AAB72E18DF8FF62;
+		};
+		1C72A7AD55D4C75D05F8DD58 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = scrollbar.c;
+			path = ../src/parts/scrollbar.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1C86AEA722688E9BF9C39990 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = PlayMovie.c;
+			path = ../src/hll/PlayMovie.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1CE25CA6C70C96EBE308FC52 = {
+			isa = PBXBuildFile;
+			fileRef = 62D7D4187F10C94579AABE08;
+		};
+		1CF0CE9D7101BF8E19FFCBB9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = SACT2.c;
+			path = ../src/hll/SACT2.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1D0B8CE3C3D657C3FAF7291A = {
+			isa = PBXBuildFile;
+			fileRef = 3FE34DC0F0DEC8C94A594C0A;
+		};
+		1D7325F83B3EEEEBB397B245 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = string.c;
+			path = ../subprojects/libsys4/src/string.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1D863066ABE315FE3672DBFB = {
+			isa = PBXBuildFile;
+			fileRef = 9DED032B1BD15DAAC9B29DD0;
+		};
+		1ED608A31EAA3CB98C206B1F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = plugin.h;
+			path = ../include/plugin.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		1F4E2322EFD02D2FDF6057C7 = {
+			isa = PBXBuildFile;
+			fileRef = 5C18CC522E91BFC631A654D9;
+		};
+		1F6E2BEFA025CEF76023DE63 = {
+			isa = PBXBuildFile;
+			fileRef = 2A93D3F1E2505478019874CC;
+		};
+		1F9B765340EDE37D236DA75D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmDialog.c;
+			path = ../src/hll/vmDialog.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		20738ED71DB2582CBFE887EA = {
+			isa = PBXBuildFile;
+			fileRef = EE3822831F3EF45BBDD85015;
+		};
+		212169CD458C4DAE002C8070 = {
+			isa = PBXBuildFile;
+			fileRef = 5C990AD219DC93AF34F34E4C;
+		};
+		229F5266129CCA96D93D64F7 = {
+			isa = PBXBuildFile;
+			fileRef = 11CDD8F6A731A932A7A768A7;
+		};
+		233472FB307A451F7F32C427 = {
+			isa = PBXBuildFile;
+			fileRef = 1C86AEA722688E9BF9C39990;
+		};
+		2344C310F30FE016214ABDDE = {
+			isa = PBXBuildFile;
+			fileRef = 99C5FF516FD16E2DF1FD68D4;
+		};
+		23C04F03D89877A4418CAAE2 = {
+			isa = PBXBuildFile;
+			fileRef = FA43B3F37F16F29874E984C9;
+		};
+		241B631C23DC92E671E660E4 = {
+			isa = PBXBuildFile;
+			fileRef = 6FEF6D065ED98D6A7582F38F;
+		};
+		244F99BBB1E30234A8582641 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = PartsEngine.c;
+			path = ../src/hll/PartsEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		24E2B34709FE2CFDA1CA44C1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = sts_mixer.h;
+			path = ../include/sts_mixer.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		25A2FC14F0A1313926E9AE76 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = parts.h;
+			path = ../include/parts.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		25FFD5CF74F75C2AFD165EDF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = page.h;
+			path = ../include/vm/page.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		266E0F70C48C9627357E6F88 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = asset_manager.c;
+			path = ../src/asset_manager.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2688051178D18EABC7A8F234 = {
+			isa = PBXGroup;
+			children = (
+				E2B079D59DA7A3D6EE73A823,
+				01FBAC4611D0674444EB37AA,
+			);
+			name = xsystem4;
+			sourceTree = "<group>";
+		};
+		26A446EC5CB5BA0BA40366F1 = {
+			isa = PBXBuildFile;
+			fileRef = BEAEDB95292C33FF67508947;
+		};
+		26D7DDAAF124F4840DC20B5A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = id_pool.c;
+			path = ../src/id_pool.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		26D8D481963029D99D08ED10 = {
+			isa = PBXBuildFile;
+			fileRef = 287281B49EFF497A0DEF7442;
+		};
+		26FFCC786DB5A590C1257577 = {
+			isa = PBXBuildFile;
+			fileRef = F423B9FEC0904C92310D53CF;
+		};
+		287281B49EFF497A0DEF7442 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = acx.c;
+			path = ../subprojects/libsys4/src/acx.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		28DF374738020B1886F38B1D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Data.c;
+			path = ../src/hll/Data.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		292030B2AD3FB202904FD356 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = GUIEngine.c;
+			path = ../src/hll/GUIEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2928B0112AF3ED1A653C1A46 = {
+			isa = PBXBuildFile;
+			fileRef = 14B55023690FE572A07B3AF8;
+		};
+		2A3FAB4E81A7C9231EC2E87D = {
+			isa = PBXBuildFile;
+			fileRef = A790E7B153E4C2308D9FB8E6;
+		};
+		2A6228C23FC47F8AD89EE56A = {
+			isa = PBXBuildFile;
+			fileRef = 8A3C4E24AE178E7A9BFEB464;
+		};
+		2A93D3F1E2505478019874CC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = SealEngine.c;
+			path = ../src/hll/SealEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2AD36CDAF330E76C19DA87D9 = {
+			isa = PBXBuildFile;
+			fileRef = D71A01899C3119F2EFF2805A;
+		};
+		2AEEFE8E1DA05984181FC092 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = checkbox.c;
+			path = ../src/parts/checkbox.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2B36580A03E810C75862279F = {
+			isa = PBXBuildFile;
+			fileRef = E8FD639398CEA6B245A094F9;
+		};
+		2B5D150F03100C20A13C1CE8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DALKEDemo.c;
+			path = ../src/hll/DALKEDemo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2B8FC387EB3294EA121D1A42 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmDrawNumber.c;
+			path = ../src/hll/vmDrawNumber.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2B9D345E8E3ED8BBD89E5281 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = (
+					"-ffile-prefix-map=$(XS_SRC:standardizepath)/=",
+				);
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = 2;
+				USE_HEADERMAP = NO;
+				VALIDATE_PRODUCT = YES;
+				WARNING_CFLAGS = (
+					"-Wall",
+				);
+				XS_DEPS = "$(PROJECT_DIR)/../ios-deps/device";
+				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(PROJECT_DIR)/../ios-deps/sim-arm64";
+				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(PROJECT_DIR)/../ios-deps/sim-x86_64";
+				XS_SRC = "$(PROJECT_DIR)/..";
+			};
+			name = Release;
+		};
+		2BAE4F4C7DAA0FC6105B8819 = {
+			isa = PBXBuildFile;
+			fileRef = 1271017ABB5385E89B6E9228;
+		};
+		2D10438B040F5EA15EA07D47 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = LoadCG.c;
+			path = ../src/hll/LoadCG.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2EB795CAC52E03D5B4DCBCE2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = gl.h;
+			path = ../include/gfx/gl.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		2EC17D0DB68AD858950CF190 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = dcf.c;
+			path = ../subprojects/libsys4/src/dcf.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2F7AA54BA9060125540D963B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MADLoader.c;
+			path = ../src/hll/MADLoader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2FBBE76E909AD6F9056D9729 = {
+			isa = PBXBuildFile;
+			fileRef = A9E801206A1C17ABD645E295;
+		};
+		2FCC8A36F4FF61A0C67EAD92 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Confirm2.c;
+			path = ../src/hll/Confirm2.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		2FFB8D32A2F3E6340DC316DD = {
+			isa = PBXBuildFile;
+			fileRef = 9C6735609611EB7DEC973FE7;
+		};
+		31871DBAFBA7A80535F1D83C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = hashtable.h;
+			path = ../subprojects/libsys4/include/system4/hashtable.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		319C2F44C75B5DB85559ABCB = {
+			isa = PBXBuildFile;
+			fileRef = 390C34C181FA184CDA9F15AF;
+		};
+		31B304EB49014F4C55050DAF = {
+			isa = PBXBuildFile;
+			fileRef = FFDD9C761ED5F5A0CAFBF690;
+		};
+		3301BB2F408C0E3D520E70BF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Delegate.c;
+			path = ../src/hll/Delegate.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		334B3D928B1733331DF3266E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = translation.c;
+			path = ../src/translation.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		33C28F4ADE7976B5E42B8AFE = {
+			isa = PBXBuildFile;
+			fileRef = 6E69FD3F1C6B5805CFF3E486;
+		};
+		33D2066BE0A3ABD05856D2F8 = {
+			isa = PBXBuildFile;
+			fileRef = 87EE9A8B167B4FF6A7DB1B24;
+		};
+		33F166AB1F517A16B7473325 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = input.c;
+			path = ../src/parts/input.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		348B918D7BF98F78661B2632 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = vm.h;
+			path = ../include/vm.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		34B4C6330C0C7AFFD6D51B56 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AliceLogo.c;
+			path = ../src/hll/AliceLogo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		358CD412C0008EC6B3F92EDD = {
+			isa = PBXBuildFile;
+			fileRef = 691AF9B3A94F0A72D95182F7;
+		};
+		37F0A48B938BD752B30EF1F2 = {
+			isa = PBXBuildFile;
+			fileRef = 1873815047920B580E5A794F;
+		};
+		390C34C181FA184CDA9F15AF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = map.c;
+			path = ../src/dungeon/map.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		398D405286C28A7F39F4F113 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = MsgLogManager.h;
+			path = ../src/hll/MsgLogManager.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		39CF28EC3634364307B27DF9 = {
+			isa = PBXBuildFile;
+			fileRef = DC8ED1D79CB28E8E329E2F50;
+		};
+		3A0EF8213A7198632BF30B6C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmAnime.c;
+			path = ../src/hll/vmAnime.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		3A318650305A371DDB842680 = {
+			isa = PBXBuildFile;
+			fileRef = 0C97B9ED477E743C772C7A3E;
+		};
+		3B59CE63DB309B86ABF1CAA4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreHaptics.framework;
+			path = System/Library/Frameworks/CoreHaptics.framework;
+			sourceTree = SDKROOT;
+		};
+		3B9B9F4BCE7C2175F5CA7D9B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MainSurface.c;
+			path = ../src/hll/MainSurface.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		3BA809E190572036979A6C80 = {
+			isa = PBXTargetDependency;
+			target = AA8F6B68278546EE45C4176F;
+			targetProxy = E2C160559645E6C79DB23689;
+		};
+		3BB4488855127ADF9155432A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = types.h;
+			path = ../include/gfx/types.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		3C006480B2C7B5E73BD3F139 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmDalkGaiden.c;
+			path = ../src/hll/vmDalkGaiden.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		3C207ACEA2ABB2A28DFB11EE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = draw.c;
+			path = ../src/draw.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		3CCA1AF15CD54EBE68DDCF3E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = hll.h;
+			path = ../src/hll/hll.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		3D02361E9C90FD3DDAE7EB3D = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					AA8F6B68278546EE45C4176F = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					EB6844E070B7479781170E03 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = D18297B26D258363EA06EA61;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 59FA9CCB4072FFEF889DB08C;
+			productRefGroup = 01A9B9067DE6351E20F1A93E;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EB6844E070B7479781170E03,
+				AA8F6B68278546EE45C4176F,
+			);
+		};
+		3E432FAA16FAE33121353F1F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = dtx.h;
+			path = ../include/dungeon/dtx.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		3E50B43EB2A8ADD20B4ABA55 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = map.h;
+			path = ../include/dungeon/map.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		3F13AFBC1F2005A0C08AD5E1 = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Generate version.h";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/version.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "v=\"$(git -C \"$XS_SRC\" describe HEAD 2>/dev/null || echo 'unknown version')\"\nout=\"$DERIVED_FILE_DIR/version.h\"\nmkdir -p \"$DERIVED_FILE_DIR\"\nprintf '#define XSYSTEM4_VERSION \"%s\"\\n' \"$v\" > \"$out.tmp\"\ncmp -s \"$out.tmp\" \"$out\" && rm \"$out.tmp\" || mv \"$out.tmp\" \"$out\"\n";
+		};
+		3F85C104939D9FC15AA7913A = {
+			isa = PBXBuildFile;
+			fileRef = 65B25708163DC88586911BFD;
+		};
+		3FCA363A6E6AC94BEB3AD14C = {
+			isa = PBXBuildFile;
+			fileRef = 10DF8E857153EB9716CD623A;
+		};
+		3FCC3D5D9ED0B084399FDA0B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = PassRegister.c;
+			path = ../src/hll/PassRegister.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		3FE34DC0F0DEC8C94A594C0A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Float.c;
+			path = ../src/hll/Float.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		4095790498D2D108D8E31730 = {
+			isa = PBXBuildFile;
+			fileRef = 9CBE37F4D49CF6F3F752C0DD;
+		};
+		40A6056CCF045F1221212D7B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = model.c;
+			path = ../src/3d/model.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		40BA972F14B7F45C3E5EE5AD = {
+			isa = PBXBuildFile;
+			fileRef = 6E0A924DF4DF89418BC853BA;
+		};
+		4123EB58164C34C6CED82644 = {
+			isa = PBXBuildFile;
+			fileRef = C7E4336D52268AAFAC6628C6;
+		};
+		414814F6E6DBC68B424FDE8B = {
+			isa = PBXBuildFile;
+			fileRef = AE1F381426E519F5D2D675CD;
+		};
+		415C63917C381E2627D0EC1B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = heap.h;
+			path = ../include/vm/heap.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		41F4D2B14322DA455D436164 = {
+			isa = PBXBuildFile;
+			fileRef = CA9616AA6FA1A2FD4BF4D6B6;
+		};
+		4206F9EE1FC3B47DC83A1469 = {
+			isa = PBXBuildFile;
+			fileRef = 334B3D928B1733331DF3266E;
+		};
+		43283D36EC25CF9209A25349 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = reign.c;
+			path = ../src/3d/reign.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		438579DD07638E8EDF92DAEC = {
+			isa = PBXBuildFile;
+			fileRef = ADB1270C8500E363CD833F25;
+		};
+		43878021F289BA8090B81EEF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = buffer.c;
+			path = ../subprojects/libsys4/src/buffer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		4438C7D37F25B7DA4B33DCF5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MainEXFile.c;
+			path = ../src/hll/MainEXFile.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		445EF26B53C4BAA200375054 = {
+			isa = PBXBuildFile;
+			fileRef = A91B0743D24C20D1A2301BA1;
+		};
+		44FF983DA1AD00BD9603343A = {
+			isa = PBXBuildFile;
+			fileRef = AF678CB8210FC962EAFD484B;
+			settings = {
+				ATTRIBUTES = (
+					Weak,
+				);
+			};
+		};
+		4540E58A6693CB34F613DCD4 = {
+			isa = PBXBuildFile;
+			fileRef = FABF77441F24A29EE9488996;
+		};
+		456B796E01916623DCAFA279 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ajp.c;
+			path = ../subprojects/libsys4/src/ajp.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		456B869B48F4082F0EE721FB = {
+			isa = PBXGroup;
+			children = (
+				153E355D46A295BC5F3699EB,
+				0CF77899360B22B922C7F154,
+				88679C8336DDCFF91AB80DFD,
+				1A0E6690ECDBE63982BB034B,
+				1721C15459B91BD9B9287B1B,
+				08919447D0C4E1F44EED4CC3,
+				C546CCF16831764CECE8D99C,
+				B7738972B55790B736B7DB78,
+				90A73EECB81B3914096A1EBC,
+				4DC52ACE0FFD7AC4D5D54F1C,
+				AFF96A34872EE2D921150E62,
+				D426C4AA9C29846805B60FF5,
+				6E5CE7ECFC4DD7A70C9B9A92,
+				9AFA01FC612943749B275F00,
+				88EC3EBD2D048CAD75BA24DF,
+				A923EE74EE40992179D4D34E,
+				89E72C90492C9F1B77AB1C3F,
+				31871DBAFBA7A80535F1D83C,
+				7382FA5D902454BA4D5523FC,
+				6B5D389D783EEA5DE56A3091,
+				5F97009C70BDD9B139DDA853,
+				0689755516842A4D7BFA19D6,
+				4F32B069CF82A83AC738A1F5,
+				D6DB4D2E8149BA54970E3CEA,
+				75027948265EC5F40D97E2CB,
+				C7FAD6ECDA40A1957F6BACF4,
+				6B22C0327B7158AC956993A0,
+				94B51A39DE71E1E3958DEFB6,
+				0C7F97EFCC50B69FFAF0D807,
+				8CAC070A27C9F48B66B2141E,
+				C09D5F180030CCAF44759342,
+				777E1FE1DBB22A9AE08C8894,
+				57F07FC910B8714C53896D5F,
+				53E0BF44D2EB267C4043211D,
+			);
+			name = system4;
+			sourceTree = "<group>";
+		};
+		459B7B9E1857C7097CF586B8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = system4.h;
+			path = ../subprojects/libsys4/include/system4.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		4652CD0CD224D11BFDA935AB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = private.h;
+			path = ../include/gfx/private.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		46920C8699AB07B2CF76EA41 = {
+			isa = PBXBuildFile;
+			fileRef = 6DA0D5291CADB1098D3B9C99;
+		};
+		46D1AC570FD7E1305E6C9286 = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.y";
+			fileType = pattern.proxy;
+			inputFiles = (
+			);
+			isEditable = 1;
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).tab.c",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).tab.h",
+			);
+			script = "for b in \"$BISON\" /opt/homebrew/opt/bison/bin/bison /usr/local/opt/bison/bin/bison; do\n\t[ -n \"$b\" ] && [ -x \"$b\" ] && break\ndone\n[ -x \"$b\" ] || { echo \"error: bison 3 not found (brew install bison)\"; exit 1; }\n\"$b\" \"$INPUT_FILE_PATH\" --defines=\"$DERIVED_FILE_DIR/$INPUT_FILE_BASE.tab.h\" --output=\"$DERIVED_FILE_DIR/$INPUT_FILE_BASE.tab.c\"\n";
+		};
+		46EF0AFB42BEB55842413974 = {
+			isa = PBXBuildFile;
+			fileRef = 1627BCE9B19251080EB4F47E;
+		};
+		47BC6DDB8B20AD75A7B9E230 = {
+			isa = PBXBuildFile;
+			fileRef = 4C74D9B3AC86152214E93590;
+		};
+		47FAA67630FBD03FDA80444B = {
+			isa = PBXBuildFile;
+			fileRef = 43878021F289BA8090B81EEF;
+		};
+		4895EDDEC5717D02272056EE = {
+			isa = PBXBuildFile;
+			fileRef = 831FB1DCA49AA90EB3D26B5F;
+		};
+		48F371A9B1D05A1B409540A9 = {
+			isa = PBXBuildFile;
+			fileRef = 4B4AF9174141E21816CE9CE9;
+		};
+		490CB2498EA3792D034CF3F9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = debugger.h;
+			path = ../include/debugger.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		4A7C5BF0CA76510DE6A939DF = {
+			isa = PBXBuildFile;
+			fileRef = E526C5A5D1C8C7BA22F0E713;
+		};
+		4A82E1AF70BDC7609F883BF1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = FillAngle.c;
+			path = ../src/hll/FillAngle.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		4AD14FCA3D2FBC4AB8BB5B22 = {
+			isa = PBXBuildFile;
+			fileRef = 1F9B765340EDE37D236DA75D;
+		};
+		4B4AF9174141E21816CE9CE9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = resume.c;
+			path = ../src/resume.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		4B4E695FE8F7ABFF4F3AE73F = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				69418BDE00872331ABD263A1,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4B9D1C78A03229FEC7976602 = {
+			isa = PBXBuildFile;
+			fileRef = 6ED8A2686C14872D50252AA8;
+		};
+		4BCADA361BDFE5ED601A5F96 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = mt19937int.c;
+			path = ../subprojects/libsys4/src/mt19937int.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		4C74D9B3AC86152214E93590 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MenuMsg.c;
+			path = ../src/hll/MenuMsg.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		4D42C1BDB52D7B6A09E3F874 = {
+			isa = PBXBuildFile;
+			fileRef = 8ED4911FB7678C0CC3BBB986;
+		};
+		4DC52ACE0FFD7AC4D5D54F1C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = cg.h;
+			path = ../subprojects/libsys4/include/system4/cg.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		4E53F9ACA240435A576198CD = {
+			isa = PBXGroup;
+			children = (
+				7F5BB8BB13D4B0E6650557BF,
+				06396B917B693C71C029B78E,
+				5F3494D9FC77FC0BFFF04267,
+				C6CA0684B7FFDA25B41138D0,
+				34B4C6330C0C7AFFD6D51B56,
+				8DBE6C68C2674C1ABE15838A,
+				8A24AD2125DA47FDE0031A63,
+				7999010451EB0CBC26C1485D,
+				FE1B2C0FA6C9D39F0BE44395,
+				8596427766CABDCC2FCA48A1,
+				0F8B3A1EC5724D1BCB85F94D,
+				8AA05BE4DF5D526C2F3933C4,
+				C6C4F18F08966E01DAE250CE,
+				BCF9602CCEFB20BACB782493,
+				DD6D862C7F5B4E47A23BFEF9,
+				6FEF6D065ED98D6A7582F38F,
+				C87B8769B34E97385AE59F90,
+				54A4EA2B711F3F9D19B74301,
+				8ED4911FB7678C0CC3BBB986,
+				C7ECA2D6A191BBF2DDEB2BDC,
+				C4B829F3C2061363C2B1D291,
+				D5A8D876620F68983A68D678,
+				1355035F0CFC84468B172E17,
+				8C3DBB966AE351F97514DE29,
+				2FCC8A36F4FF61A0C67EAD92,
+				902AE29DEB00DAEE15F682E5,
+				F058C4C1226FB562A3D61485,
+				047597549D03DC7114B412AE,
+				CD7EAD5F417149EFA0A21262,
+				2B5D150F03100C20A13C1CE8,
+				28DF374738020B1886F38B1D,
+				7B37A8F7968B3A5A48907ED5,
+				3301BB2F408C0E3D520E70BF,
+				88C8BD40B0E1C3AFFE77B223,
+				9111E5A6C344AB546CDFBAB4,
+				B02288FE0ACA8ACD924F7BD1,
+				E9EB9F8898B1132084241464,
+				0CD49AB62D34F2767002C51C,
+				726F2E439385C50E0A4BEED8,
+				5E625E1766DD4D27AD95A013,
+				8068078BFFF2774D263FEC64,
+				B8122717205EB28AA4D74C7F,
+				7C8F7B839E7ECA1611B528B9,
+				DDACDE122693F8C1DB6C8F91,
+				C8B610A26127845A8CE4E4EC,
+				EC974BD15D4772EEAAF10B56,
+				F497BDE7F7532A6758AC2BA8,
+				E006D58F12A5D940FDD4097D,
+				53826EAEDDE243D06737CE66,
+				4A82E1AF70BDC7609F883BF1,
+				3FE34DC0F0DEC8C94A594C0A,
+				B36A2BCED105CB88A63E6464,
+				E4C9F242386326F7AF2EFE95,
+				292030B2AD3FB202904FD356,
+				77D20F6E98E2CC066F6DB8BB,
+				3CCA1AF15CD54EBE68DDCF3E,
+				BEAEDB95292C33FF67508947,
+				A98DA0B74C2CB44B9F132843,
+				A790E7B153E4C2308D9FB8E6,
+				6F3DE59013EC95A53A8A0C57,
+				AE1F381426E519F5D2D675CD,
+				F1CF9E992C6173C3793B55F8,
+				A599274D417DB0931843E49A,
+				7E0DDA4BB8A6989C0C3BF22C,
+				C7E4336D52268AAFAC6628C6,
+				F7979195266725D0447F7C2C,
+				2D10438B040F5EA15EA07D47,
+				2F7AA54BA9060125540D963B,
+				4438C7D37F25B7DA4B33DCF5,
+				3B9B9F4BCE7C2175F5CA7D9B,
+				87EE9A8B167B4FF6A7DB1B24,
+				52B849DE79155EE5F32C2068,
+				08856F2D772776C8D58460B4,
+				691AF9B3A94F0A72D95182F7,
+				E8FD639398CEA6B245A094F9,
+				4C74D9B3AC86152214E93590,
+				62D7D4187F10C94579AABE08,
+				E526C5A5D1C8C7BA22F0E713,
+				398D405286C28A7F39F4F113,
+				E919B1EE6CEAD4DD3BBFD197,
+				7E2137AC6BFEAE011CC302CD,
+				9A06146018C9352C226C8A6A,
+				51F4D92D64FE8C7F670D762A,
+				09A44987BA56F911788766C6,
+				07928CF1F0B7B92B853A976D,
+				069433672A3E564EFC5BF7C2,
+				244F99BBB1E30234A8582641,
+				3FCC3D5D9ED0B084399FDA0B,
+				71CF1B6F2272CE9EA96A2A4F,
+				E7368C1A5B50F69BC9C4BD86,
+				CBB52C921C777B2F77DEF670,
+				D0C2B5612FA145FF96F95BD7,
+				BF68314B6DBED864E999A58B,
+				C09AA28A7CABC2774B875061,
+				E15B769CC49520B01F3284AB,
+				6D3A0F313E1B208A8220661D,
+				1444DA1805E2878DE13738A0,
+				0F18D3EC87DC58642AB227DE,
+				556D9DC3AAFC6B28F9A3410D,
+				E929A34BC36CEA20DDE17E4F,
+				A2C3B2D231B46312FEDC2630,
+				1C86AEA722688E9BF9C39990,
+				76A69B12FC1058CB1E18DD7A,
+				1CF0CE9D7101BF8E19FFCBB9,
+				2A93D3F1E2505478019874CC,
+				177068BF4CC27C4250E75BA2,
+				066AE867A1ED89EADC946EE1,
+				EE3822831F3EF45BBDD85015,
+				B84F899568120DC24C6E5984,
+				6E0A924DF4DF89418BC853BA,
+				CD43A2085E7E9139ACFBB39C,
+				8A3C4E24AE178E7A9BFEB464,
+				C075643F4CF3316D0D5B6FAE,
+				E379EC12A80E1A8E31DB0897,
+				D0EAF1F829A5CDFC7C3F5F7B,
+				F64E557C4359B7D13968EBFD,
+				FA43B3F37F16F29874E984C9,
+				F1ADA8CF112211BDB32E7288,
+				0DF8067C7F498880DAAC1078,
+				69B9CF90B7EF5D1EC03AA688,
+				3A0EF8213A7198632BF30B6C,
+				D69E37ED01C72D6D04AADEDB,
+				D152B2214541DBC3BC14E783,
+				82D40AF1A6B09EBA088AEC2B,
+				9DE6AAA4B935A53D99478D68,
+				3C006480B2C7B5E73BD3F139,
+				8E2784467584D7CF93249F12,
+				1F9B765340EDE37D236DA75D,
+				6730E8ACB5B6AE0031F4927F,
+				92A66B31620E1ADA283F14DE,
+				2B8FC387EB3294EA121D1A42,
+				5CB048DF1AAB72E18DF8FF62,
+				F67050ED0B9A13FED751CDAA,
+				ADB1270C8500E363CD833F25,
+				F7EECE5EA0B9B45EE40613DD,
+				BE33A459717A20133B82704E,
+				19121DEE21AA3B1A13D34D61,
+				9B5FBAFB60A92207D3777130,
+				632C02B2AD486C4004E1456A,
+				79D35DB53DB2CCF090B85A82,
+				08FA4E28D16AA38EFCC35F49,
+				B5C0AED4E4A0474D5CED7147,
+				5200F65C801914E4F7982150,
+				19B1BB81E90EDB1A6E83DA63,
+				C55A664A48B4700C4F0D53C4,
+				65B25708163DC88586911BFD,
+			);
+			name = hll;
+			sourceTree = "<group>";
+		};
+		4F32B069CF82A83AC738A1F5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = mt19937int.h;
+			path = ../subprojects/libsys4/include/system4/mt19937int.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		5001F83D6D2F490B4747860F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = cJSON.h;
+			path = ../include/cJSON.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		508066AF205677B555216592 = {
+			isa = PBXBuildFile;
+			fileRef = C6738FDF27524FD163F22038;
+		};
+		51E738BDF9A3D01AEB78E0BC = {
+			isa = PBXBuildFile;
+			fileRef = 0747C6D6DE6D45BF94471F47;
+		};
+		51F4D92D64FE8C7F670D762A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = NewFont.c;
+			path = ../src/hll/NewFont.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		5200F65C801914E4F7982150 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = vmSurface.h;
+			path = ../src/hll/vmSurface.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		52B849DE79155EE5F32C2068 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MamanyoSDemo.c;
+			path = ../src/hll/MamanyoSDemo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		52C35F1C27E7EDFC8AD20D7F = {
+			isa = PBXBuildFile;
+			fileRef = C94F780998AC8DB6E1211CD5;
+		};
+		53506109D627B712D115D2A8 = {
+			isa = PBXBuildFile;
+			fileRef = CA40F5D317889FBBA466FDDC;
+		};
+		53826EAEDDE243D06737CE66 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = FileOperation.c;
+			path = ../src/hll/FileOperation.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		53E0BF44D2EB267C4043211D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = webp.h;
+			path = ../subprojects/libsys4/include/system4/webp.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		546C0C217480091E34530166 = {
+			isa = PBXBuildFile;
+			fileRef = 40A6056CCF045F1221212D7B;
+		};
+		54A4EA2B711F3F9D19B74301 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = CharSpriteManager.h;
+			path = ../src/hll/CharSpriteManager.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		54C80C6DA74C1C475EFD84DF = {
+			isa = PBXBuildFile;
+			fileRef = DDACDE122693F8C1DB6C8F91;
+		};
+		554032F92A19FE83AF36E448 = {
+			isa = PBXBuildFile;
+			fileRef = 69B9CF90B7EF5D1EC03AA688;
+		};
+		5540B01A81C1AB6C61F6408D = {
+			isa = PBXBuildFile;
+			fileRef = 047597549D03DC7114B412AE;
+		};
+		556D9DC3AAFC6B28F9A3410D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_upper_left.h;
+			path = ../src/hll/pe_v14_upper_left.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		556E35B79AAC57CAFF89D003 = {
+			isa = PBXBuildFile;
+			fileRef = A75C4504CBF3C179029DF751;
+		};
+		559E33C14BE7686CCF141DAD = {
+			isa = PBXBuildFile;
+			fileRef = D828F722037CD7E3868AD939;
+		};
+		55BA28FBCD816E97AD54790D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = savedata.c;
+			path = ../src/savedata.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		562755D6A01AE95961107F68 = {
+			isa = PBXBuildFile;
+			fileRef = E7368C1A5B50F69BC9C4BD86;
+		};
+		56C6F589B0F05AA637E36F8D = {
+			isa = PBXGroup;
+			children = (
+				92724372E3BA936D350CB822,
+			);
+			name = xsystem4;
+			sourceTree = "<group>";
+		};
+		56DFC8B36F69A2889ECFED72 = {
+			isa = PBXBuildFile;
+			fileRef = 4A82E1AF70BDC7609F883BF1;
+		};
+		56EE41313A3FCDB56617182C = {
+			isa = PBXBuildFile;
+			fileRef = AC879512E7EDE1F928B7102D;
+		};
+		571C056EB8352C8848F56A14 = {
+			isa = PBXBuildFile;
+			fileRef = FC6C3ECE5E823792C380E2D4;
+		};
+		57CBE05E8C7C8EC5A9063008 = {
+			isa = PBXBuildFile;
+			fileRef = AC0FEAAC55B18A9A1E8DD179;
+		};
+		57E1EF0D9F8D8F58FE01F16B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = polyobj.h;
+			path = ../include/dungeon/polyobj.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		57F07FC910B8714C53896D5F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = vector.h;
+			path = ../subprojects/libsys4/include/system4/vector.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		5835617540DC2FD2CE141D05 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = effect.c;
+			path = ../src/effect.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		5848B3F5F530A8A111FB954B = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreVideo.framework;
+			path = System/Library/Frameworks/CoreVideo.framework;
+			sourceTree = SDKROOT;
+		};
+		5888F7905384D01BB643E885 = {
+			isa = PBXBuildFile;
+			fileRef = E89A69E30276F29EAD488777;
+		};
+		59726A219382FC202D8C2A99 = {
+			isa = PBXBuildFile;
+			fileRef = 774170B16A88E9000EAC0AD7;
+		};
+		59E707E0929D85CE809844B1 = {
+			isa = PBXBuildFile;
+			fileRef = C075643F4CF3316D0D5B6FAE;
+		};
+		59FA9CCB4072FFEF889DB08C = {
+			isa = PBXGroup;
+			children = (
+				56C6F589B0F05AA637E36F8D,
+				2688051178D18EABC7A8F234,
+				14B1AFC24D4183DD58C67EB6,
+				C4E49923A572A079BC06D6BF,
+				682963F31574CA174937BF1B,
+				01A9B9067DE6351E20F1A93E,
+			);
+			sourceTree = "<group>";
+		};
+		5A05A6DAC6AF44733DB7F51D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = gl_metal.h;
+			path = ../include/gfx/gl_metal.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		5AACFE2C9C713DAA2111AE10 = {
+			isa = PBXBuildFile;
+			fileRef = 5E625E1766DD4D27AD95A013;
+		};
+		5B007A7239022E1ABF96743A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pl_mpeg.h;
+			path = ../include/pl_mpeg.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		5BE45FB19D476E60EB210FCE = {
+			isa = PBXBuildFile;
+			fileRef = EA8B187580C482823F5D5244;
+		};
+		5C18CC522E91BFC631A654D9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = OpenGLES.framework;
+			path = System/Library/Frameworks/OpenGLES.framework;
+			sourceTree = SDKROOT;
+		};
+		5C2D5B0F6D134FA8DEF3A3FC = {
+			isa = PBXBuildFile;
+			fileRef = 9111E5A6C344AB546CDFBAB4;
+		};
+		5C49393616584B87542FF791 = {
+			isa = PBXBuildFile;
+			fileRef = 177068BF4CC27C4250E75BA2;
+		};
+		5C90C1DE09642CB816493C6D = {
+			isa = PBXBuildFile;
+			fileRef = 2EC17D0DB68AD858950CF190;
+		};
+		5C990AD219DC93AF34F34E4C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = construction.c;
+			path = ../src/parts/construction.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		5CB048DF1AAB72E18DF8FF62 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmFile.c;
+			path = ../src/hll/vmFile.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		5CC32D0F98BEA4D60DC67666 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreFoundation.framework;
+			path = System/Library/Frameworks/CoreFoundation.framework;
+			sourceTree = SDKROOT;
+		};
+		5D29569E40C49ABB08B8374C = {
+			isa = PBXBuildFile;
+			fileRef = 8E2784467584D7CF93249F12;
+		};
+		5D52A5A04A77133AACAF31AF = {
+			isa = PBXBuildFile;
+			fileRef = 7BD0BAC155258BFAE68D0730;
+		};
+		5D97052C38DDF558EB2A1423 = {
+			isa = PBXBuildFile;
+			fileRef = E4C9F242386326F7AF2EFE95;
+		};
+		5E3C3C5645A43D9BB9D70AC9 = {
+			isa = PBXBuildFile;
+			fileRef = 0CE50FBE3D390886DC942D13;
+		};
+		5E625E1766DD4D27AD95A013 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawPluginManager.c;
+			path = ../src/hll/DrawPluginManager.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		5F3494D9FC77FC0BFFF04267 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ADVSYS.c;
+			path = ../src/hll/ADVSYS.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		5F35C9C3F0C7006B062AB0E3 = {
+			isa = PBXBuildFile;
+			fileRef = EC974BD15D4772EEAAF10B56;
+		};
+		5F710A12AF94AB1EC3095F87 = {
+			isa = PBXBuildFile;
+			fileRef = B84F899568120DC24C6E5984;
+		};
+		5F97009C70BDD9B139DDA853 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = jpeg.h;
+			path = ../subprojects/libsys4/include/system4/jpeg.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		5FF33225BA00C86A10A7978E = {
+			isa = PBXBuildFile;
+			fileRef = C96FD9B3626C2D89D9F0E6BD;
+		};
+		6057BB2AC7CF469E54E9F99A = {
+			isa = PBXBuildFile;
+			fileRef = 6E9107FD8F559B7DCBFA75AE;
+		};
+		61EC64148074F64719C09881 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = movie.h;
+			path = ../include/movie.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		620F44ACE629DBD0D7160EF4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = renderer.c;
+			path = ../src/3d/renderer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		625C66A072324D0BB49E2B08 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = sprite.h;
+			path = ../include/sprite.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		62D7D4187F10C94579AABE08 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MonsterInfo.c;
+			path = ../src/hll/MonsterInfo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		632C02B2AD486C4004E1456A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmSound.c;
+			path = ../src/hll/vmSound.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6587208857BC671114D7AD29 = {
+			isa = PBXBuildFile;
+			fileRef = 7C8F7B839E7ECA1611B528B9;
+		};
+		65B25708163DC88586911BFD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = VSFile.c;
+			path = ../src/hll/VSFile.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		65D20EEF91C365223F427DC8 = {
+			isa = PBXBuildFile;
+			fileRef = 2B8FC387EB3294EA121D1A42;
+		};
+		65D7004E0603CF3C8E54D295 = {
+			isa = PBXBuildFile;
+			fileRef = 71CF1B6F2272CE9EA96A2A4F;
+		};
+		66272DD00BC0AD99C773C8C7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = QuartzCore.framework;
+			path = System/Library/Frameworks/QuartzCore.framework;
+			sourceTree = SDKROOT;
+		};
+		66D8D844FFF6C426824F3630 = {
+			isa = PBXBuildFile;
+			fileRef = C09AA28A7CABC2774B875061;
+		};
+		66EE7F42CAAF56D87C5FD10B = {
+			isa = PBXBuildFile;
+			fileRef = C1C8658BB761A8E7773FB5AC;
+		};
+		6730E8ACB5B6AE0031F4927F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmDrawGauge.c;
+			path = ../src/hll/vmDrawGauge.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		682963F31574CA174937BF1B = {
+			isa = PBXGroup;
+			children = (
+				10555048B2CE8052B40057DA,
+				EF80E0B240B54E1E5E1C3BB8,
+				6FFB263C680F0F69409C0BDE,
+				91F2B73734509A73E7296CD2,
+				5CC32D0F98BEA4D60DC67666,
+				0CE50FBE3D390886DC942D13,
+				E89A69E30276F29EAD488777,
+				5848B3F5F530A8A111FB954B,
+				0BCA27E5E08249A019AE9B2D,
+				FABF77441F24A29EE9488996,
+				5C18CC522E91BFC631A654D9,
+				66272DD00BC0AD99C773C8C7,
+				CA9616AA6FA1A2FD4BF4D6B6,
+				3B59CE63DB309B86ABF1CAA4,
+				AF678CB8210FC962EAFD484B,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		687AE573EC49E8FB26B57AFB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = icon.c;
+			path = ../src/icon.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		68B605439C7494CFBFAF89E6 = {
+			isa = PBXBuildFile;
+			fileRef = 1D7325F83B3EEEEBB397B245;
+		};
+		691AF9B3A94F0A72D95182F7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MarmotModelEngine.c;
+			path = ../src/hll/MarmotModelEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		69418BDE00872331ABD263A1 = {
+			isa = PBXBuildFile;
+			fileRef = BAFF789CE4F63C111387040A;
+		};
+		69B9CF90B7EF5D1EC03AA688 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ValueEncryption.c;
+			path = ../src/hll/ValueEncryption.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6B22C0327B7158AC956993A0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = qnt.h;
+			path = ../subprojects/libsys4/include/system4/qnt.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		6B5D389D783EEA5DE56A3091 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = instructions.h;
+			path = ../subprojects/libsys4/include/system4/instructions.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		6C7F4ADA9F63908AE590BF84 = {
+			isa = PBXBuildFile;
+			fileRef = E7BBD58337225BE53271DF3A;
+		};
+		6D3A0F313E1B208A8220661D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_prelink.h;
+			path = ../src/hll/pe_v14_prelink.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		6D7C190C4643BC14250B5B9D = {
+			isa = PBXBuildFile;
+			fileRef = 91F2B73734509A73E7296CD2;
+		};
+		6DA0D5291CADB1098D3B9C99 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = dtx.c;
+			path = ../src/dungeon/dtx.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6E0A924DF4DF89418BC853BA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = StretchHelper.c;
+			path = ../src/hll/StretchHelper.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6E3AFBC24562F7ED9929730F = {
+			isa = PBXBuildFile;
+			fileRef = FE1B2C0FA6C9D39F0BE44395;
+		};
+		6E5CE7ECFC4DD7A70C9B9A92 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = dlf.h;
+			path = ../subprojects/libsys4/include/system4/dlf.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		6E69FD3F1C6B5805CFF3E486 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = sprite.c;
+			path = ../src/sprite.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6E9107FD8F559B7DCBFA75AE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = generator.c;
+			path = ../src/dungeon/generator.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6ED8A2686C14872D50252AA8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.objc;
+			name = ios.m;
+			path = ../src/ios/ios.m;
+			sourceTree = SOURCE_ROOT;
+		};
+		6EDDE2C13C2DDF58DDC326FB = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = shaders;
+			dstSubfolderSpec = 7;
+			files = (
+				46EF0AFB42BEB55842413974,
+			);
+			name = Shaders;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6F3DE59013EC95A53A8A0C57 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = iarray.h;
+			path = ../src/hll/iarray.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		6F91BEA025353CAB686E13A1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = aar.c;
+			path = ../subprojects/libsys4/src/aar.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6FEEB3CA2827F41155AD4125 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = base64.c;
+			path = ../src/base64.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6FEF6D065ED98D6A7582F38F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = CGManager.c;
+			path = ../src/hll/CGManager.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		6FFB263C680F0F69409C0BDE = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreAudio.framework;
+			path = System/Library/Frameworks/CoreAudio.framework;
+			sourceTree = SDKROOT;
+		};
+		703E5A8705C36142DCA792EE = {
+			isa = PBXBuildFile;
+			fileRef = 132172509667368445AC4BF0;
+		};
+		70DD609E0CCE937D890F4334 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = mtrand43.c;
+			path = ../src/dungeon/mtrand43.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		71B522227EA10477A7D02BDE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = dgn.h;
+			path = ../include/dungeon/dgn.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		71CF1B6F2272CE9EA96A2A4F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = PastelChime2.c;
+			path = ../src/hll/PastelChime2.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		726F2E439385C50E0A4BEED8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawNumeral.c;
+			path = ../src/hll/DrawNumeral.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		72861822A99BAA32E4414AB0 = {
+			isa = PBXBuildFile;
+			fileRef = 7B37A8F7968B3A5A48907ED5;
+		};
+		72B9D3EA03A8A50E00CDA4FA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = polyobj.c;
+			path = ../src/dungeon/polyobj.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		72C43E2024E6CC93545BBC71 = {
+			isa = PBXBuildFile;
+			fileRef = FD4AE2F82DE7615001C25D82;
+		};
+		734E7459D21BD14099562993 = {
+			isa = PBXBuildFile;
+			fileRef = 19121DEE21AA3B1A13D34D61;
+		};
+		7382FA5D902454BA4D5523FC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ini.h;
+			path = ../subprojects/libsys4/include/system4/ini.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		74B7F8E12C304E2D6B00C1BC = {
+			isa = PBXBuildFile;
+			fileRef = 3B9B9F4BCE7C2175F5CA7D9B;
+		};
+		75027948265EC5F40D97E2CB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pms.h;
+			path = ../subprojects/libsys4/include/system4/pms.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		7647ED9B082E4FFF40E2DC7D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = save.c;
+			path = ../src/parts/save.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		764C653C6B8A6E9A40695282 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = movie_plmpeg.c;
+			path = ../src/movie_plmpeg.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		76A69B12FC1058CB1E18DD7A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ReignEngine.c;
+			path = ../src/hll/ReignEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		774170B16A88E9000EAC0AD7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = tes.c;
+			path = ../src/dungeon/tes.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		774C00F49152CA7C271E6968 = {
+			isa = PBXBuildFile;
+			fileRef = FAB27513E189BD75DF82445F;
+		};
+		777E1FE1DBB22A9AE08C8894 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = utfsjis.h;
+			path = ../subprojects/libsys4/include/system4/utfsjis.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		77D20F6E98E2CC066F6DB8BB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = HashMap.c;
+			path = ../src/hll/HashMap.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		785347C5C13D7F6CBE947A5D = {
+			isa = PBXBuildFile;
+			fileRef = 7E0DDA4BB8A6989C0C3BF22C;
+		};
+		7862A9F9BA0C217F6A7BD1F5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = skybox.c;
+			path = ../src/dungeon/skybox.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		790E887C1B68E1CB024285B6 = {
+			isa = PBXBuildFile;
+			fileRef = 9A06146018C9352C226C8A6A;
+		};
+		7999010451EB0CBC26C1485D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AliceLogo4.c;
+			path = ../src/hll/AliceLogo4.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		79D35DB53DB2CCF090B85A82 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmSprite.c;
+			path = ../src/hll/vmSprite.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		79D86D1914AA11EF41EA7DCC = {
+			isa = PBXBuildFile;
+			fileRef = C87B8769B34E97385AE59F90;
+		};
+		7A4B4F2B9F42049DC33420E6 = {
+			isa = PBXBuildFile;
+			fileRef = 2F7AA54BA9060125540D963B;
+		};
+		7AE7CED5BDDB4E06A2E6C933 = {
+			isa = PBXBuildFile;
+			fileRef = E919B1EE6CEAD4DD3BBFD197;
+		};
+		7B37A8F7968B3A5A48907ED5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DataFile.c;
+			path = ../src/hll/DataFile.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7B924FC596D21320F7820397 = {
+			isa = PBXBuildFile;
+			fileRef = 8DBE6C68C2674C1ABE15838A;
+		};
+		7BD0BAC155258BFAE68D0730 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = page.c;
+			path = ../src/page.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7C6FB3C60730C09E3D7B7C75 = {
+			isa = PBXBuildFile;
+			fileRef = 6FFB263C680F0F69409C0BDE;
+		};
+		7C8F7B839E7ECA1611B528B9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawSimpleText.c;
+			path = ../src/hll/DrawSimpleText.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7CA0B6F68EAE62F99694E447 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = scene.h;
+			path = ../include/scene.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		7CF1CE520D7C5105CCED5859 = {
+			isa = PBXBuildFile;
+			fileRef = F7979195266725D0447F7C2C;
+		};
+		7D01DEF4AE25EB0E35C8EE75 = {
+			isa = PBXBuildFile;
+			fileRef = BDBF628BE23C81383B8C0394;
+		};
+		7D45AD9946C0E0134CB7DE9B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = pcf.c;
+			path = ../subprojects/libsys4/src/pcf.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7D86B33DAE8FCBF4BC1E0F26 = {
+			isa = PBXBuildFile;
+			fileRef = F64E557C4359B7D13968EBFD;
+		};
+		7DF650FDB1D740FBC6B71D2B = {
+			isa = PBXBuildFile;
+			fileRef = B7535CAFA094BAB75566E2B1;
+		};
+		7E0DDA4BB8A6989C0C3BF22C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = InstallInfo.c;
+			path = ../src/hll/InstallInfo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7E2137AC6BFEAE011CC302CD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MsgSkip.c;
+			path = ../src/hll/MsgSkip.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7E9450579EC9362526A5A1D7 = {
+			isa = PBXBuildFile;
+			fileRef = 4BCADA361BDFE5ED601A5F96;
+		};
+		7F08FEF6D2B2FF135517F57C = {
+			isa = PBXBuildFile;
+			fileRef = 8AA05BE4DF5D526C2F3933C4;
+		};
+		7F2DB8CBC55CA2CCEDE62B5F = {
+			isa = PBXBuildFile;
+			fileRef = B5C0AED4E4A0474D5CED7147;
+		};
+		7F5BB8BB13D4B0E6650557BF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ACXLoader.c;
+			path = ../src/hll/ACXLoader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		7FA163CA3148FD17753E9E9C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = 3d_internal.h;
+			path = ../src/3d/3d_internal.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		7FDE5CCACC0C18F86B163D73 = {
+			isa = PBXBuildFile;
+			fileRef = 3C207ACEA2ABB2A28DFB11EE;
+		};
+		8068078BFFF2774D263FEC64 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawRain.c;
+			path = ../src/hll/DrawRain.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		81072621CBFFF75A1EB482FE = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0ED055F97CAA0D68482DB417,
+				26D8D481963029D99D08ED10,
+				2FBBE76E909AD6F9056D9729,
+				2AD36CDAF330E76C19DA87D9,
+				EF5C288182CF79D6C7680E54,
+				E37588FEA5E8E08AE9BAF7C0,
+				53506109D627B712D115D2A8,
+				9C3A0E787620EDEC54133510,
+				A84B4163F1B2FB16A11EA7A2,
+				47FAA67630FBD03FDA80444B,
+				2BAE4F4C7DAA0FC6105B8819,
+				C9363CA59167CB8C2DB97F59,
+				5C90C1DE09642CB816493C6D,
+				4895EDDEC5717D02272056EE,
+				8C5AA2FDD42746D99B82229A,
+				703E5A8705C36142DCA792EE,
+				7DF650FDB1D740FBC6B71D2B,
+				9309CFECA458AB47678F9985,
+				F8F7B39FE435B7E4486C1580,
+				DEEA4394865EE2E12A471F4B,
+				4095790498D2D108D8E31730,
+				3FCA363A6E6AC94BEB3AD14C,
+				7E9450579EC9362526A5A1D7,
+				AD1B2516105C89CBFCB24C73,
+				96FC3571F27F66C4E9C0184F,
+				229F5266129CCA96D93D64F7,
+				A75F895EB9126B8941912721,
+				51E738BDF9A3D01AEB78E0BC,
+				31B304EB49014F4C55050DAF,
+				68B605439C7494CFBFAF89E6,
+				F8D00DF30A0F2EFFF850DF58,
+				37F0A48B938BD752B30EF1F2,
+				E8C2D1F647D9C54C2718E967,
+				BD3D6F9898B6A7D546F4C43C,
+				8151F789D3B730A98F39547D,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8151F789D3B730A98F39547D = {
+			isa = PBXBuildFile;
+			fileRef = 9B36D9BB4BE7050F9D93C957;
+		};
+		82047D1174ECE6C39CCE3A8C = {
+			isa = PBXBuildFile;
+			fileRef = BE09DBB059ACB93ADC32CDC8;
+		};
+		82D40AF1A6B09EBA088AEC2B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmChrLoader.c;
+			path = ../src/hll/vmChrLoader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		82F2B20814796FAF10B394EE = {
+			isa = PBXBuildFile;
+			fileRef = 9B5FBAFB60A92207D3777130;
+		};
+		831FB1DCA49AA90EB3D26B5F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = dlf.c;
+			path = ../subprojects/libsys4/src/dlf.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		83267344628E60B758343A3D = {
+			isa = PBXBuildFile;
+			fileRef = C55A664A48B4700C4F0D53C4;
+		};
+		83B9A020DE5B3C0DF65BD346 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = id_pool.h;
+			path = ../include/id_pool.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		8596427766CABDCC2FCA48A1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AnteaterADVEngine.c;
+			path = ../src/hll/AnteaterADVEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		85E26A100D66868E3A72A24A = {
+			isa = PBXBuildFile;
+			fileRef = 53826EAEDDE243D06737CE66;
+		};
+		875F787F235BC28BA730644B = {
+			isa = PBXBuildFile;
+			fileRef = 72B9D3EA03A8A50E00CDA4FA;
+		};
+		8768547546DE4059EBA5A492 = {
+			isa = PBXBuildFile;
+			fileRef = 5CC32D0F98BEA4D60DC67666;
+		};
+		87EE9A8B167B4FF6A7DB1B24 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MamanyoDemo.c;
+			path = ../src/hll/MamanyoDemo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		88679C8336DDCFF91AB80DFD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = afa.h;
+			path = ../subprojects/libsys4/include/system4/afa.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		88C8BD40B0E1C3AFFE77B223 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Discord.c;
+			path = ../src/hll/Discord.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		88EC3EBD2D048CAD75BA24DF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = file.h;
+			path = ../subprojects/libsys4/include/system4/file.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		89E72C90492C9F1B77AB1C3F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = fnl.h;
+			path = ../subprojects/libsys4/include/system4/fnl.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		8A24AD2125DA47FDE0031A63 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AliceLogo3.c;
+			path = ../src/hll/AliceLogo3.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8A3C4E24AE178E7A9BFEB464 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Sys43VM.c;
+			path = ../src/hll/Sys43VM.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8A898E8F6AF3432F1F0DF244 = {
+			isa = PBXBuildFile;
+			fileRef = A599274D417DB0931843E49A;
+		};
+		8AA05BE4DF5D526C2F3933C4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Array.c;
+			path = ../src/hll/Array.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8C3DBB966AE351F97514DE29 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Confirm.c;
+			path = ../src/hll/Confirm.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8C5AA2FDD42746D99B82229A = {
+			isa = PBXBuildFile;
+			fileRef = FF9B2727AF11D3F9158CE14A;
+		};
+		8C8B34FEAB8FC7E8AF4746E7 = {
+			isa = PBXBuildFile;
+			fileRef = 04898F630720D8C7818D08CE;
+		};
+		8CAC070A27C9F48B66B2141E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = savefile.h;
+			path = ../subprojects/libsys4/include/system4/savefile.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		8D3653B147E815932266202D = {
+			isa = PBXBuildFile;
+			fileRef = 0CD49AB62D34F2767002C51C;
+		};
+		8D9B2DF23A62DF0A2BF4CA42 = {
+			isa = PBXGroup;
+			children = (
+				6F91BEA025353CAB686E13A1,
+				287281B49EFF497A0DEF7442,
+				A9E801206A1C17ABD645E295,
+				D71A01899C3119F2EFF2805A,
+				B377FA0F0EB7F79EBC7DEC4D,
+				456B796E01916623DCAFA279,
+				CA40F5D317889FBBA466FDDC,
+				119F309A49230416516CDBA6,
+				A20C8B102E84D199DE906864,
+				43878021F289BA8090B81EEF,
+				1271017ABB5385E89B6E9228,
+				E180E85B62A2D9D2E8ED14C0,
+				2EC17D0DB68AD858950CF190,
+				831FB1DCA49AA90EB3D26B5F,
+				FF9B2727AF11D3F9158CE14A,
+				132172509667368445AC4BF0,
+				B7535CAFA094BAB75566E2B1,
+				EBEB19879A7737A06C1478C5,
+				C989FAB5933D12C11454E120,
+				9B47A555B96E65C8DF7644EB,
+				D26303DF9DD4A4F0B9B3382A,
+				9B36D9BB4BE7050F9D93C957,
+				9CBE37F4D49CF6F3F752C0DD,
+				10DF8E857153EB9716CD623A,
+				0F085C060964DB9FC0C4C8E9,
+				EBE7A4E332C3CA07BD63C697,
+				4BCADA361BDFE5ED601A5F96,
+				7D45AD9946C0E0134CB7DE9B,
+				F4CF96EC03E68ECF91608071,
+				11CDD8F6A731A932A7A768A7,
+				96F59BAC1DC42D856CA3CD1A,
+				0747C6D6DE6D45BF94471F47,
+				FFDD9C761ED5F5A0CAFBF690,
+				1D7325F83B3EEEEBB397B245,
+				0C6A03744EE242610D0AF806,
+				1873815047920B580E5A794F,
+				C87328B29D95B0E799D98263,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		8DBE6C68C2674C1ABE15838A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AliceLogo2.c;
+			path = ../src/hll/AliceLogo2.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8E2784467584D7CF93249F12 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmData.c;
+			path = ../src/hll/vmData.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8ECA80DA90CD501BEF8A3025 = {
+			isa = PBXBuildFile;
+			fileRef = 1CF0CE9D7101BF8E19FFCBB9;
+		};
+		8ED4911FB7678C0CC3BBB986 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ChipmunkSpriteEngine.c;
+			path = ../src/hll/ChipmunkSpriteEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8FD6069171B608EFAEEB2B20 = {
+			isa = PBXBuildFile;
+			fileRef = 1C72A7AD55D4C75D05F8DD58;
+		};
+		8FEF0C6515FA0E9AAC1B49C6 = {
+			isa = PBXGroup;
+			children = (
+				E6B2429FC2C9CC7092F3FE6A,
+			);
+			name = metal;
+			sourceTree = "<group>";
+		};
+		902AE29DEB00DAEE15F682E5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Confirm3.c;
+			path = ../src/hll/Confirm3.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		90A73EECB81B3914096A1EBC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = buffer.h;
+			path = ../subprojects/libsys4/include/system4/buffer.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		9111E5A6C344AB546CDFBAB4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawDungeon.c;
+			path = ../src/hll/DrawDungeon.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		91F2B73734509A73E7296CD2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreBluetooth.framework;
+			path = System/Library/Frameworks/CoreBluetooth.framework;
+			sourceTree = SDKROOT;
+		};
+		92724372E3BA936D350CB822 = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist.xml;
+			name = Info.plist;
+			path = xsystem4/Info.plist;
+			sourceTree = SOURCE_ROOT;
+		};
+		92A66B31620E1ADA283F14DE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmDrawMsg.c;
+			path = ../src/hll/vmDrawMsg.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9309CFECA458AB47678F9985 = {
+			isa = PBXBuildFile;
+			fileRef = EBEB19879A7737A06C1478C5;
+		};
+		936940D7F4A4BBB8BBC182D7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = flat.c;
+			path = ../src/parts/flat.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		94B51A39DE71E1E3958DEFB6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = rou.h;
+			path = ../subprojects/libsys4/include/system4/rou.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		96F59BAC1DC42D856CA3CD1A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = qnt.c;
+			path = ../subprojects/libsys4/src/qnt.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		96FC3571F27F66C4E9C0184F = {
+			isa = PBXBuildFile;
+			fileRef = F4CF96EC03E68ECF91608071;
+		};
+		99C5FF516FD16E2DF1FD68D4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = format.c;
+			path = ../src/format.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9A06146018C9352C226C8A6A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MusicSystem.c;
+			path = ../src/hll/MusicSystem.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9AFA01FC612943749B275F00 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ex.h;
+			path = ../subprojects/libsys4/include/system4/ex.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		9B353D2516472D208BA1FC25 = {
+			isa = PBXBuildFile;
+			fileRef = 52B849DE79155EE5F32C2068;
+		};
+		9B36D9BB4BE7050F9D93C957 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.yacc;
+			name = ini_parser.y;
+			path = ../subprojects/libsys4/src/ini_parser.y;
+			sourceTree = SOURCE_ROOT;
+		};
+		9B47A555B96E65C8DF7644EB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ini.c;
+			path = ../subprojects/libsys4/src/ini.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9B5FBAFB60A92207D3777130 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmMusic.c;
+			path = ../src/hll/vmMusic.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9C3A0E787620EDEC54133510 = {
+			isa = PBXBuildFile;
+			fileRef = 119F309A49230416516CDBA6;
+		};
+		9C4A93ADD6BAE53CB821CAE8 = {
+			isa = PBXBuildFile;
+			fileRef = 5835617540DC2FD2CE141D05;
+		};
+		9C6735609611EB7DEC973FE7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = renderer.c;
+			path = ../src/dungeon/renderer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9C78BBD5ACCE3198DD76D895 = {
+			isa = PBXBuildFile;
+			fileRef = A16258689020C200D847F798;
+		};
+		9C820CAB6423D8A74CAE175E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ios.h;
+			path = ../src/ios/ios.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		9CBE37F4D49CF6F3F752C0DD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = instructions.c;
+			path = ../subprojects/libsys4/src/instructions.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9CF420A10E32AB96369E42BC = {
+			isa = PBXBuildFile;
+			fileRef = 936940D7F4A4BBB8BBC182D7;
+		};
+		9DE6AAA4B935A53D99478D68 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmCursor.c;
+			path = ../src/hll/vmCursor.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9DED032B1BD15DAAC9B29DD0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = parts.c;
+			path = ../src/parts/parts.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		9EA5A15ACBA9C387FB37F70D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = debug.c;
+			path = ../src/parts/debug.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A0A27642472F77192BDAE982 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = renderer.h;
+			path = ../include/dungeon/renderer.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		A10A9AEED341B8D84CDC9885 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = video.c;
+			path = ../src/video.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A16258689020C200D847F798 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = heap.c;
+			path = ../src/heap.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A20C8B102E84D199DE906864 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = archive.c;
+			path = ../subprojects/libsys4/src/archive.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A22217B47A83DF5CBD2B0FA6 = {
+			isa = PBXBuildFile;
+			fileRef = C825B5C335885602C727C286;
+		};
+		A2957FE13D87A9226971CEA7 = {
+			isa = PBXBuildFile;
+			fileRef = 3C006480B2C7B5E73BD3F139;
+		};
+		A2C101C03C35C250FE2DC5B4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = reign.h;
+			path = ../include/reign.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		A2C3B2D231B46312FEDC2630 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = PlayDemo.c;
+			path = ../src/hll/PlayDemo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A2E5EA3A85035CE1BB81D1E9 = {
+			isa = PBXBuildFile;
+			fileRef = 292030B2AD3FB202904FD356;
+		};
+		A3BD5EC63E59032525301DBD = {
+			isa = PBXBuildFile;
+			fileRef = 8068078BFFF2774D263FEC64;
+		};
+		A4190FB5CEFA99AE243035A4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = savedata.h;
+			path = ../include/savedata.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		A486B8AD6AA525383A8868E1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = mixer.h;
+			path = ../include/mixer.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		A4A16BE684D5A11F371B9B69 = {
+			isa = PBXBuildFile;
+			fileRef = 632C02B2AD486C4004E1456A;
+		};
+		A599274D417DB0931843E49A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = InputString.c;
+			path = ../src/hll/InputString.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A5B458466E2F9BC34F93ABD1 = {
+			isa = PBXBuildFile;
+			fileRef = 6730E8ACB5B6AE0031F4927F;
+		};
+		A75C4504CBF3C179029DF751 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = message_window.c;
+			path = ../src/parts/message_window.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A75F895EB9126B8941912721 = {
+			isa = PBXBuildFile;
+			fileRef = 96F59BAC1DC42D856CA3CD1A;
+		};
+		A77EAB4C7A9BF92699260FD0 = {
+			isa = PBXBuildFile;
+			fileRef = 2AEEFE8E1DA05984181FC092;
+		};
+		A790E7B153E4C2308D9FB8E6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = iarray.c;
+			path = ../src/hll/iarray.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A84B4163F1B2FB16A11EA7A2 = {
+			isa = PBXBuildFile;
+			fileRef = A20C8B102E84D199DE906864;
+		};
+		A859AFAB83C02C097DEAAABD = {
+			isa = PBXBuildFile;
+			fileRef = 029AB9C18980C6A65EA0E24E;
+		};
+		A8AE9E3297F438ECFAF7E44E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = parts_internal.h;
+			path = ../src/parts/parts_internal.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		A8AEDB28A95187FB2B987AF8 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_DEFAULT_SOURCE,
+					_REENTRANT,
+					XSYS4_IOS,
+					USE_METAL,
+					"XSYS4_DEV_HOOKS=0",
+					"XSYS4_DATA_DIR=\\\"/usr/local/share/xsystem4\\\"",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(DERIVED_FILE_DIR)",
+					"$(XS_SRC)/src",
+					"$(XS_SRC)/include",
+					"$(XS_SRC)/subprojects/libsys4/include",
+					"$(XS_DEPS)/include",
+					"$(XS_DEPS)/include/SDL2",
+					"$(XS_DEPS)/include/freetype2",
+					"$(XS_DEPS)/include/opus",
+				);
+				INFOPLIST_FILE = xsystem4/Info.plist;
+				LIBRARY_SEARCH_PATHS = (
+					"$(XS_DEPS)/lib",
+				);
+				MARKETING_VERSION = 5;
+				OTHER_LDFLAGS = (
+					"-Wl,-stack_size,0x20000000",
+					"-lSDL2",
+					"-lSDL2main",
+					"-lfreetype",
+					"-lffi",
+					"-lcglm",
+					"-lsndfile",
+					"-lFLAC",
+					"-lvorbisenc",
+					"-lvorbis",
+					"-logg",
+					"-lopus",
+					"-lturbojpeg",
+					"-lwebp",
+					"-lsharpyuv",
+					"-lpng16",
+					"-liconv",
+					"-lz",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.xsystem4.xsystem4;
+				PRODUCT_NAME = xsystem4;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wno-unused-parameter",
+				);
+			};
+			name = Release;
+		};
+		A8DC8B5567BC65C96903C1A4 = {
+			isa = PBXBuildFile;
+			fileRef = B8122717205EB28AA4D74C7F;
+		};
+		A91B0743D24C20D1A2301BA1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = debug.c;
+			path = ../src/3d/debug.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A923EE74EE40992179D4D34E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = flat.h;
+			path = ../subprojects/libsys4/include/system4/flat.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		A94694D2C590F803814BE8E7 = {
+			isa = PBXBuildFile;
+			fileRef = 55BA28FBCD816E97AD54790D;
+		};
+		A98DA0B74C2CB44B9F132843 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = HTTPDownloader.c;
+			path = ../src/hll/HTTPDownloader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A9C82CF1D5A82D9DC7ABFAAE = {
+			isa = PBXBuildFile;
+			fileRef = 66272DD00BC0AD99C773C8C7;
+		};
+		A9E801206A1C17ABD645E295 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = afa.c;
+			path = ../subprojects/libsys4/src/afa.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AA06008B25C883669DA8E6AA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = hacks.c;
+			path = ../src/hacks.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AA583076D10F6D8076077CE8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = cJSON.c;
+			path = ../src/cJSON.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AA8F6B68278546EE45C4176F = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E298E28A2E3D9A6C72A45FA3;
+			buildPhases = (
+				81072621CBFFF75A1EB482FE,
+			);
+			buildRules = (
+				46D1AC570FD7E1305E6C9286,
+				DA305E84DB2D32B26CDAE771,
+			);
+			dependencies = (
+			);
+			name = sys4;
+			productName = sys4;
+			productReference = B39B8D63F242DAD59587808A;
+			productType = "com.apple.product-type.library.static";
+		};
+		AAB5D12EA265E80BBF98B30E = {
+			isa = PBXBuildFile;
+			fileRef = 7647ED9B082E4FFF40E2DC7D;
+		};
+		AAEE6A45102D57B4D71AC01C = {
+			isa = PBXBuildFile;
+			fileRef = 7862A9F9BA0C217F6A7BD1F5;
+		};
+		AB0375AB7C0E8678E4E68801 = {
+			isa = PBXBuildFile;
+			fileRef = 34B4C6330C0C7AFFD6D51B56;
+		};
+		AB8768DC6ACDD8E41E9D08D4 = {
+			isa = PBXBuildFile;
+			fileRef = B39B8D63F242DAD59587808A;
+		};
+		ABD5CD2E5B9074D28EF88664 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = generator.h;
+			path = ../include/dungeon/generator.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		AC0FEAAC55B18A9A1E8DD179 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = thumbnail.c;
+			path = ../src/parts/thumbnail.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AC4E4A80040FAA515FAECC37 = {
+			isa = PBXBuildFile;
+			fileRef = AA583076D10F6D8076077CE8;
+		};
+		AC879512E7EDE1F928B7102D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = audio_meta.c;
+			path = ../src/audio_meta.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AD1B2516105C89CBFCB24C73 = {
+			isa = PBXBuildFile;
+			fileRef = 7D45AD9946C0E0134CB7DE9B;
+		};
+		ADB1270C8500E363CD833F25 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmGraphQuake.c;
+			path = ../src/hll/vmGraphQuake.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AE1F381426E519F5D2D675CD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = IbisInputEngine.c;
+			path = ../src/hll/IbisInputEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		AEA060F3B4E23012CB816C5D = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F120D5272B4FEA09F232B563,
+				A8AEDB28A95187FB2B987AF8,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AF678CB8210FC962EAFD484B = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = GameController.framework;
+			path = System/Library/Frameworks/GameController.framework;
+			sourceTree = SDKROOT;
+		};
+		AFF96A34872EE2D921150E62 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = dasm.h;
+			path = ../subprojects/libsys4/include/system4/dasm.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		B02288FE0ACA8ACD924F7BD1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawEffect.c;
+			path = ../src/hll/DrawEffect.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B08600F54BEB23BE42B11FF0 = {
+			isa = PBXBuildFile;
+			fileRef = A10A9AEED341B8D84CDC9885;
+		};
+		B0D9F4E8B358685D5B622741 = {
+			isa = PBXGroup;
+			children = (
+				456B869B48F4082F0EE721FB,
+				459B7B9E1857C7097CF586B8,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		B0F61E4ABCAFC47131FF8B50 = {
+			isa = PBXBuildFile;
+			fileRef = 011E9E94C6568F3043195D40;
+		};
+		B16CB92702E3C0B64D6CFFFD = {
+			isa = PBXBuildFile;
+			fileRef = 2D10438B040F5EA15EA07D47;
+		};
+		B1964232429CD2338610FFDE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = effect.h;
+			path = ../include/effect.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		B22143A34B46DE43CC5ECD89 = {
+			isa = PBXBuildFile;
+			fileRef = 43283D36EC25CF9209A25349;
+		};
+		B2749419A1C35005E96CF5F9 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BDA3D6EF9A1071E5B2E29E47,
+				445EF26B53C4BAA200375054,
+				546C0C217480091E34530166,
+				66EE7F42CAAF56D87C5FD10B,
+				F84F8F117422D0530705F11A,
+				5FF33225BA00C86A10A7978E,
+				B22143A34B46DE43CC5ECD89,
+				D8B39781D12AA22830E46C04,
+				F944E855648DD6428758E284,
+				5BE45FB19D476E60EB210FCE,
+				BB1B916D51B44E06752AC0B6,
+				A22217B47A83DF5CBD2B0FA6,
+				56EE41313A3FCDB56617182C,
+				559E33C14BE7686CCF141DAD,
+				BC0BC954C23CF059D9C818E9,
+				AC4E4A80040FAA515FAECC37,
+				7FDE5CCACC0C18F86B163D73,
+				A859AFAB83C02C097DEAAABD,
+				46920C8699AB07B2CF76EA41,
+				2928B0112AF3ED1A653C1A46,
+				6057BB2AC7CF469E54E9F99A,
+				319C2F44C75B5DB85559ABCB,
+				16793BAD38755EC611E39E93,
+				875F787F235BC28BA730644B,
+				2FFB8D32A2F3E6340DC316DD,
+				AAEE6A45102D57B4D71AC01C,
+				59726A219382FC202D8C2A99,
+				9C4A93ADD6BAE53CB821CAE8,
+				0D6D4A19C4142C6800025A9F,
+				C4DF5DA1A0439626188E9293,
+				0FC38FEE84B66A1FFDAC73DA,
+				2344C310F30FE016214ABDDE,
+				6C7F4ADA9F63908AE590BF84,
+				F73D5B5D9AE0A0221656F278,
+				9C78BBD5ACCE3198DD76D895,
+				CE98731FCB1EF1B69C2887A6,
+				1B7263E19A2F63E3AE8B6BB9,
+				E0DEEC1957DD96EBED5B5A50,
+				016D4AE8E07A955ABCB1E167,
+				AB0375AB7C0E8678E4E68801,
+				7B924FC596D21320F7820397,
+				EC23D11E22B2B7F3985B3C52,
+				0C8DDB6AE468CB0381D5DF04,
+				6E3AFBC24562F7ED9929730F,
+				150296BA70F017DBD9F87A2F,
+				7F08FEF6D2B2FF135517F57C,
+				0C3EC4D4E54DFBC80014AB50,
+				DE163A76280705A89FD7C9A8,
+				241B631C23DC92E671E660E4,
+				FE7316DCF0C17F22E8296833,
+				79D86D1914AA11EF41EA7DCC,
+				4D42C1BDB52D7B6A09E3F874,
+				169DE2852E48234896C528CA,
+				EE133947986B22F4366571E0,
+				B79A8F5BC5B3478A2C3FE8DF,
+				DAB91932F6545CD7EC8F9A51,
+				B44C5932048557927926C4B6,
+				ED0749AF147C749FEC821BBE,
+				B99342F78F737BA10929A273,
+				5540B01A81C1AB6C61F6408D,
+				EAD14586D89E41BE917E9998,
+				BABE0B22949ECDC8D2FED7DF,
+				C42B9D2374BAE7BB7FC9014B,
+				72861822A99BAA32E4414AB0,
+				1783A90CED35F1F3CDF890CF,
+				BC7AA286BA08CC7571875DD1,
+				5C2D5B0F6D134FA8DEF3A3FC,
+				C189B739EFD0945348F01731,
+				DB4685A69C0E88AAC0FD5186,
+				8D3653B147E815932266202D,
+				EF9125588914B2EDC1CBF691,
+				5AACFE2C9C713DAA2111AE10,
+				A3BD5EC63E59032525301DBD,
+				A8DC8B5567BC65C96903C1A4,
+				6587208857BC671114D7AD29,
+				54C80C6DA74C1C475EFD84DF,
+				E6769A86148FB3205E8B0C20,
+				5F35C9C3F0C7006B062AB0E3,
+				E85AEB6F2430373384D1B6C9,
+				D933FEE81C18834B9AFDD172,
+				85E26A100D66868E3A72A24A,
+				56DFC8B36F69A2889ECFED72,
+				1D0B8CE3C3D657C3FAF7291A,
+				A2E5EA3A85035CE1BB81D1E9,
+				092A00A37D7A53189B285189,
+				5D97052C38DDF558EB2A1423,
+				E6CA3647F570BEBF6CA20DA0,
+				B818B4CC8A128A3B6C7F25A1,
+				414814F6E6DBC68B424FDE8B,
+				BD2FF75DD9C7C1E35C8F95EF,
+				8A898E8F6AF3432F1F0DF244,
+				785347C5C13D7F6CBE947A5D,
+				4123EB58164C34C6CED82644,
+				7CF1CE520D7C5105CCED5859,
+				B16CB92702E3C0B64D6CFFFD,
+				7A4B4F2B9F42049DC33420E6,
+				BC2388BFE0A52B4F16363278,
+				74B7F8E12C304E2D6B00C1BC,
+				33D2066BE0A3ABD05856D2F8,
+				9B353D2516472D208BA1FC25,
+				FE96277BA853F96336F018E1,
+				358CD412C0008EC6B3F92EDD,
+				2B36580A03E810C75862279F,
+				47BC6DDB8B20AD75A7B9E230,
+				1CE25CA6C70C96EBE308FC52,
+				4A7C5BF0CA76510DE6A939DF,
+				7AE7CED5BDDB4E06A2E6C933,
+				C950E0AAADE38E764C1EF013,
+				790E887C1B68E1CB024285B6,
+				CE72F28AE0127E31FAEAF2F3,
+				CB550961D748A3B6D40AF3DA,
+				EB7049DA3CC09A2049FB68C6,
+				C994095D2700F4343330E90D,
+				DCEC302E008112DD320354EB,
+				F1793FA1411077D502A3F0EE,
+				65D7004E0603CF3C8E54D295,
+				FD223B5E3C0EBC24210E9A33,
+				B6784A91C912F088A8A54CDC,
+				233472FB307A451F7F32C427,
+				0C4A8885F7329D67427D6476,
+				8ECA80DA90CD501BEF8A3025,
+				1F6E2BEFA025CEF76023DE63,
+				5C49393616584B87542FF791,
+				D311EFAD16912BAC43A81869,
+				20738ED71DB2582CBFE887EA,
+				5F710A12AF94AB1EC3095F87,
+				40BA972F14B7F45C3E5EE5AD,
+				1160928D380AC23C348270E9,
+				2A6228C23FC47F8AD89EE56A,
+				130B844746364712FA5B648A,
+				E9EF33E0C6EB6F4952526EE1,
+				7D86B33DAE8FCBF4BC1E0F26,
+				23C04F03D89877A4418CAAE2,
+				D8FF681A4BF2D63F41578CCE,
+				E3B3D5C717E256DA32A00CB5,
+				3F85C104939D9FC15AA7913A,
+				554032F92A19FE83AF36E448,
+				26A446EC5CB5BA0BA40366F1,
+				2A3FAB4E81A7C9231EC2E87D,
+				562755D6A01AE95961107F68,
+				66D8D844FFF6C426824F3630,
+				59E707E0929D85CE809844B1,
+				EEF749FA59BD71BE6095E714,
+				DBD7275E5FFBF612D1FF119E,
+				19F49E80EF4810D34E4E9C59,
+				C8D7B759FBE9F2F24E2CBE0F,
+				E568AF1919CB75A41937BCBE,
+				A2957FE13D87A9226971CEA7,
+				5D29569E40C49ABB08B8374C,
+				4AD14FCA3D2FBC4AB8BB5B22,
+				A5B458466E2F9BC34F93ABD1,
+				ED5C22A09BAE343A764ADCE5,
+				65D20EEF91C365223F427DC8,
+				1C6DF5CEE2546B33200D26D7,
+				CAFC5087B71E9B918D81AFE7,
+				438579DD07638E8EDF92DAEC,
+				0E86DE4ECBAC328948D8BF5D,
+				CB3ED064827DF49C48D969C6,
+				734E7459D21BD14099562993,
+				82F2B20814796FAF10B394EE,
+				A4A16BE684D5A11F371B9B69,
+				C143EBC8F7B937697F8409AE,
+				1C5E9361C3B9BFAD7E87A8BD,
+				7F2DB8CBC55CA2CCEDE62B5F,
+				CDCC998571167791A9724B0D,
+				83267344628E60B758343A3D,
+				0BA27652F2216E24365936AC,
+				B9145591FD9F603A74076855,
+				B0F61E4ABCAFC47131FF8B50,
+				4B9D1C78A03229FEC7976602,
+				D2DA45B289A5D0DD2CA4F23B,
+				1173231F823BBCC90F3D5815,
+				1039E3E96B01E125623BACA2,
+				52C35F1C27E7EDFC8AD20D7F,
+				5D52A5A04A77133AACAF31AF,
+				A77EAB4C7A9BF92699260FD0,
+				212169CD458C4DAE002C8070,
+				C7E996E3AFF91C11C98EB599,
+				39CF28EC3634364307B27DF9,
+				9CF420A10E32AB96369E42BC,
+				E5961368BB0976D217656839,
+				8C8B34FEAB8FC7E8AF4746E7,
+				D2FA439832A2160F1A50E150,
+				556E35B79AAC57CAFF89D003,
+				7D01DEF4AE25EB0E35C8EE75,
+				1D863066ABE315FE3672DBFB,
+				D00075457319C61D6EAEE244,
+				AAB5D12EA265E80BBF98B30E,
+				8FD6069171B608EFAEEB2B20,
+				FA513E16852F7B8F9EA94161,
+				57CBE05E8C7C8EC5A9063008,
+				48F371A9B1D05A1B409540A9,
+				A94694D2C590F803814BE8E7,
+				571C056EB8352C8848F56A14,
+				D8EA43AFA879F2B8DB5E1969,
+				26FFCC786DB5A590C1257577,
+				33C28F4ADE7976B5E42B8AFE,
+				72C43E2024E6CC93545BBC71,
+				82047D1174ECE6C39CCE3A8C,
+				774C00F49152CA7C271E6968,
+				4206F9EE1FC3B47DC83A1469,
+				508066AF205677B555216592,
+				B08600F54BEB23BE42B11FF0,
+				3A318650305A371DDB842680,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B36A2BCED105CB88A63E6464 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = GoatGUIEngine.c;
+			path = ../src/hll/GoatGUIEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B377FA0F0EB7F79EBC7DEC4D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ain.c;
+			path = ../subprojects/libsys4/src/ain.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B39B8D63F242DAD59587808A = {
+			isa = PBXFileReference;
+			explicitFileType = archive.ar;
+			includeInIndex = 0;
+			path = libsys4.a;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		B44C5932048557927926C4B6 = {
+			isa = PBXBuildFile;
+			fileRef = 2FCC8A36F4FF61A0C67EAD92;
+		};
+		B5C0AED4E4A0474D5CED7147 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmSurface.c;
+			path = ../src/hll/vmSurface.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B6784A91C912F088A8A54CDC = {
+			isa = PBXBuildFile;
+			fileRef = A2C3B2D231B46312FEDC2630;
+		};
+		B7535CAFA094BAB75566E2B1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = flat.c;
+			path = ../subprojects/libsys4/src/flat.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B7738972B55790B736B7DB78 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = archive.h;
+			path = ../subprojects/libsys4/include/system4/archive.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		B79A8F5BC5B3478A2C3FE8DF = {
+			isa = PBXBuildFile;
+			fileRef = 1355035F0CFC84468B172E17;
+		};
+		B8122717205EB28AA4D74C7F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawRipple.c;
+			path = ../src/hll/DrawRipple.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B818B4CC8A128A3B6C7F25A1 = {
+			isa = PBXBuildFile;
+			fileRef = 77D20F6E98E2CC066F6DB8BB;
+		};
+		B84F899568120DC24C6E5984 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = StoatSpriteEngine.c;
+			path = ../src/hll/StoatSpriteEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B9145591FD9F603A74076855 = {
+			isa = PBXBuildFile;
+			fileRef = 26D7DDAAF124F4840DC20B5A;
+		};
+		B91AF22907A89D9AAB6D3C35 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = font_fnl.c;
+			path = ../src/font_fnl.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		B99342F78F737BA10929A273 = {
+			isa = PBXBuildFile;
+			fileRef = F058C4C1226FB562A3D61485;
+		};
+		B9C45302557175F61DFE89B6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = s3de.c;
+			path = ../src/3d/s3de.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		BABE0B22949ECDC8D2FED7DF = {
+			isa = PBXBuildFile;
+			fileRef = 2B5D150F03100C20A13C1CE8;
+		};
+		BAFF789CE4F63C111387040A = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder;
+			name = fonts;
+			path = ../fonts;
+			sourceTree = SOURCE_ROOT;
+		};
+		BB1B916D51B44E06752AC0B6 = {
+			isa = PBXBuildFile;
+			fileRef = 266E0F70C48C9627357E6F88;
+		};
+		BC0BC954C23CF059D9C818E9 = {
+			isa = PBXBuildFile;
+			fileRef = 6FEEB3CA2827F41155AD4125;
+		};
+		BC2388BFE0A52B4F16363278 = {
+			isa = PBXBuildFile;
+			fileRef = 4438C7D37F25B7DA4B33DCF5;
+		};
+		BC7AA286BA08CC7571875DD1 = {
+			isa = PBXBuildFile;
+			fileRef = 88C8BD40B0E1C3AFFE77B223;
+		};
+		BCAFE9E88DDDBA15229EDB48 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = tes.h;
+			path = ../include/dungeon/tes.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		BCF9602CCEFB20BACB782493 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Bitarray.c;
+			path = ../src/hll/Bitarray.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		BD2FF75DD9C7C1E35C8F95EF = {
+			isa = PBXBuildFile;
+			fileRef = F1CF9E992C6173C3793B55F8;
+		};
+		BD3D6F9898B6A7D546F4C43C = {
+			isa = PBXBuildFile;
+			fileRef = D26303DF9DD4A4F0B9B3382A;
+		};
+		BDA3D6EF9A1071E5B2E29E47 = {
+			isa = PBXBuildFile;
+			fileRef = D77DC40F5592E4F0307590E2;
+		};
+		BDBF628BE23C81383B8C0394 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = motion.c;
+			path = ../src/parts/motion.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		BE09DBB059ACB93ADC32CDC8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = system4.c;
+			path = ../src/system4.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		BE0CEDCEC143A7E4E3FBBC9C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = apeg.h;
+			path = ../include/apeg.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		BE33A459717A20133B82704E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmMapLoader.c;
+			path = ../src/hll/vmMapLoader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		BEAEDB95292C33FF67508947 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = hll_shape_select.c;
+			path = ../src/hll/hll_shape_select.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		BF68314B6DBED864E999A58B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_gauge.h;
+			path = ../src/hll/pe_v14_gauge.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C075643F4CF3316D0D5B6FAE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = system.c;
+			path = ../src/hll/system.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C09AA28A7CABC2774B875061 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = pe_v14_message.c;
+			path = ../src/hll/pe_v14_message.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C09D5F180030CCAF44759342 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = string.h;
+			path = ../subprojects/libsys4/include/system4/string.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C143EBC8F7B937697F8409AE = {
+			isa = PBXBuildFile;
+			fileRef = 79D35DB53DB2CCF090B85A82;
+		};
+		C189B739EFD0945348F01731 = {
+			isa = PBXBuildFile;
+			fileRef = B02288FE0ACA8ACD924F7BD1;
+		};
+		C1C8658BB761A8E7773FB5AC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = mpr.c;
+			path = ../src/3d/mpr.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C28163D9E64F21E38F3DDC21 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = msgskip.h;
+			path = ../include/msgskip.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C42B9D2374BAE7BB7FC9014B = {
+			isa = PBXBuildFile;
+			fileRef = 28DF374738020B1886F38B1D;
+		};
+		C496BE9F9407E23FDD5C8841 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = frame_pacing.h;
+			path = ../include/frame_pacing.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C4B829F3C2061363C2B1D291 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ChrLoader.h;
+			path = ../src/hll/ChrLoader.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C4DF5DA1A0439626188E9293 = {
+			isa = PBXBuildFile;
+			fileRef = B91AF22907A89D9AAB6D3C35;
+		};
+		C4E49923A572A079BC06D6BF = {
+			isa = PBXGroup;
+			children = (
+				BAFF789CE4F63C111387040A,
+				1627BCE9B19251080EB4F47E,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		C546CCF16831764CECE8D99C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = alk.h;
+			path = ../subprojects/libsys4/include/system4/alk.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C55A664A48B4700C4F0D53C4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmTimer.c;
+			path = ../src/hll/vmTimer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C6738FDF27524FD163F22038 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = util.c;
+			path = ../src/util.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C6C4F18F08966E01DAE250CE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = BanMisc.c;
+			path = ../src/hll/BanMisc.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C6CA0684B7FFDA25B41138D0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AFAFactory.c;
+			path = ../src/hll/AFAFactory.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C7E4336D52268AAFAC6628C6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Int.c;
+			path = ../src/hll/Int.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C7E996E3AFF91C11C98EB599 = {
+			isa = PBXBuildFile;
+			fileRef = 9EA5A15ACBA9C387FB37F70D;
+		};
+		C7ECA2D6A191BBF2DDEB2BDC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ChrLoader.c;
+			path = ../src/hll/ChrLoader.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C7FAD6ECDA40A1957F6BACF4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = png.h;
+			path = ../subprojects/libsys4/include/system4/png.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C825B5C335885602C727C286 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = audio.c;
+			path = ../src/audio.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C87328B29D95B0E799D98263 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = webp.c;
+			path = ../subprojects/libsys4/src/webp.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C87B8769B34E97385AE59F90 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = CharSpriteManager.c;
+			path = ../src/hll/CharSpriteManager.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C8B45FC882F3F6C2F72E4ADC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = swf.h;
+			path = ../include/swf.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		C8B610A26127845A8CE4E4EC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = EXWriter.c;
+			path = ../src/hll/EXWriter.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C8D7B759FBE9F2F24E2CBE0F = {
+			isa = PBXBuildFile;
+			fileRef = 82D40AF1A6B09EBA088AEC2B;
+		};
+		C9363CA59167CB8C2DB97F59 = {
+			isa = PBXBuildFile;
+			fileRef = E180E85B62A2D9D2E8ED14C0;
+		};
+		C94F780998AC8DB6E1211CD5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = msgqueue.c;
+			path = ../src/msgqueue.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C950E0AAADE38E764C1EF013 = {
+			isa = PBXBuildFile;
+			fileRef = 7E2137AC6BFEAE011CC302CD;
+		};
+		C96FD9B3626C2D89D9F0E6BD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = particle.c;
+			path = ../src/3d/particle.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C989FAB5933D12C11454E120 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = hashtable.c;
+			path = ../subprojects/libsys4/src/hashtable.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		C994095D2700F4343330E90D = {
+			isa = PBXBuildFile;
+			fileRef = 069433672A3E564EFC5BF7C2;
+		};
+		C9B59D32D1E4348010D17EEA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = gfx.h;
+			path = ../include/gfx/gfx.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		CA40F5D317889FBBA466FDDC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ald.c;
+			path = ../subprojects/libsys4/src/ald.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		CA9616AA6FA1A2FD4BF4D6B6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = UIKit.framework;
+			path = System/Library/Frameworks/UIKit.framework;
+			sourceTree = SDKROOT;
+		};
+		CAA0B94E395F63AA4881925D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = base64.h;
+			path = ../include/base64.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		CAFC5087B71E9B918D81AFE7 = {
+			isa = PBXBuildFile;
+			fileRef = F67050ED0B9A13FED751CDAA;
+		};
+		CB3ED064827DF49C48D969C6 = {
+			isa = PBXBuildFile;
+			fileRef = BE33A459717A20133B82704E;
+		};
+		CB550961D748A3B6D40AF3DA = {
+			isa = PBXBuildFile;
+			fileRef = 09A44987BA56F911788766C6;
+		};
+		CBB52C921C777B2F77DEF670 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_backlog.h;
+			path = ../src/hll/pe_v14_backlog.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		CCD52F105181D2767DAF4FDC = {
+			isa = PBXGroup;
+			children = (
+				029AB9C18980C6A65EA0E24E,
+				6DA0D5291CADB1098D3B9C99,
+				14B55023690FE572A07B3AF8,
+				6E9107FD8F559B7DCBFA75AE,
+				390C34C181FA184CDA9F15AF,
+				70DD609E0CCE937D890F4334,
+				72B9D3EA03A8A50E00CDA4FA,
+				9C6735609611EB7DEC973FE7,
+				7862A9F9BA0C217F6A7BD1F5,
+				774170B16A88E9000EAC0AD7,
+			);
+			name = dungeon;
+			sourceTree = "<group>";
+		};
+		CD43A2085E7E9139ACFBB39C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = String.c;
+			path = ../src/hll/String.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		CD4E1A54743F9BDD629C6A80 = {
+			isa = PBXBuildFile;
+			fileRef = 3B59CE63DB309B86ABF1CAA4;
+			settings = {
+				ATTRIBUTES = (
+					Weak,
+				);
+			};
+		};
+		CD7EAD5F417149EFA0A21262 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DALKDemo.c;
+			path = ../src/hll/DALKDemo.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		CDCC998571167791A9724B0D = {
+			isa = PBXBuildFile;
+			fileRef = 19B1BB81E90EDB1A6E83DA63;
+		};
+		CE72F28AE0127E31FAEAF2F3 = {
+			isa = PBXBuildFile;
+			fileRef = 51F4D92D64FE8C7F670D762A;
+		};
+		CE98731FCB1EF1B69C2887A6 = {
+			isa = PBXBuildFile;
+			fileRef = 7F5BB8BB13D4B0E6650557BF;
+		};
+		CF459069D746D6AC0CB62D34 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = serialize_struct.h;
+			path = ../include/serialize_struct.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		D00075457319C61D6EAEE244 = {
+			isa = PBXBuildFile;
+			fileRef = 05DA03F62EBD5FE557AC2AEC;
+		};
+		D0C2B5612FA145FF96F95BD7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_checkbox.h;
+			path = ../src/hll/pe_v14_checkbox.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		D0EAF1F829A5CDFC7C3F5F7B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = SystemServiceEx.c;
+			path = ../src/hll/SystemServiceEx.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D152B2214541DBC3BC14E783 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmCG.c;
+			path = ../src/hll/vmCG.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D18297B26D258363EA06EA61 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8046979FDCDA056DB666804,
+				2B9D345E8E3ED8BBD89E5281,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D26303DF9DD4A4F0B9B3382A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.lex;
+			name = ini_lexer.l;
+			path = ../subprojects/libsys4/src/ini_lexer.l;
+			sourceTree = SOURCE_ROOT;
+		};
+		D2DA45B289A5D0DD2CA4F23B = {
+			isa = PBXBuildFile;
+			fileRef = F1FEB27DE7B6A065DAFFBD54;
+		};
+		D2FA439832A2160F1A50E150 = {
+			isa = PBXBuildFile;
+			fileRef = 168C645F315196B608996A1C;
+		};
+		D311EFAD16912BAC43A81869 = {
+			isa = PBXBuildFile;
+			fileRef = 066AE867A1ED89EADC946EE1;
+		};
+		D3EC06D38540311E30CD2A9E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ffi.c;
+			path = ../src/ffi.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D426C4AA9C29846805B60FF5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = dcf.h;
+			path = ../subprojects/libsys4/include/system4/dcf.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		D42AB59EE99005ABBCD0D905 = {
+			isa = PBXGroup;
+			children = (
+				2AEEFE8E1DA05984181FC092,
+				5C990AD219DC93AF34F34E4C,
+				9EA5A15ACBA9C387FB37F70D,
+				DC8ED1D79CB28E8E329E2F50,
+				936940D7F4A4BBB8BBC182D7,
+				33F166AB1F517A16B7473325,
+				04898F630720D8C7818D08CE,
+				168C645F315196B608996A1C,
+				A75C4504CBF3C179029DF751,
+				BDBF628BE23C81383B8C0394,
+				9DED032B1BD15DAAC9B29DD0,
+				A8AE9E3297F438ECFAF7E44E,
+				05DA03F62EBD5FE557AC2AEC,
+				7647ED9B082E4FFF40E2DC7D,
+				1C72A7AD55D4C75D05F8DD58,
+				E76069082F79A28287C1FEE4,
+				AC0FEAAC55B18A9A1E8DD179,
+			);
+			name = parts;
+			sourceTree = "<group>";
+		};
+		D5A8D876620F68983A68D678 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Clipboard.c;
+			path = ../src/hll/Clipboard.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D69E37ED01C72D6D04AADEDB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmArray.c;
+			path = ../src/hll/vmArray.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D6DB4D2E8149BA54970E3CEA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pcf.h;
+			path = ../subprojects/libsys4/include/system4/pcf.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		D71A01899C3119F2EFF2805A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = afa3.c;
+			path = ../subprojects/libsys4/src/afa3.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D77DC40F5592E4F0307590E2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = collision.c;
+			path = ../src/3d/collision.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D828F722037CD7E3868AD939 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = audio_mixer.c;
+			path = ../src/audio_mixer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		D8B39781D12AA22830E46C04 = {
+			isa = PBXBuildFile;
+			fileRef = 620F44ACE629DBD0D7160EF4;
+		};
+		D8EA43AFA879F2B8DB5E1969 = {
+			isa = PBXBuildFile;
+			fileRef = 10E6428B34C14179F0B3AF0B;
+		};
+		D8FF681A4BF2D63F41578CCE = {
+			isa = PBXBuildFile;
+			fileRef = F1ADA8CF112211BDB32E7288;
+		};
+		D933FEE81C18834B9AFDD172 = {
+			isa = PBXBuildFile;
+			fileRef = E006D58F12A5D940FDD4097D;
+		};
+		D9A18E6790AD4DF226E9D5B2 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB8768DC6ACDD8E41E9D08D4,
+				F73D835AE2117FBA91E240B6,
+				165F6F1622969F689E989D25,
+				7C6FB3C60730C09E3D7B7C75,
+				6D7C190C4643BC14250B5B9D,
+				8768547546DE4059EBA5A492,
+				5E3C3C5645A43D9BB9D70AC9,
+				5888F7905384D01BB643E885,
+				17A93BDF5AE4F88F700C5C86,
+				1AEA78A3C5169A153D3B7E32,
+				4540E58A6693CB34F613DCD4,
+				1F4E2322EFD02D2FDF6057C7,
+				A9C82CF1D5A82D9DC7ABFAAE,
+				41F4D2B14322DA455D436164,
+				CD4E1A54743F9BDD629C6A80,
+				44FF983DA1AD00BD9603343A,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA305E84DB2D32B26CDAE771 = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.l";
+			fileType = pattern.proxy;
+			inputFiles = (
+				"$(DERIVED_FILE_DIR)/ini_parser.tab.h",
+			);
+			isEditable = 1;
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).yy.c",
+			);
+			script = "f=flex\nfor b in /opt/homebrew/opt/flex/bin/flex /usr/local/opt/flex/bin/flex; do [ -x \"$b\" ] && f=\"$b\" && break; done\n\"$f\" -o \"$DERIVED_FILE_DIR/$INPUT_FILE_BASE.yy.c\" \"$INPUT_FILE_PATH\"\n";
+		};
+		DAB91932F6545CD7EC8F9A51 = {
+			isa = PBXBuildFile;
+			fileRef = 8C3DBB966AE351F97514DE29;
+		};
+		DB4685A69C0E88AAC0FD5186 = {
+			isa = PBXBuildFile;
+			fileRef = E9EB9F8898B1132084241464;
+		};
+		DBD7275E5FFBF612D1FF119E = {
+			isa = PBXBuildFile;
+			fileRef = D69E37ED01C72D6D04AADEDB;
+		};
+		DC8ED1D79CB28E8E329E2F50 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = flash.c;
+			path = ../src/parts/flash.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		DCEC302E008112DD320354EB = {
+			isa = PBXBuildFile;
+			fileRef = 244F99BBB1E30234A8582641;
+		};
+		DD6D862C7F5B4E47A23BFEF9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = CalcTable.c;
+			path = ../src/hll/CalcTable.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		DDACDE122693F8C1DB6C8F91 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawSnow.c;
+			path = ../src/hll/DrawSnow.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		DE163A76280705A89FD7C9A8 = {
+			isa = PBXBuildFile;
+			fileRef = BCF9602CCEFB20BACB782493;
+		};
+		DEEA4394865EE2E12A471F4B = {
+			isa = PBXBuildFile;
+			fileRef = 9B47A555B96E65C8DF7644EB;
+		};
+		E006D58F12A5D940FDD4097D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = FileDialog.c;
+			path = ../src/hll/FileDialog.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E0DEEC1957DD96EBED5B5A50 = {
+			isa = PBXBuildFile;
+			fileRef = 5F3494D9FC77FC0BFFF04267;
+		};
+		E15B769CC49520B01F3284AB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = pe_v14_numeral.h;
+			path = ../src/hll/pe_v14_numeral.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		E180E85B62A2D9D2E8ED14C0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = dasm.c;
+			path = ../subprojects/libsys4/src/dasm.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E1989449893C66FDCBCF74AA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = parser.c;
+			path = ../src/3d/parser.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E298E28A2E3D9A6C72A45FA3 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E661778C91E33740915DA31D,
+				13F6E49B669C631632A84556,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E2B079D59DA7A3D6EE73A823 = {
+			isa = PBXGroup;
+			children = (
+				1A7EC7F6C468D05C8265D07E,
+				F99013FBF2E3232F23B817E9,
+				0555A88090C99CB8CCC46990,
+				BE0CEDCEC143A7E4E3FBBC9C,
+				1C480201D7AC422BC8886413,
+				ED56BED20F1BB81E213323BE,
+				CAA0B94E395F63AA4881925D,
+				5001F83D6D2F490B4747860F,
+				490CB2498EA3792D034CF3F9,
+				B1964232429CD2338610FFDE,
+				C496BE9F9407E23FDD5C8841,
+				15A506391627DCBA654B1C06,
+				83B9A020DE5B3C0DF65BD346,
+				EB30DD76E5E88974D3DCEBF2,
+				FF6346902D5D540E17DCDA3C,
+				A486B8AD6AA525383A8868E1,
+				61EC64148074F64719C09881,
+				0BE08BFD5C6B2F807E4A2E05,
+				C28163D9E64F21E38F3DDC21,
+				25A2FC14F0A1313926E9AE76,
+				5B007A7239022E1ABF96743A,
+				1ED608A31EAA3CB98C206B1F,
+				E588BAEABF2391F9C5F78D5D,
+				A2C101C03C35C250FE2DC5B4,
+				1672F62BC18A6AABAB9506B4,
+				A4190FB5CEFA99AE243035A4,
+				7CA0B6F68EAE62F99694E447,
+				CF459069D746D6AC0CB62D34,
+				625C66A072324D0BB49E2B08,
+				24E2B34709FE2CFDA1CA44C1,
+				C8B45FC882F3F6C2F72E4ADC,
+				F90B0CC472BEBEC1CB4408F5,
+				348B918D7BF98F78661B2632,
+				0439198DDB201468751817DA,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		E2C160559645E6C79DB23689 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D02361E9C90FD3DDAE7EB3D;
+			proxyType = 1;
+			remoteGlobalIDString = AA8F6B68278546EE45C4176F;
+			remoteInfo = sys4;
+		};
+		E37588FEA5E8E08AE9BAF7C0 = {
+			isa = PBXBuildFile;
+			fileRef = 456B796E01916623DCAFA279;
+		};
+		E379EC12A80E1A8E31DB0897 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = SystemService.c;
+			path = ../src/hll/SystemService.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E3B3D5C717E256DA32A00CB5 = {
+			isa = PBXBuildFile;
+			fileRef = 0DF8067C7F498880DAAC1078;
+		};
+		E4C9F242386326F7AF2EFE95 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Gpx2Plus.c;
+			path = ../src/hll/Gpx2Plus.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E526C5A5D1C8C7BA22F0E713 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MsgLogManager.c;
+			path = ../src/hll/MsgLogManager.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E568AF1919CB75A41937BCBE = {
+			isa = PBXBuildFile;
+			fileRef = 9DE6AAA4B935A53D99478D68;
+		};
+		E588BAEABF2391F9C5F78D5D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = queue.h;
+			path = ../include/queue.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		E5961368BB0976D217656839 = {
+			isa = PBXBuildFile;
+			fileRef = 33F166AB1F517A16B7473325;
+		};
+		E661778C91E33740915DA31D = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_DEFAULT_SOURCE,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(XS_SRC)/subprojects/libsys4/include",
+					"$(XS_SRC)/subprojects/libsys4/src",
+					"$(DERIVED_FILE_DIR)",
+					"$(XS_DEPS)/include",
+					"$(XS_DEPS)/include/webp",
+					"$(XS_DEPS)/include/libpng16",
+				);
+				PRODUCT_NAME = sys4;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		E6769A86148FB3205E8B0C20 = {
+			isa = PBXBuildFile;
+			fileRef = C8B610A26127845A8CE4E4EC;
+		};
+		E67F730D1AE38CF427032B30 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = font.h;
+			path = ../include/gfx/font.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		E6B2429FC2C9CC7092F3FE6A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.objc;
+			name = gl_metal.m;
+			path = ../src/metal/gl_metal.m;
+			sourceTree = SOURCE_ROOT;
+		};
+		E6CA3647F570BEBF6CA20DA0 = {
+			isa = PBXBuildFile;
+			fileRef = A98DA0B74C2CB44B9F132843;
+		};
+		E7368C1A5B50F69BC9C4BD86 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = pe_v14_activity.c;
+			path = ../src/hll/pe_v14_activity.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E76069082F79A28287C1FEE4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = text.c;
+			path = ../src/parts/text.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E7BBD58337225BE53271DF3A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = frame_pacing.c;
+			path = ../src/frame_pacing.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E7D9321F5F2AC93DB0ECFA7C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = mtrand43.h;
+			path = ../include/dungeon/mtrand43.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		E85AEB6F2430373384D1B6C9 = {
+			isa = PBXBuildFile;
+			fileRef = F497BDE7F7532A6758AC2BA8;
+		};
+		E89A69E30276F29EAD488777 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreMotion.framework;
+			path = System/Library/Frameworks/CoreMotion.framework;
+			sourceTree = SDKROOT;
+		};
+		E8C2D1F647D9C54C2718E967 = {
+			isa = PBXBuildFile;
+			fileRef = C87328B29D95B0E799D98263;
+		};
+		E8E92E94C89D6BC6E2C8380C = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = xsystem4.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E8FD639398CEA6B245A094F9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Math.c;
+			path = ../src/hll/Math.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E919B1EE6CEAD4DD3BBFD197 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = MsgLogViewer.c;
+			path = ../src/hll/MsgLogViewer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E929A34BC36CEA20DDE17E4F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = PixelRestore.c;
+			path = ../src/hll/PixelRestore.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E9EB9F8898B1132084241464 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DrawGraph.c;
+			path = ../src/hll/DrawGraph.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		E9EF33E0C6EB6F4952526EE1 = {
+			isa = PBXBuildFile;
+			fileRef = D0EAF1F829A5CDFC7C3F5F7B;
+		};
+		EA8B187580C482823F5D5244 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = apeg.c;
+			path = ../src/apeg.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		EAD14586D89E41BE917E9998 = {
+			isa = PBXBuildFile;
+			fileRef = CD7EAD5F417149EFA0A21262;
+		};
+		EB30DD76E5E88974D3DCEBF2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = input.h;
+			path = ../include/input.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		EB6844E070B7479781170E03 = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AEA060F3B4E23012CB816C5D;
+			buildPhases = (
+				3F13AFBC1F2005A0C08AD5E1,
+				B2749419A1C35005E96CF5F9,
+				D9A18E6790AD4DF226E9D5B2,
+				4B4E695FE8F7ABFF4F3AE73F,
+				6EDDE2C13C2DDF58DDC326FB,
+				EF1EEDD9D7FDDCB62412A157,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3BA809E190572036979A6C80,
+			);
+			name = xsystem4;
+			productName = xsystem4;
+			productReference = E8E92E94C89D6BC6E2C8380C;
+			productType = "com.apple.product-type.application";
+		};
+		EB7049DA3CC09A2049FB68C6 = {
+			isa = PBXBuildFile;
+			fileRef = 07928CF1F0B7B92B853A976D;
+		};
+		EBE7A4E332C3CA07BD63C697 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = little_endian.h;
+			path = ../subprojects/libsys4/src/little_endian.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		EBEB19879A7737A06C1478C5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = fnl.c;
+			path = ../subprojects/libsys4/src/fnl.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		EC23D11E22B2B7F3985B3C52 = {
+			isa = PBXBuildFile;
+			fileRef = 8A24AD2125DA47FDE0031A63;
+		};
+		EC974BD15D4772EEAAF10B56 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = File.c;
+			path = ../src/hll/File.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		ED0749AF147C749FEC821BBE = {
+			isa = PBXBuildFile;
+			fileRef = 902AE29DEB00DAEE15F682E5;
+		};
+		ED56BED20F1BB81E213323BE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = audio.h;
+			path = ../include/audio.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		ED5C22A09BAE343A764ADCE5 = {
+			isa = PBXBuildFile;
+			fileRef = 92A66B31620E1ADA283F14DE;
+		};
+		EE133947986B22F4366571E0 = {
+			isa = PBXBuildFile;
+			fileRef = D5A8D876620F68983A68D678;
+		};
+		EE3822831F3EF45BBDD85015 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = SoundFilePlayer.c;
+			path = ../src/hll/SoundFilePlayer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		EEF749FA59BD71BE6095E714 = {
+			isa = PBXBuildFile;
+			fileRef = 3A0EF8213A7198632BF30B6C;
+		};
+		EF1EEDD9D7FDDCB62412A157 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(XS_SRC)/COPYING",
+			);
+			name = "Licence file";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/COPYING.xsystem4",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# the licence beside the engine; the shader converter is not needed in the app\nres=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\ncp \"$XS_SRC/COPYING\" \"$res/COPYING.xsystem4\"\nrm -f \"$res/shaders/metal/glsl2msl.py\"\n";
+		};
+		EF5C288182CF79D6C7680E54 = {
+			isa = PBXBuildFile;
+			fileRef = B377FA0F0EB7F79EBC7DEC4D;
+		};
+		EF80E0B240B54E1E5E1C3BB8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = AudioToolbox.framework;
+			path = System/Library/Frameworks/AudioToolbox.framework;
+			sourceTree = SDKROOT;
+		};
+		EF9125588914B2EDC1CBF691 = {
+			isa = PBXBuildFile;
+			fileRef = 726F2E439385C50E0A4BEED8;
+		};
+		F058C4C1226FB562A3D61485 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = CrayfishLogViewer.c;
+			path = ../src/hll/CrayfishLogViewer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F120D5272B4FEA09F232B563 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					_DEFAULT_SOURCE,
+					_REENTRANT,
+					XSYS4_IOS,
+					USE_METAL,
+					"XSYS4_DEV_HOOKS=1",
+					"XSYS4_DATA_DIR=\\\"/usr/local/share/xsystem4\\\"",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(DERIVED_FILE_DIR)",
+					"$(XS_SRC)/src",
+					"$(XS_SRC)/include",
+					"$(XS_SRC)/subprojects/libsys4/include",
+					"$(XS_DEPS)/include",
+					"$(XS_DEPS)/include/SDL2",
+					"$(XS_DEPS)/include/freetype2",
+					"$(XS_DEPS)/include/opus",
+				);
+				INFOPLIST_FILE = xsystem4/Info.plist;
+				LIBRARY_SEARCH_PATHS = (
+					"$(XS_DEPS)/lib",
+				);
+				MARKETING_VERSION = 5;
+				OTHER_LDFLAGS = (
+					"-Wl,-stack_size,0x20000000",
+					"-lSDL2",
+					"-lSDL2main",
+					"-lfreetype",
+					"-lffi",
+					"-lcglm",
+					"-lsndfile",
+					"-lFLAC",
+					"-lvorbisenc",
+					"-lvorbis",
+					"-logg",
+					"-lopus",
+					"-lturbojpeg",
+					"-lwebp",
+					"-lsharpyuv",
+					"-lpng16",
+					"-liconv",
+					"-lz",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.xsystem4.xsystem4;
+				PRODUCT_NAME = xsystem4;
+				WARNING_CFLAGS = (
+					"-Wall",
+					"-Wno-unused-parameter",
+				);
+			};
+			name = Debug;
+		};
+		F1793FA1411077D502A3F0EE = {
+			isa = PBXBuildFile;
+			fileRef = 3FCC3D5D9ED0B084399FDA0B;
+		};
+		F1ADA8CF112211BDB32E7288 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Timer.c;
+			path = ../src/hll/Timer.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F1CF9E992C6173C3793B55F8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = InputDevice.c;
+			path = ../src/hll/InputDevice.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F1FEB27DE7B6A065DAFFBD54 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = json.c;
+			path = ../src/json.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F423B9FEC0904C92310D53CF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = serialize_struct.c;
+			path = ../src/serialize_struct.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F497BDE7F7532A6758AC2BA8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = File2.c;
+			path = ../src/hll/File2.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F4CF96EC03E68ECF91608071 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = pms.c;
+			path = ../subprojects/libsys4/src/pms.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F64E557C4359B7D13968EBFD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = TextFile.c;
+			path = ../src/hll/TextFile.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F67050ED0B9A13FED751CDAA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmGraph.c;
+			path = ../src/hll/vmGraph.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F73D5B5D9AE0A0221656F278 = {
+			isa = PBXBuildFile;
+			fileRef = AA06008B25C883669DA8E6AA;
+		};
+		F73D835AE2117FBA91E240B6 = {
+			isa = PBXBuildFile;
+			fileRef = 10555048B2CE8052B40057DA;
+		};
+		F7979195266725D0447F7C2C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = KiwiSoundEngine.c;
+			path = ../src/hll/KiwiSoundEngine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F7EECE5EA0B9B45EE40613DD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = vmKey.c;
+			path = ../src/hll/vmKey.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F8046979FDCDA056DB666804 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = (
+					"-ffile-prefix-map=$(XS_SRC:standardizepath)/=",
+				);
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = 2;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wall",
+				);
+				XS_DEPS = "$(PROJECT_DIR)/../ios-deps/device";
+				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(PROJECT_DIR)/../ios-deps/sim-arm64";
+				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(PROJECT_DIR)/../ios-deps/sim-x86_64";
+				XS_SRC = "$(PROJECT_DIR)/..";
+			};
+			name = Debug;
+		};
+		F84F8F117422D0530705F11A = {
+			isa = PBXBuildFile;
+			fileRef = E1989449893C66FDCBCF74AA;
+		};
+		F8D00DF30A0F2EFFF850DF58 = {
+			isa = PBXBuildFile;
+			fileRef = 0C6A03744EE242610D0AF806;
+		};
+		F8F7B39FE435B7E4486C1580 = {
+			isa = PBXBuildFile;
+			fileRef = C989FAB5933D12C11454E120;
+		};
+		F90B0CC472BEBEC1CB4408F5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = translation.h;
+			path = ../include/translation.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		F944E855648DD6428758E284 = {
+			isa = PBXBuildFile;
+			fileRef = B9C45302557175F61DFE89B6;
+		};
+		F99013FBF2E3232F23B817E9 = {
+			isa = PBXGroup;
+			children = (
+				E67F730D1AE38CF427032B30,
+				C9B59D32D1E4348010D17EEA,
+				2EB795CAC52E03D5B4DCBCE2,
+				5A05A6DAC6AF44733DB7F51D,
+				4652CD0CD224D11BFDA935AB,
+				3BB4488855127ADF9155432A,
+			);
+			name = gfx;
+			sourceTree = "<group>";
+		};
+		FA43B3F37F16F29874E984C9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = TextSurfaceManager.c;
+			path = ../src/hll/TextSurfaceManager.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		FA513E16852F7B8F9EA94161 = {
+			isa = PBXBuildFile;
+			fileRef = E76069082F79A28287C1FEE4;
+		};
+		FAB27513E189BD75DF82445F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = text.c;
+			path = ../src/text.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		FABF77441F24A29EE9488996 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = Metal.framework;
+			path = System/Library/Frameworks/Metal.framework;
+			sourceTree = SDKROOT;
+		};
+		FC6C3ECE5E823792C380E2D4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = scene.c;
+			path = ../src/scene.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		FCBD9A91EE8A7E659E0F2F02 = {
+			isa = PBXGroup;
+			children = (
+				7FA163CA3148FD17753E9E9C,
+				D77DC40F5592E4F0307590E2,
+				A91B0743D24C20D1A2301BA1,
+				40A6056CCF045F1221212D7B,
+				C1C8658BB761A8E7773FB5AC,
+				E1989449893C66FDCBCF74AA,
+				C96FD9B3626C2D89D9F0E6BD,
+				43283D36EC25CF9209A25349,
+				620F44ACE629DBD0D7160EF4,
+				B9C45302557175F61DFE89B6,
+			);
+			name = 3d;
+			sourceTree = "<group>";
+		};
+		FD223B5E3C0EBC24210E9A33 = {
+			isa = PBXBuildFile;
+			fileRef = E929A34BC36CEA20DDE17E4F;
+		};
+		FD4AE2F82DE7615001C25D82 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = swf.c;
+			path = ../src/swf.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		FE1B2C0FA6C9D39F0BE44395 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = AliceLogo5.c;
+			path = ../src/hll/AliceLogo5.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		FE7316DCF0C17F22E8296833 = {
+			isa = PBXBuildFile;
+			fileRef = DD6D862C7F5B4E47A23BFEF9;
+		};
+		FE96277BA853F96336F018E1 = {
+			isa = PBXBuildFile;
+			fileRef = 08856F2D772776C8D58460B4;
+		};
+		FF6346902D5D540E17DCDA3C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = json.h;
+			path = ../include/json.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		FF9B2727AF11D3F9158CE14A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ex.c;
+			path = ../subprojects/libsys4/src/ex.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		FFDD9C761ED5F5A0CAFBF690 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = savefile.c;
+			path = ../subprojects/libsys4/src/savefile.c;
+			sourceTree = SOURCE_ROOT;
+		};
+	};
+	rootObject = 3D02361E9C90FD3DDAE7EB3D;
+}
