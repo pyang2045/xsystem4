@@ -38,6 +38,11 @@ void PE_SetComponentMargin(int parts_no, int top, int bottom, int left, int righ
 	parts->margin_right = right;
 	if (changed)
 		parts_layout_size_changed(parts);
+	// ain v7 with activities: the box lays its children out again. C_TITLE
+	// slides its buttons in by animating their margins down to 0.
+	if (changed && parts_v7_activities && parts->parent
+			&& parts->parent->states[0].type == PARTS_LAYOUT_BOX)
+		parts_component_dirty(parts->parent);
 }
 
 int PE_GetComponentMarginTop(int parts_no)

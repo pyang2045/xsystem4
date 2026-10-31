@@ -2267,13 +2267,94 @@ static void PE_v7_UpdateMatrix(possibly_unused bool message_window_show)
  * activities, the widgets, the controllers, but the message API of Rance
  * 9): the functions whose declarations are those of v14 or the old ones
  * named. */
+/*
+ * ain v7 AddPartsConstructionProcess(ref array<int>, ref array<float>,
+ * ref array<string>): parts::AddConstructProcess packs one CASConstructionProcess:
+ * the parts number and state, then its fields in the order of its getters,
+ * the font's bold and edge weights in the floats, its text and CG name in the
+ * strings. The commands are those of CASConstructionProcess@Set*.
+ */
+enum v7_cp_int {
+	CP_NUMBER, CP_STATE, CP_COMMAND, CP_INTERP, CP_SX, CP_SY, CP_SW, CP_SH,
+	CP_DX, CP_DY, CP_DX2, CP_DY2, CP_DW, CP_DH, CP_R, CP_G, CP_B, CP_A,
+	CP_R2, CP_G2, CP_B2, CP_CHAR_SPACE, CP_LINE_SPACE, CP_FONT_TYPE, CP_FONT_SIZE,
+	CP_TEXT_R, CP_TEXT_G, CP_TEXT_B, CP_EDGE_R, CP_EDGE_G, CP_EDGE_B, CP_FULL_SIZE,
+	CP_NR_INTS
+};
+
+static bool PE_v7_AddPartsConstructionProcess(struct page **ints_page, struct page **floats_page,
+		struct page **strings_page)
+{
+	struct page *ip = *ints_page, *fp = *floats_page, *sp = *strings_page;
+	if (!ip || !fp || !sp || ip->nr_vars < CP_NR_INTS || fp->nr_vars < 2 || sp->nr_vars < 2) {
+		WARNING("AddPartsConstructionProcess: unexpected array sizes");
+		return false;
+	}
+#define I(n) (ip->values[CP_##n].i)
+	int no = I(NUMBER), state = I(STATE);
+	float bold = fp->values[0].f, edge = fp->values[1].f;
+	struct string *text = heap_get_string(sp->values[0].i);
+	struct string *cg = heap_get_string(sp->values[1].i);
+#define TEXT_ARGS no, I(DX), I(DY), text, I(FONT_TYPE), I(FONT_SIZE), I(TEXT_R), I(TEXT_G), I(TEXT_B), \
+		bold, I(EDGE_R), I(EDGE_G), I(EDGE_B), edge, I(CHAR_SPACE), I(LINE_SPACE), state
+	switch (I(COMMAND)) {
+	case 0: return PE_AddCreateToPartsConstructionProcess(no, I(DW), I(DH), state);
+	case 1: return PE_AddCreatePixelOnlyToPartsConstructionProcess(no, I(DW), I(DH), state);
+	case 2: return PE_AddCreateCGToProcess(no, cg, state);
+	case 3: return PE_AddFillToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(R), I(G), I(B), state);
+	case 4: return PE_AddFillAlphaColorToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(R), I(G), I(B), I(A), state);
+	case 5: return PE_AddFillAMapToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH), I(A), state);
+	case 6: return PE_AddFillWithAlphaToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(R), I(G), I(B), I(A), state);
+	case 7: return PE_AddDrawTextToPartsConstructionProcess(TEXT_ARGS);
+	case 8: return PE_AddCopyTextToPartsConstructionProcess(TEXT_ARGS);
+	case 10: return PE_AddDrawRectToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(R), I(G), I(B), state);
+	case 11: return PE_AddDrawCutCGToPartsConstructionProcess(no, cg, I(DX), I(DY), I(DW), I(DH),
+			I(SX), I(SY), I(DW), I(DH), I(INTERP), state);
+	case 12: return PE_AddCopyCutCGToPartsConstructionProcess(no, cg, I(DX), I(DY), I(DW), I(DH),
+			I(SX), I(SY), I(DW), I(DH), I(INTERP), state);
+	case 13: return PE_AddDrawCutCGToPartsConstructionProcess(no, cg, I(DX), I(DY), I(DW), I(DH),
+			I(SX), I(SY), I(SW), I(SH), I(INTERP), state);
+	case 14: return PE_AddCopyCutCGToPartsConstructionProcess(no, cg, I(DX), I(DY), I(DW), I(DH),
+			I(SX), I(SY), I(SW), I(SH), I(INTERP), state);
+	case 15: return PE_AddGrayFilterToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(FULL_SIZE), state);
+	case 16: return PE_AddAddFilterToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(R), I(G), I(B), I(FULL_SIZE), state);
+	case 17: return PE_AddMulFilterToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
+			I(R), I(G), I(B), I(FULL_SIZE), state);
+	case 23: return PE_AddAlphaBlendTextToPartsConstructionProcess(TEXT_ARGS);
+	case 24: return PE_AddOnlyAlphaTextToPartsConstructionProcess(TEXT_ARGS);
+	default:
+		// 9 gradation, 18 line, 19-22 the alpha CG cuts: no script path seen.
+		WARNING("AddPartsConstructionProcess: command %d not implemented", I(COMMAND));
+		return false;
+	}
+#undef TEXT_ARGS
+#undef I
+}
+
+extern bool parts_v7_activities;
+
 static void pe_v7_register(int libno)
 {
 	struct static_library *lib = &lib_PartsEngine;
+	parts_v7_activities = true;
 	static_library_register(lib, "Parts_GetParentPartsNumber", PE_v14_GetParentPartsNumber);
 	static_library_register(lib, "GetComponentAbsoluteMaxPosZ", PE_v7_GetComponentAbsoluteMaxPosZ);
 	static_library_register(lib, "GetActiveParts", PE_v7_GetActiveParts);
 	static_library_register(lib, "UpdateMatrix", PE_v7_UpdateMatrix);
+	static_library_register(lib, "SaveThumbnail", PE_SaveThumbnail);
+	static_library_register(lib, "Parts_GetPartsSize", PE_GetPartsSize);
+	static_library_register(lib, "SetButtonEnable", PE_SetButtonEnable);
+	static_library_register(lib, "IsButtonEnable", PE_IsButtonEnable);
+	static_library_register(lib, "SetButtonCGName", PE_SetButtonCGName);
+	struct ain_hll_function *cp = get_fun(libno, "AddPartsConstructionProcess");
+	if (cp && cp->nr_arguments == 3 && cp->arguments[0].type.data == AIN_REF_ARRAY_INT)
+		static_library_register(lib, "AddPartsConstructionProcess", PE_v7_AddPartsConstructionProcess);
 	static_library_register(lib, "SetWantSaveBackScene", PE_v7_SetWantSaveBackScene);
 	static_library_register(lib, "IsWantSaveBackScene", PE_v7_IsWantSaveBackScene);
 	struct ain_hll_function *fun = get_fun(libno, "SaveBackScene");
@@ -2286,6 +2367,7 @@ static void pe_v7_register(int libno)
 	if (fun && fun->nr_arguments == 3 && fun->arguments[0].type.data == AIN_INT
 	    && fun->arguments[1].type.data == AIN_STRING && fun->arguments[2].type.data == AIN_INT)
 		static_library_register(lib, "Parts_SetSoundName", PE_SetSoundName);
+	pe_v14_register_checkbox(libno);
 }
 
 // Runs after link_libraries(): static_library_register() requires the

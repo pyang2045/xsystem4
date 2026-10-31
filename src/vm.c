@@ -1825,24 +1825,23 @@ static void vm_execute(void);
 
 static union vm_value delegate_copy_argument(union vm_value value, enum ain_data_type type)
 {
-	// Delegate arguments remain on the caller's stack. A v14 callee local
-	// page owns its reference parameters, which variable_fini releases on
-	// return. Retain the referenced page, preserving the [page, index] alias.
-	if (ain->version >= 14) {
-		switch (type) {
-		case AIN_REF_TYPE:
-		case AIN_WRAP:
-		case AIN_IFACE:
-			// A wrapped delegate or an interface object is also a
-			// borrowed heap value here (0x657430 retains 82 and 89). The
-			// callback's local page releases it on return, so it needs its
-			// own reference while the caller/optional field still owns it.
-			if (value.i > 0 && heap_index_valid(value.i))
-				heap_ref(value.i);
-			break;
-		default:
-			break;
-		}
+	// Delegate arguments remain on the caller's stack. A callee local page
+	// owns its reference parameters, which variable_fini releases on return
+	// (for ain v7 too: 妻みぐい３'s config colours lost the caller's page).
+	// Retain the referenced page, preserving the [page, index] alias.
+	switch (type) {
+	case AIN_REF_TYPE:
+	case AIN_WRAP:
+	case AIN_IFACE:
+		// A wrapped delegate or an interface object is also a
+		// borrowed heap value here (0x657430 retains 82 and 89). The
+		// callback's local page releases it on return, so it needs its
+		// own reference while the caller/optional field still owns it.
+		if (value.i > 0 && heap_index_valid(value.i))
+			heap_ref(value.i);
+		break;
+	default:
+		break;
 	}
 	return value;
 }

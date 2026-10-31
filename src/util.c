@@ -268,7 +268,7 @@ static bool has_high_bytes(const char *s)
 
 char *unix_path(const char *path)
 {
-	if (!game_charset_is_gbk() || !has_high_bytes(path))
+	if (!game_charset_is_not_sjis() || !has_high_bytes(path))
 		return legacy_unix_path(path);
 	// Decode before replacing separators: a GBK trail byte can be 0x5C.
 	char *utf = game_to_utf8(path, 0);

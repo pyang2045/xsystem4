@@ -213,14 +213,14 @@ static bool parts_hittest(struct parts *parts, int state, Point pos)
 	// v14: a layout box is never under the cursor (its widget's hit test,
 	// vtable +0x4c = 0x49c5b0, returns false); its state now has the box's
 	// size (layoutbox.c).
-	if (ain->version >= 14 && parts->states[0].type == PARTS_LAYOUT_BOX)
+	if ((ain->version >= 14 || parts_v7_activities) && parts->states[0].type == PARTS_LAYOUT_BOX)
 		return false;
 	// v14: a parts with an alpha clipper (+0x2fc) is under the cursor only
 	// where its clipper is, the clipper tested by its pixels (CGUIPartsView's
 	// hit test 0x568df0 calls the clipper's with +0x1ad, the pixel decision,
 	// set). So Haharanman's title film filter, a full-screen CG clipped to
 	// the film frame, does not cover the menu buttons.
-	if (ain->version >= 14 && parts->alpha_clipper_parts_no
+	if ((ain->version >= 14 || parts_v7_activities) && parts->alpha_clipper_parts_no
 			&& parts->alpha_clipper_parts_no != parts->no) {
 		static int depth;	// a clipper clipped by its own clippee
 		struct parts *clipper = parts_try_get(parts->alpha_clipper_parts_no);
@@ -455,7 +455,11 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 		int passed_time, bool *hover_consumed, bool *click_consumed)
 {
 	// Always use DEFAULT state hitbox regardless of the current display state.
-	bool is_hovered = parts_hittest(parts, PARTS_STATE_DEFAULT, cur_pos) && !*hover_consumed;
+	// ain v7 with activities: a hidden parts is not under the cursor
+	// (C_SAVE's クリック抑制フィルタ, full-screen, hides itself to let the
+	// list be clicked); other games keep the old test.
+	bool is_hovered = parts_hittest(parts, PARTS_STATE_DEFAULT, cur_pos) && !*hover_consumed
+		&& (!parts_v7_activities || parts->global.show);
 
 	bool was_hovered = parts->is_hovered;
 	parts->is_hovered = is_hovered;
@@ -496,11 +500,17 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 		return;
 	}
 
+	// ain v7 with activities: a parts that takes no click keeps its normal
+	// state under the cursor. 背景 of C_TITLE is a flat with an empty ＣＧ名
+	// as its オンカーソル状態: in that state it drew nothing and did not play.
+	bool keep_state = parts_v7_activities && !parts->clickable;
+	enum parts_state_type hovered = keep_state ? PARTS_STATE_DEFAULT : PARTS_STATE_HOVERED;
+
 	bool click_eligible = parts->clickable || !parts->pass_cursor;
 	if (!click_eligible || *click_consumed) {
 		if (!was_hovered)
 			audio_play_sound(parts_cursor_sound(parts));
-		parts_set_state(parts, PARTS_STATE_HOVERED);
+		parts_set_state(parts, hovered);
 		return;
 	}
 
@@ -523,12 +533,12 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 	}
 
 	if (cur_clicking && click_down_parts == parts->no) {
-		parts_set_state(parts, PARTS_STATE_CLICKED);
+		parts_set_state(parts, keep_state ? PARTS_STATE_DEFAULT : PARTS_STATE_CLICKED);
 	} else {
 		if (!was_hovered) {
 			audio_play_sound(parts_cursor_sound(parts));
 		}
-		parts_set_state(parts, PARTS_STATE_HOVERED);
+		parts_set_state(parts, hovered);
 	}
 
 	// click event: only if the click down event had same parts number.

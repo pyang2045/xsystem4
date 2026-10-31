@@ -47,6 +47,23 @@ static void PE_v14_CheckBoxChecked(int number, bool check)
 		parts_checkbox_set_checked(parts, check);
 }
 
+/* void SetCheckBoxColor(int Number, int Red, int Green, int Blue) */
+static void PE_v7_SetCheckBoxColor(int number, int r, int g, int b)
+{
+	struct parts *parts = pe_v14_checkbox(number);
+	if (!parts)
+		return;
+	struct parts_checkbox *cb = parts_get_checkbox(parts);
+	if (cb->show_color && cb->r == r && cb->g == g && cb->b == b)
+		return;
+	cb->r = r;
+	cb->g = g;
+	cb->b = b;
+	cb->show_color = true;
+	parts_checkbox_rebuild(parts);
+	parts_dirty(parts);
+}
+
 /* bool IsCheckBoxChecked(int Number): case 238 -> 0x5911a0 (+0xf1). */
 static bool PE_v14_IsCheckBoxChecked(int number)
 {
@@ -146,7 +163,7 @@ static int PE_v14_GetHSliderBarScrollPos(int number)
  * the binding it has (a stub), rather than a C function of another shape. */
 static void pe_v14_register_checkbox(int libno)
 {
-	if (ain->version < 14)
+	if (ain->version < 14 && !parts_v7_activities)
 		return;
 	static const struct {
 		const char *name;
@@ -168,6 +185,8 @@ static void pe_v14_register_checkbox(int libno)
 		{ "SetHSliderBarScrollPos", PE_v14_SetHSliderBarScrollPos, AIN_VOID, 2, { AIN_INT, AIN_INT } },
 		{ "GetHSliderBarScrollPos", PE_v14_GetHSliderBarScrollPos, AIN_INT, 1, { AIN_INT } },
 	};
+	if (parts_v7_activities && get_fun(libno, "SetCheckBoxColor"))
+		static_library_register(&lib_PartsEngine, "SetCheckBoxColor", PE_v7_SetCheckBoxColor);
 	for (size_t i = 0; i < sizeof(bindings) / sizeof(bindings[0]); i++) {
 		struct ain_hll_function *fun = get_fun(libno, bindings[i].name);
 		if (!fun || !fun->arguments || fun->nr_arguments != bindings[i].nr_arguments

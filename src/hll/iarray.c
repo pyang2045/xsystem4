@@ -298,11 +298,12 @@ struct string *iarray_read_string(struct iarray_reader *r)
 {
 	int c;
 	struct string *s = make_string("", 0);
-	if (sys4_get_string_charset() == SYS4_CHARSET_GBK) {
+	if (sys4_get_string_charset() != SYS4_CHARSET_SJIS) {
 		// Exact inverse of iarray_write_string: a pair is written as
 		// p[0] | p[1] << 8 (>= 0x100), a single byte as a char. The SJIS
 		// path below turns a trailing single byte in the SJIS lead range
-		// (the last byte of many GBK strings, sign-extended) into two bytes.
+		// (the last byte of many GBK or UTF-8 strings, sign-extended) into
+		// two bytes.
 		while ((c = iarray_read(r))) {
 			char b[2] = { c & 0xff, (c >> 8) & 0xff };
 			string_append_cstr(&s, b, c >= 0x100 ? 2 : 1);

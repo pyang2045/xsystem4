@@ -960,7 +960,9 @@ bool PE_SetPartsFlat(int parts_no, struct string *filename, int state)
 		parts_dirty(parts);
 		return true;
 	}
-	return false;
+	// 妻みぐい３ gives the empty フラット名 of a pact node: no flat, which
+	// parts_flat_load has cleared; not a failure for the script to report.
+	return filename && !filename->size;
 }
 
 bool PE_IsPartsFlatEnd(int parts_no, int state)

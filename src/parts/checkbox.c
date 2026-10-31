@@ -343,6 +343,17 @@ void parts_checkbox_rebuild(struct parts *parts)
 	struct cg_metrics box;
 	for (int i = 0; i < PARTS_NR_STATES; i++)
 		checkbox_cg_name(cb, cb->checked, cb->enable ? i : 3, names[i], sizeof(names[i]));
+	if (!names[0][0] && cb->show_color && cb->w > 0 && cb->h > 0) {
+		// 妻みぐい３: the settings' colour swatches are boxes of the colour.
+		for (int i = 0; i < PARTS_NR_STATES; i++) {
+			parts_clear_construction_process(parts_get_construction_process(parts, i));
+			PE_AddCreateToPartsConstructionProcess(parts->no, cb->w, cb->h, i + 1);
+			PE_AddFillToPartsConstructionProcess(parts->no, 0, 0, cb->w, cb->h,
+					cb->r, cb->g, cb->b, i + 1);
+			PE_BuildPartsConstructionProcess(parts->no, i + 1);
+		}
+		return;
+	}
 	if (!names[0][0] || !asset_cg_get_metrics_by_name(names[0], &box))
 		return;
 	for (int i = 1; i < PARTS_NR_STATES; i++) {
@@ -387,7 +398,7 @@ void parts_checkbox_rebuild(struct parts *parts)
  * drawn again. */
 void parts_checkbox_update(void)
 {
-	if (ain->version < 14)
+	if (ain->version < 14 && !parts_v7_activities)
 		return;
 	if (!checkbox_any_dirty)
 		return;

@@ -148,10 +148,22 @@ static int save_controller_no(int id)
 	return index < 0 ? id : index;
 }
 
+/*
+ * The save holds what the activities made: v14, and ain v7 with the activity
+ * declarations (妻みぐい３, PartsEngine_PostLink). Other games keep their v3
+ * layout.
+ */
+bool parts_v7_activities;
+
+static bool parts_activity_save(void)
+{
+	return ain->version >= 14 || parts_v7_activities;
+}
+
 static void save_controller_ids(struct iarray_writer *w)
 {
 	// v14: always, the mark of a save whose IDs are root numbers.
-	if (ain->version < 14)
+	if (!parts_activity_save())
 		return;
 	iarray_write(w, SAVE_CONTROLLER_IDS);
 	iarray_write(w, ctrl_stack.nr_controllers);
@@ -164,7 +176,7 @@ static void save_controller_ids(struct iarray_writer *w)
 // the IDs (to be freed) and the active controller, NULL without a section.
 static int *load_controller_ids(struct iarray_reader *r, int version, int nr, int *active_out)
 {
-	if (ain->version < 14 || version < 7 || nr < 0 || nr > PARTS_CONTROLLER_STACK_MAX)
+	if (!parts_activity_save() || version < 7 || nr < 0 || nr > PARTS_CONTROLLER_STACK_MAX)
 		return NULL;
 	unsigned len = nr + 3;
 	if (r->size < len || r->size - len < r->pos)
@@ -695,7 +707,8 @@ static void load_parts_flat(struct iarray_reader *r, struct parts *parts,
 {
 	struct string *name = iarray_read_string_or_null(r);
 	parts_flat_load(parts, flat, name);
-	free_string(name);
+	if (name)
+		free_string(name);
 	flat->needs_advance = true;
 }
 
@@ -928,6 +941,10 @@ static void save_parts(struct iarray_writer *w, struct parts *parts, int version
 		iarray_write(w, parts->pactex_canvas_w);
 		iarray_write(w, parts->pactex_canvas_h);
 	}
+	if (parts_v7_activities) {
+		iarray_write(w, parts->has_widget_type);
+		iarray_write(w, parts->want_back_scene);
+	}
 	// TODO: once the Rance 9 save format stabilizes, bump save version
 	// and save unconditionally
 	if (parts_multi_controller) {
@@ -1004,6 +1021,10 @@ static void load_parts(struct iarray_reader *r, int version)
 	if (version >= 6) {
 		parts->pactex_canvas_w = iarray_read(r);
 		parts->pactex_canvas_h = iarray_read(r);
+	}
+	if (parts_v7_activities) {
+		parts->has_widget_type = iarray_read(r);
+		parts->want_back_scene = iarray_read(r);
 	}
 	// The transform is not saved (v14); a child's is combined once its
 	// parent is attached, by the update PE_Load ends with.
@@ -1441,7 +1462,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 	struct iarray_writer w;
 	iarray_init_writer(&w, "XPE");
 	// Older engines retain their byte-for-byte v3 layout.
-	int version = ain->version >= 14 ? CURRENT_SAVE_VERSION : 3;
+	int version = parts_activity_save() ? CURRENT_SAVE_VERSION : 3;
 	iarray_write(&w, version);
 	if (CURRENT_SAVE_VERSION > 1)
 		save_numeral_fonts(&w);
@@ -1450,7 +1471,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 	// and save unconditionally
 	if (parts_multi_controller) {
 		// v14: the top controller acts while none is designated.
-		int active = ain->version >= 14 && ctrl_stack.active < 0
+		int active = parts_activity_save() && ctrl_stack.active < 0
 			? ctrl_stack.nr_controllers - 1
 			: save_controller_no(ctrl_stack.active);
 		iarray_write(&w, active);
@@ -1513,7 +1534,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		iarray_write_at(&w, sub_pos, sub);
 	}
 
-	if (ain->version >= 14) {
+	if (parts_activity_save()) {
 		save_cg_deforms(&w, save_hidden);
 		save_wheelable(&w, save_hidden);
 		save_sound_names(&w, save_hidden);
@@ -1653,7 +1674,7 @@ bool PE_Load(struct page **buffer)
 		parts_controller_set_stack(nr, ids);
 		if (ids)
 			active = active_id;
-		if (ain->version >= 14)
+		if (parts_activity_save())
 			ctrl_stack.active = -1;	// made the loaded one below
 		else
 			ctrl_stack.active = active;
@@ -1693,7 +1714,7 @@ bool PE_Load(struct page **buffer)
 				parts_set_sub_color_mode(parts, true);
 		}
 	}
-	if (ain->version >= 14) {
+	if (parts_activity_save()) {
 		load_cg_deforms(&r);
 		if (!load_wheelable(&r)) {
 			free(ids);
@@ -1706,7 +1727,7 @@ bool PE_Load(struct page **buffer)
 		load_buttons(&r);
 	}
 	// (the controller ID section follows the lists; it was read first)
-	if (parts_multi_controller && ain->version >= 14) {
+	if (parts_multi_controller && parts_activity_save()) {
 		load_controller_finish(active, ids != NULL);
 		static bool warned;
 		if (!ids && !warned) {
@@ -1722,7 +1743,7 @@ bool PE_Load(struct page **buffer)
 	// child would be drawn, hit and measured at its own position, as if it
 	// had no parent, until the next frame's update. Before v14 the saved
 	// global position is what is drawn, as it always was.
-	if (ain->version >= 14)
+	if (parts_activity_save())
 		PE_UpdateComponent(0);
 
 	parts_engine_clean();

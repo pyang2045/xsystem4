@@ -2958,9 +2958,10 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 	// A 横スライダーバー (母爛漫's message windows' transparency slider) is
 	// read as a 橫滾動條: its pactex has the same keys but 全体スライダー量
 	// and スライダーレート.
-	const bool slider = ain->version >= 14 && widget_type == PARTS_COMPONENT_HSLIDERBAR;
+	const bool widgets = ain->version >= 14 || parts_v7_activities;
+	const bool slider = widgets && widget_type == PARTS_COMPONENT_HSLIDERBAR;
 	if (widget_type == PARTS_COMPONENT_VSCROLLBAR || slider
-			|| (ain->version >= 14 && widget_type == PARTS_COMPONENT_HSCROLLBAR)) {
+			|| (widgets && widget_type == PARTS_COMPONENT_HSCROLLBAR)) {
 		struct parts_scrollbar *sb = &parts_get(parts_no)->scrollbar;
 		sb->total = pactex_value_number(pactex_leaf_value(type_info,
 				"\x91\x53\x91\xcc\x83\x58\x83\x4e\x83\x8d\x81\x5b\x83\x8b\x97\xca",
@@ -2990,7 +2991,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 		 * no SJIS pactex was read, and a bar named otherwise shows
 		 * nothing, as it did. Not read: the names of the two buttons and
 		 * every フラット名 (the game's are all empty). */
-		if (ain->version >= 14) {
+		if (widgets) {
 			sb->length = pactex_value_number(pactex_cn_value(type_info,
 					"\xe9\x4c\xa4\xb5"), 0);				/* 長さ */
 			sb->width = pactex_value_number(pactex_cn_value(type_info,
@@ -3028,7 +3029,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 	/* --- 檢查ボックス and ラジオ按鈕ボックス, by the widget type of the native
 	 * table and not by a legacy guess (which also gives 1). Before the button
 	 * below: a radio box's type name contains 按鈕. --- */
-	if (ain->version >= 14) {
+	if (widgets) {
 		const int native_type = pactex_native_type(ptype);
 		if (native_type == PACTEX_EPT_CHECK_BOX) {
 			pactex_apply_check_box(type_info, parts_get(parts_no));
@@ -3710,6 +3711,16 @@ static bool PartsEngine_ReleaseActivity_v7(struct string *name, struct page **er
 	return r;
 }
 
+/* The name of the archive entry: 妻みぐい３ (Ｅ＿コンフィグファイル名) gives the
+ * activity file with its source extension, .pact, not only the bare name. */
+static void pactex_entry_name(char *out, size_t size, const char *fname)
+{
+	size_t len = strlen(fname);
+	if (len >= 5 && !strcmp(fname + len - 5, ".pact"))
+		len -= 5;
+	snprintf(out, size, "%.*s.pactex", (int)len, fname);
+}
+
 static bool PartsEngine_ReadActivityFile(struct string *name, struct string *filename, bool edit)
 {
 	PartsEngine_CreateActivity(name);
@@ -3730,18 +3741,18 @@ static bool PartsEngine_ReadActivityFile(struct string *name, struct string *fil
 	char pactex_name[512];
 
 	/* Try: basename.pactex */
-	snprintf(pactex_name, sizeof(pactex_name), "%s.pactex", base);
+	pactex_entry_name(pactex_name, sizeof(pactex_name), base);
 	dfile = asset_get_by_name(ASSET_PACT, pactex_name, NULL);
 
 	/* Try: full path.pactex (forward slash) */
 	if (!dfile && base != fname) {
-		snprintf(pactex_name, sizeof(pactex_name), "%s.pactex", fname);
+		pactex_entry_name(pactex_name, sizeof(pactex_name), fname);
 		dfile = asset_get_by_name(ASSET_PACT, pactex_name, NULL);
 	}
 
 	/* Try: full path.pactex (backslash — AlicArch v2 uses backslash separators) */
 	if (!dfile && base != fname) {
-		snprintf(pactex_name, sizeof(pactex_name), "%s.pactex", fname);
+		pactex_entry_name(pactex_name, sizeof(pactex_name), fname);
 		for (char *p = pactex_name; *p; p++) {
 			if (*p == '/') *p = '\\';
 		}
@@ -3795,11 +3806,11 @@ static bool PartsEngine_IsExistActivityFile(struct string *filename)
 	const char *base = strrchr(fname, '/');
 	base = base ? base + 1 : fname;
 	char pactex_name[512];
-	snprintf(pactex_name, sizeof(pactex_name), "%s.pactex", base);
+	pactex_entry_name(pactex_name, sizeof(pactex_name), base);
 	if (asset_exists_by_name(ASSET_PACT, pactex_name, NULL))
 		return true;
 	if (base != fname) {
-		snprintf(pactex_name, sizeof(pactex_name), "%s.pactex", fname);
+		pactex_entry_name(pactex_name, sizeof(pactex_name), fname);
 		if (asset_exists_by_name(ASSET_PACT, pactex_name, NULL))
 			return true;
 	}

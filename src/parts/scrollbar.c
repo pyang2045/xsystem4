@@ -199,7 +199,7 @@ static void scrollbar_look_build(struct parts *parts);
  */
 void parts_scrollbar_update(void)
 {
-	if (ain->version < 14)
+	if (ain->version < 14 && !parts_v7_activities)
 		return;
 	struct parts *parts;
 	PARTS_LIST_FOREACH(parts) {
@@ -382,7 +382,7 @@ static void scrollbar_look_build(struct parts *parts)
 
 static struct parts_scrollbar_look *scrollbar_look(struct parts *parts)
 {
-	if (ain->version < 14 || !scrollbar_is_bar(parts) || !parts->scrollbar_look)
+	if ((ain->version < 14 && !parts_v7_activities) || !scrollbar_is_bar(parts) || !parts->scrollbar_look)
 		return NULL;
 	if (parts->scrollbar_look->dirty)
 		scrollbar_look_build(parts);
@@ -391,7 +391,7 @@ static struct parts_scrollbar_look *scrollbar_look(struct parts *parts)
 
 bool parts_scrollbar_has_look(struct parts *parts)
 {
-	return ain->version >= 14 && scrollbar_is_bar(parts) && parts->scrollbar_look;
+	return (ain->version >= 14 || parts_v7_activities) && scrollbar_is_bar(parts) && parts->scrollbar_look;
 }
 
 /* cvttss2si: a float that is no int (out of range, NaN) gives INT_MIN. */
@@ -607,7 +607,7 @@ static void scrollbar_end_drag(void)
  */
 void parts_scrollbar_input(Point pos, bool down, bool was_down, struct parts *target)
 {
-	if (ain->version < 14)
+	if (ain->version < 14 && !parts_v7_activities)
 		return;
 	enum parts_scrollbar_hit hit = PARTS_SCROLLBAR_MISS;
 	struct parts_scrollbar_look *look = NULL;

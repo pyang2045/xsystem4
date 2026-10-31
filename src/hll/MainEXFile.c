@@ -948,7 +948,203 @@ static bool MainEXFile_GetFormatNameList(struct string *name, int list_slot, int
 	return true;
 }
 
+/*
+ * ain v7 (妻みぐい３): the getters are bool and hand the value out through a
+ * ref argument, which stays as it is when there is no such value (EX_Int and
+ * the other script wrappers then return their default). The two-dimensional
+ * forms take (Col, Row): EX_A2Int(Name, Row, Col, ...) pushes them that way.
+ * IA2, SA2 and RA2 select the row by an int key, a string key or its index and
+ * the column by its format name.
+ */
+static bool v7_get_int(struct ex_value *v, int *data)
+{
+	if (!v || (v->type != EX_INT && v->type != EX_FLOAT))
+		return false;
+	*data = value_int(v, *data);
+	return true;
+}
+
+static bool v7_get_float(struct ex_value *v, float *data)
+{
+	if (!v || (v->type != EX_INT && v->type != EX_FLOAT))
+		return false;
+	*data = value_float(v, *data);
+	return true;
+}
+
+static bool v7_get_string(struct ex_value *v, struct string **data)
+{
+	if (!v || v->type != EX_STRING)
+		return false;
+	if (*data)
+		free_string(*data);
+	*data = string_ref(v->s);
+	return true;
+}
+
+static struct ex_value *v7_list_value(struct string *name, int index)
+{
+	struct ex_list *list = resolve_list(name);
+	return list ? ex_list_get(list, index) : NULL;
+}
+
+static struct ex_value *v7_cell(struct string *name, int col, int row)
+{
+	struct ex_table *t = resolve_table(name);
+	if (t)
+		return ex_table_get(t, row, col);
+	t = list_item_table(resolve_list(name), row);
+	return t ? ex_table_get(t, 0, col) : NULL;
+}
+
+static struct ex_value *v7_row_cell(struct string *name, int row, struct string *format)
+{
+	int col = MainEXFile_GetColAtFormatName(name, format, 0);
+	if (row < 0 || col < 0)
+		return NULL;
+	return v7_cell(name, col, row);
+}
+
+static struct ex_value *v7_int_key_cell(struct string *name, int key, struct string *format)
+{
+	return v7_row_cell(name, MainEXFile_GetRowAtIntKey(name, key, 0), format);
+}
+
+static struct ex_value *v7_string_key_cell(struct string *name, struct string *key, struct string *format)
+{
+	return v7_row_cell(name, MainEXFile_GetRowAtStringKey(name, key, 0), format);
+}
+
+#define V7_GETTERS(prefix, params, value) \
+	static int MainEXFile_v7_##prefix##Type params { struct ex_value *v = value; return v ? v->type : 0; } \
+	static bool MainEXFile_v7_##prefix##Exists params { return !!(value); }
+#define V7_DATA(prefix, type, suffix, get, params, value) \
+	static bool MainEXFile_v7_##prefix##suffix params { return get(value, data); }
+#define V7_ALL_DATA(prefix, value, ...) \
+	V7_DATA(prefix, int, Int, v7_get_int, (__VA_ARGS__, int *data, int id), value) \
+	V7_DATA(prefix, float, Float, v7_get_float, (__VA_ARGS__, float *data, int id), value) \
+	V7_DATA(prefix, string, String, v7_get_string, (__VA_ARGS__, struct string **data, int id), value)
+
+V7_GETTERS(A2, (struct string *name, int col, int row, int id), v7_cell(name, col, row))
+V7_GETTERS(IA2, (struct string *name, int key, struct string *format, int id), v7_int_key_cell(name, key, format))
+V7_GETTERS(SA2, (struct string *name, struct string *key, struct string *format, int id), v7_string_key_cell(name, key, format))
+V7_GETTERS(RA2, (struct string *name, int row, struct string *format, int id), v7_row_cell(name, row, format))
+V7_ALL_DATA(, resolve(name), struct string *name)
+V7_ALL_DATA(A, v7_list_value(name, index), struct string *name, int index)
+V7_ALL_DATA(A2, v7_cell(name, col, row), struct string *name, int col, int row)
+V7_ALL_DATA(IA2, v7_int_key_cell(name, key, format), struct string *name, int key, struct string *format)
+V7_ALL_DATA(SA2, v7_string_key_cell(name, key, format), struct string *name, struct string *key, struct string *format)
+V7_ALL_DATA(RA2, v7_row_cell(name, row, format), struct string *name, int row, struct string *format)
+
+static bool v7_child_name(struct string *tree_path, int index, struct string **out, bool leaves)
+{
+	struct ex_tree *tree = resolve_tree(tree_path);
+	if (!tree)
+		return false;
+	int count = 0;
+	for (unsigned i = 0; i < tree->nr_children; i++) {
+		struct ex_tree *child = &tree->children[i];
+		if (child->is_leaf != leaves)
+			continue;
+		if (count++ == index) {
+			if (*out)
+				free_string(*out);
+			*out = string_ref(leaves ? child->leaf.name : child->name);
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool MainEXFile_v7_GetNodeName(struct string *tree_path, int index, struct string **out, int id)
+{
+	return v7_child_name(tree_path, index, out, false);
+}
+
+static bool MainEXFile_v7_GetEXName(struct string *tree_path, int index, struct string **out, int id)
+{
+	return v7_child_name(tree_path, index, out, true);
+}
+
+// Appends the names to the array, as ex_list_children for the v14 slot.
+static bool v7_child_list(struct string *tree_path, struct page **array, bool leaves)
+{
+	struct ex_tree *tree = resolve_tree(tree_path);
+	if (!tree)
+		return false;
+	int count = 0;
+	for (unsigned i = 0; i < tree->nr_children; i++) {
+		if (tree->children[i].is_leaf == leaves)
+			count++;
+	}
+	if (!count)
+		return true;
+	struct page *old = *array;
+	int kept = old ? old->nr_vars : 0;
+	heap_gc_inhibit();
+	struct page *page = alloc_page(ARRAY_PAGE, AIN_ARRAY_STRING, kept + count);
+	page->array.struct_type = -1;
+	page->array.rank = 1;
+	for (int i = 0; i < kept; i++)
+		page->values[i] = old->values[i];
+	int n = kept;
+	for (unsigned i = 0; i < tree->nr_children; i++) {
+		struct ex_tree *child = &tree->children[i];
+		if (child->is_leaf == leaves)
+			page->values[n++].i = heap_alloc_string(string_ref(leaves ? child->leaf.name : child->name));
+	}
+	*array = page;
+	heap_gc_allow();
+	if (old)
+		free_page(old);
+	return true;
+}
+
+static bool MainEXFile_v7_GetNodeNameList(struct string *tree_path, struct page **array, int id)
+{
+	return v7_child_list(tree_path, array, false);
+}
+
+static bool MainEXFile_v7_GetEXNameList(struct string *tree_path, struct page **array, int id)
+{
+	return v7_child_list(tree_path, array, true);
+}
+
+extern struct static_library lib_MainEXFile;
+
+static void MainEXFile_PreLink(void)
+{
+	int libno = ain_get_library(ain, "MainEXFile");
+	if (libno < 0)
+		return;
+	int fno = ain_get_library_function(ain, libno, "Int");
+	if (fno < 0 || ain->libraries[libno].functions[fno].nr_arguments != 3
+	    || ain->libraries[libno].functions[fno].arguments[1].type.data != AIN_REF_INT)
+		return;
+#define V7(fun) static_library_replace(&lib_MainEXFile, #fun, MainEXFile_v7_##fun)
+	V7(A2Type); V7(A2Exists); V7(Int); V7(Float); V7(String);
+	V7(AInt); V7(AFloat); V7(AString); V7(A2Int); V7(A2Float); V7(A2String);
+	V7(GetNodeName); V7(GetEXName); V7(GetNodeNameList); V7(GetEXNameList);
+#undef V7
+}
+
 HLL_LIBRARY(MainEXFile,
+	    HLL_EXPORT(_PreLink, MainEXFile_PreLink),
+	    HLL_EXPORT(IA2Type, MainEXFile_v7_IA2Type),
+	    HLL_EXPORT(SA2Type, MainEXFile_v7_SA2Type),
+	    HLL_EXPORT(RA2Type, MainEXFile_v7_RA2Type),
+	    HLL_EXPORT(IA2Exists, MainEXFile_v7_IA2Exists),
+	    HLL_EXPORT(SA2Exists, MainEXFile_v7_SA2Exists),
+	    HLL_EXPORT(RA2Exists, MainEXFile_v7_RA2Exists),
+	    HLL_EXPORT(IA2Int, MainEXFile_v7_IA2Int),
+	    HLL_EXPORT(IA2Float, MainEXFile_v7_IA2Float),
+	    HLL_EXPORT(IA2String, MainEXFile_v7_IA2String),
+	    HLL_EXPORT(SA2Int, MainEXFile_v7_SA2Int),
+	    HLL_EXPORT(SA2Float, MainEXFile_v7_SA2Float),
+	    HLL_EXPORT(SA2String, MainEXFile_v7_SA2String),
+	    HLL_EXPORT(RA2Int, MainEXFile_v7_RA2Int),
+	    HLL_EXPORT(RA2Float, MainEXFile_v7_RA2Float),
+	    HLL_EXPORT(RA2String, MainEXFile_v7_RA2String),
 	    HLL_EXPORT(_ModuleInit, MainEXFile_ModuleInit),
 	    HLL_EXPORT(_ModuleFini, MainEXFile_ModuleFini),
 	    HLL_EXPORT(ReloadDebugEXFile, MainEXFile_ReloadDebugEXFile),

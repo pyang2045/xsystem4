@@ -633,6 +633,7 @@ struct parts_checkbox {
 	bool enable;        // 有効狀態 (+0xf0)
 	bool checked;       // 檢查狀態 (+0xf1)
 	int r, g, b;        // 按鈕の色 (+0xf4)
+	bool show_color;    // SetCheckBoxColor on a box without a ＣＧ名 (ain v7)
 	struct parts_widget_font font; // +0x100
 	char *cg_name;                // ＣＧ名 (+0x134)
 	char *over_cg_name;           // 覆蓋ＣＧ名 (+0x14c)
@@ -1217,5 +1218,8 @@ static inline bool parts_state_valid(int state)
 }
 
 int parts_cg_deform(struct parts *parts, int state);
+
+// ain v7 with the activity declarations (妻みぐい３): see save.c.
+extern bool parts_v7_activities;
 
 #endif /* SYSTEM4_PARTS_INTERNAL_H */

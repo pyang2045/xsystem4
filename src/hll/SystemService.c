@@ -972,11 +972,65 @@ static struct ain_hll_function *get_fun(int libno, const char *name)
 	return fno >= 0 ? &ain->libraries[libno].functions[fno] : NULL;
 }
 
+/*
+ * ain v7 (妻みぐい３) has the out-parameter forms of the string getters: a
+ * string return does not reach the script and the int writes of GetCPUInfo
+ * would land on its string slots.
+ */
+static void v7_set_string(struct string **out, struct string *value)
+{
+	if (*out)
+		free_string(*out);
+	*out = value;
+}
+
+static void SystemService_v7_GetGameName(struct string **out)
+{
+	v7_set_string(out, SystemService_GetGameName());
+}
+
+static void SystemService_v7_GetGameFolderPath(struct string **out)
+{
+	v7_set_string(out, SystemService_GetGameFolderPath());
+}
+
+static void SystemService_v7_GetOSInfo(struct string **out)
+{
+	v7_set_string(out, SystemService_GetOSInfo());
+}
+
+static void SystemService_v7_GetScreenInfo(struct string **out)
+{
+	v7_set_string(out, SystemService_GetScreenInfo());
+}
+
+static void SystemService_v7_GetCPUInfo(struct string **vendor, int *signature, int *flag, struct string **brand)
+{
+	v7_set_string(vendor, string_ref(&EMPTY_STRING));
+	*signature = 0;
+	*flag = 0;
+	v7_set_string(brand, string_ref(&EMPTY_STRING));
+}
+
+static void SystemService_v7_PreLink(int libno)
+{
+	int fno = ain_get_library_function(ain, libno, "GetGameFolderPath");
+	if (fno < 0 || ain->libraries[libno].functions[fno].nr_arguments != 1)
+		return;
+	static_library_replace(&lib_SystemService, "GetGameName", SystemService_v7_GetGameName);
+	static_library_replace(&lib_SystemService, "GetGameFolderPath", SystemService_v7_GetGameFolderPath);
+	static_library_replace(&lib_SystemService, "GetOSInfo", SystemService_v7_GetOSInfo);
+	static_library_replace(&lib_SystemService, "GetScreenInfo", SystemService_v7_GetScreenInfo);
+	static_library_replace(&lib_SystemService, "GetCPUInfo", SystemService_v7_GetCPUInfo);
+}
+
 static void SystemService_PreLink(void)
 {
 	struct ain_hll_function *fun;
 	int libno = ain_get_library(ain, "SystemService");
 	assert(libno >= 0);
+
+	SystemService_v7_PreLink(libno);
 
 	fun = get_fun(libno, "IsResetOnce");
 	if (fun && fun->nr_arguments == 1) {
