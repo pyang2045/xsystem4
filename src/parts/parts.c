@@ -198,7 +198,7 @@ struct parts *parts_get(int parts_no)
 			stale_warnings++;
 			WARNING("stale activity parts %d re-created on controller %d",
 					parts_no, parts->controller_no);
-			if (getenv("XSYS4_STALE_STACK") && stale_warnings == 1)
+			if (dev_getenv("XSYS4_STALE_STACK") && stale_warnings == 1)
 				vm_stack_trace();
 		}
 		// ... and hangs under the root of its controller (0x53d1d0 ->
@@ -3162,7 +3162,7 @@ static void parts_set_parent_now(struct parts *parts, int parent_parts_no)
 	if (parent) {
 		if (ain->version >= 14 && parent->controller_no != parts->controller_no) {
 			static unsigned traced;
-			if (getenv("XSYS4_STAGE2_TRACE") && traced++ < 60)
+			if (dev_getenv("XSYS4_STAGE2_TRACE") && traced++ < 60)
 				WARNING("S2 layer-root reparent: parts %d (controller %d) under %d (controller %d)",
 					parts->no, parts->controller_no, parent->no, parent->controller_no);
 			parts_set_controller(parts, parent->controller_no);

@@ -36,7 +36,7 @@ void main() {
         // offset into the band
         float offset = mod(p - lhs, 15.0);
         // if offset >= band_no, use new texture
-        float new = step(band_no, offset);
-        vec3 col = mix(texture(old, tex_coord).rgb, texture(tex, tex_coord).rgb, new);
+        float use_new = step(band_no, offset);
+        vec3 col = mix(texture(old, tex_coord).rgb, texture(tex, tex_coord).rgb, use_new);
         frag_color = vec4(col, 1.0);
 }

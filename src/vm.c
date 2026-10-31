@@ -486,11 +486,11 @@ static void stage2_trace_init(void)
 	if (stage2_trace_initialized)
 		return;
 	stage2_trace_initialized = true;
-	const char *enabled = getenv("XSYS4_STAGE2_TRACE");
+	const char *enabled = dev_getenv("XSYS4_STAGE2_TRACE");
 	stage2_trace_enabled = enabled && *enabled && strcmp(enabled, "0");
 	if (!stage2_trace_enabled)
 		return;
-	const char *from_msg = getenv("XSYS4_STAGE2_FROM_MSG");
+	const char *from_msg = dev_getenv("XSYS4_STAGE2_FROM_MSG");
 	if (from_msg && *from_msg) {
 		char *end;
 		long n = strtol(from_msg, &end, 10);
@@ -499,8 +499,8 @@ static void stage2_trace_init(void)
 			stage2_trace_msg_ready = false;
 		}
 	}
-	const char *value = getenv("XSYS4_STAGE2_AFTER_MS");
-	const char *watch = getenv("XSYS4_STAGE2_WATCH_FNO");
+	const char *value = dev_getenv("XSYS4_STAGE2_AFTER_MS");
+	const char *watch = dev_getenv("XSYS4_STAGE2_WATCH_FNO");
 	if (watch) {
 		char *end;
 		long n = strtol(watch, &end, 10);
@@ -512,13 +512,13 @@ static void stage2_trace_init(void)
 		if (n >= 0 && n <= 3600000)
 			stage2_trace_after_ms = n;
 	}
-	value = getenv("XSYS4_STAGE2_PER_FNO");
+	value = dev_getenv("XSYS4_STAGE2_PER_FNO");
 	if (value) {
 		long n = strtol(value, NULL, 10);
 		if (n >= 1 && n <= 64)
 			stage2_trace_per_fno = n;
 	}
-	value = getenv("XSYS4_STAGE2_FNOS");
+	value = dev_getenv("XSYS4_STAGE2_FNOS");
 	if (value && *value) {
 		stage2_trace_nr_fnos = 0;
 		while (*value && stage2_trace_nr_fnos < STAGE2_TRACE_TARGETS) {
@@ -2481,7 +2481,7 @@ bool vm_ask(enum vm_ask_type type, const char *text, bool unshown)
 			*p = ' ';
 	}
 
-	const char *automatic = getenv("XSYS4_AUTO_MSGBOX");
+	const char *automatic = dev_getenv("XSYS4_AUTO_MSGBOX");
 	if (automatic && !*automatic)
 		automatic = NULL;
 	if (automatic && strcmp(automatic, "ok") && strcmp(automatic, "cancel")) {
@@ -3621,7 +3621,7 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 						display_sjis0(file_s ? file_s->text : "?"),
 						line,
 						display_sjis1(expr_s ? expr_s->text : "?"));
-				if (getenv("XSYS4_ASSERT_STACK")) {
+				if (dev_getenv("XSYS4_ASSERT_STACK")) {
 					for (int _h = call_stack_ptr-1; _h >= 0 && _h >= call_stack_ptr-14; _h--) {
 						int _hfno = call_stack[_h].fno;
 						WARNING("  assert stack[%d]: fno=%d '%s'", _h, _hfno,
@@ -5833,7 +5833,7 @@ static void vm_execute(void)
 			static int trace_fno = -2;
 			static int trace_left = 6000;
 			if (unlikely(trace_fno == -2)) {
-				const char *tf = getenv("XSYS4_TRACE_FNO");
+				const char *tf = dev_getenv("XSYS4_TRACE_FNO");
 				trace_fno = tf ? atoi(tf) : -1;
 			}
 			if (unlikely(trace_fno >= 0) && trace_left > 0 && call_stack_ptr > 0

@@ -785,19 +785,28 @@ static void load_rsave_array(int slot, struct rsave_heap_array *a)
 static void load_rsave_struct(int slot, struct rsave_heap_struct *s)
 {
 	int struct_index = resolve_struct_symbol(&s->struct_type);
-	struct page *page = alloc_page(STRUCT_PAGE, struct_index, s->nr_slots);
+	// A wrap page (STRUCT_PAGE, index -1) belongs to no struct: it is written
+	// with an empty name and no member types (see struct_page_to_rsave).
+	bool wrap = struct_index < 0 && s->struct_type.name && !s->struct_type.name[0];
+	if (!wrap && (struct_index < 0 || struct_index >= ain->nr_structures)) {
+		invalid_save_data("Unknown struct %s",
+				display_sjis0(s->struct_type.name ? s->struct_type.name : "?"));
+	}
+	struct page *page = alloc_page(STRUCT_PAGE, wrap ? -1 : struct_index, s->nr_slots);
 
 	// type check
-	struct ain_struct *as = &ain->structures[struct_index];
-	if (as->nr_members < s->nr_types) {
-		invalid_save_data("Struct %s has too many members", as->name);
-	}
-	for (int i = 0; i < s->nr_types; i++) {
-		if (s->types[i] != as->members[i].type.data) {
-			invalid_save_data(
-				"%s.%s: member type mismatch. Expected %d, got %d",
-				as->name, as->members[i].name,
-				as->members[i].type.data, s->types[i]);
+	if (!wrap) {
+		struct ain_struct *as = &ain->structures[struct_index];
+		if (as->nr_members < s->nr_types) {
+			invalid_save_data("Struct %s has too many members", display_sjis0(as->name));
+		}
+		for (int i = 0; i < s->nr_types; i++) {
+			if (s->types[i] != as->members[i].type.data) {
+				invalid_save_data(
+					"%s.%s: member type mismatch. Expected %d, got %d",
+					display_sjis0(as->name), display_sjis1(as->members[i].name),
+					as->members[i].type.data, s->types[i]);
+			}
 		}
 	}
 

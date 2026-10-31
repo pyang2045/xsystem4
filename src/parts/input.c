@@ -838,7 +838,7 @@ static void v14_press(Point cur_pos, struct parts *target)
 		drag_initial_pos = target->local.pos;
 		drag_start_cursor = cur_pos;
 	}
-	if (getenv("XSYS4_STAGE2_TRACE")) {
+	if (dev_getenv("XSYS4_STAGE2_TRACE")) {
 		unsigned candidates = 0;
 		struct parts *parts;
 		NOTICE("S2 parts press ms=%u key=%d pos=%d,%d target=%d", SDL_GetTicks(),
@@ -863,7 +863,7 @@ static void v14_release(int pressed_no, Point cur_pos, bool have_pos)
 	int vars[3] = { cur_pos.x, cur_pos.y, VK_LBUTTON };
 	struct parts *target = pressed_no ? parts_try_get(pressed_no) : NULL;
 	bool on_target = target && target->is_hovered && target->clickable && have_pos;
-	if (getenv("XSYS4_STAGE2_TRACE"))
+	if (dev_getenv("XSYS4_STAGE2_TRACE"))
 		NOTICE("S2 click ms=%u key=%d pos=%d,%d target=%d%s%s", SDL_GetTicks(), VK_LBUTTON,
 				cur_pos.x, cur_pos.y, target ? target->no : 0,
 				target && !on_target ? " (left)" : "",

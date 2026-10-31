@@ -2,6 +2,7 @@ project('system4', 'c',
         meson_version: '>= 0.59',
         default_options : ['c_std=c11'])
 add_project_arguments('-D_DEFAULT_SOURCE', language : 'c')
+add_project_arguments('-DXSYS4_DEV_HOOKS=' + (get_option('dev_hooks') ? '1' : '0'), language : 'c')
 add_project_arguments('-DXSYS4_DATA_DIR="' + get_option('prefix') / get_option('datadir') / 'xsystem4"', language : 'c')
 
 if get_option('buildtype').startswith('release')

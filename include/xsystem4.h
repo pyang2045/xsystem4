@@ -106,6 +106,20 @@ void screenshot_save(void);
 #define XSYS4_DATA_DIR "/usr/local/share/xsystem4"
 #endif
 
+/*
+ * The XSYS4_* test and trace variables (auto input, screenshots, traces, ...).
+ * Builds with -Ddev_hooks=false (releases) read none of them: dev_getenv is
+ * NULL there, and the code behind it compiles away.
+ */
+#ifndef XSYS4_DEV_HOOKS
+#define XSYS4_DEV_HOOKS 1
+#endif
+#if XSYS4_DEV_HOOKS
+#define dev_getenv(name) getenv(name)
+#else
+#define dev_getenv(name) ((void)(name), (char *)NULL)
+#endif
+
 #define MMAP_IF_64BIT (sizeof(void*) >= 8 ? ARCHIVE_MMAP : 0)
 
 extern bool game_daibanchou_en;
@@ -115,6 +129,9 @@ extern bool game_rance7_mg;
 extern bool game_rance8;
 extern bool game_rance8_mg;
 extern bool game_dungeons_and_dolls;
+
+/* The string SystemService.GetGameVersionByText returns for this game (hacks.c). */
+const char *game_version_text(void);
 
 /* CN (GBK/GB18030) text support. Auto-detected in system4.c; consumed by the
  * text/encoding paths. Originally declared in the fork's libsys4 header, which

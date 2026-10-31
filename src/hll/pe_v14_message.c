@@ -328,7 +328,7 @@ static void pe_v14_trace_window(const char *operation, const char *phase,
 static bool pe_v14_trace_window_enabled(unsigned *count, int parts_no)
 {
 	static unsigned missing_count;
-	if (!getenv("XSYS4_STAGE2_TRACE"))
+	if (!dev_getenv("XSYS4_STAGE2_TRACE"))
 		return false;
 	if ((*count)++ < 12)
 		return true;

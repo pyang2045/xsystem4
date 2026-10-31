@@ -28,6 +28,7 @@
 
 #include "hll.h"
 #include "vm/page.h"
+#include "xsystem4.h"
 
 struct shuffle_table {
 	int id;
@@ -139,7 +140,7 @@ uint32_t sys4_rand_time_seed(void)
 	static int fixed = -1;
 	static uint32_t fixed_seed, calls, last;
 	if (fixed < 0) {
-		const char *env = getenv("XSYS4_RANDOM_SEED");
+		const char *env = dev_getenv("XSYS4_RANDOM_SEED");
 		fixed = env && *env ? 1 : 0;
 		if (fixed)
 			fixed_seed = (uint32_t)strtoul(env, NULL, 0);

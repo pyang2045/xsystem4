@@ -517,7 +517,7 @@ static uint64_t gfx_stage2_perf_begin_swap(void)
 {
 	if (!stage2_perf.initialized) {
 		stage2_perf.initialized = true;
-		const char *value = getenv("XSYS4_STAGE2_PERF");
+		const char *value = dev_getenv("XSYS4_STAGE2_PERF");
 		stage2_perf.enabled = value && *value && strcmp(value, "0");
 		if (stage2_perf.enabled) {
 			stage2_perf.frequency = SDL_GetPerformanceFrequency();
@@ -594,8 +594,8 @@ void gfx_swap(void)
 		static int shot_max = 40;
 		static int shot_count = 0;
 		if (!shot_checked) {
-			shot_dir = getenv("XSYS4_SCREENSHOT_DIR");
-			const char *sched = getenv("XSYS4_SCREENSHOT_SCHEDULE");
+			shot_dir = dev_getenv("XSYS4_SCREENSHOT_DIR");
+			const char *sched = dev_getenv("XSYS4_SCREENSHOT_SCHEDULE");
 			unsigned start, step;
 			int count;
 			if (sched && sscanf(sched, "%u,%u,%d", &start, &step, &count) == 3
