@@ -739,6 +739,8 @@ struct parts {
 	bool pixel_hittest;
 	bool lock_input_state;
 	bool want_save;
+	// SetWantSaveBackScene: SaveBackScene keeps this parts and its subtree.
+	bool want_back_scene;
 	bool draggable;
 	// The sound archive's numbers of the cursor and the click sound, which
 	// the input plays (-1: none). v14: those of sound_names[2] and [3]
@@ -798,6 +800,10 @@ struct parts {
 	struct parts_motion_list motion;
 	int controller_no;
 	int component_type;   // v14 component widget type (EPartsType)
+	// Programs before v14 (ain v7 妻みぐい３): component_type is a widget
+	// type (0 to 9, the same numbers as v14) the pactex loader or
+	// SetComponentType gave; their other types are state types.
+	bool has_widget_type;
 	// v14 low-level (EPartsType 18) state types recognized by the pactex
 	// loader (19 CG, 21 text, 24 numeral, 27 CG detection); 0 = none.
 	int component_state_type[PARTS_NR_STATES];

@@ -734,6 +734,7 @@ int main(int argc, char *argv[])
 		// tables are never all well-formed UTF-8.
 		if (sc.nonascii >= 16 && sc.utf8_valid == sc.nonascii) {
 			ain_is_utf8 = true;
+			sys4_set_string_charset(SYS4_CHARSET_UTF8);
 			WARNING("Detected UTF-8 strings in AIN (utf8=%d/%d)", sc.utf8_valid, sc.nonascii);
 		} else if (sc.legacy > 5) {
 			ain_is_gb18030 = true;

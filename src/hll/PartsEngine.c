@@ -2221,6 +2221,73 @@ static void PartsEngine_PreLink(void)
 	}
 }
 
+/* SaveBackScene and the rest with the ain v7 declarations (ref array<int>
+ * buffers): src/parts/save.c. */
+static void PE_v7_SetWantSaveBackScene(int parts_no, bool enable)
+{
+	PE_SetWantSaveBackScene(parts_no, enable);
+}
+
+static bool PE_v7_IsWantSaveBackScene(int parts_no)
+{
+	return PE_IsWantSaveBackScene(parts_no);
+}
+
+// The greatest global Z of a parts and its subtree.
+static int parts_max_global_z(struct parts *parts)
+{
+	int z = parts->global.z;
+	struct parts *child;
+	TAILQ_FOREACH(child, &parts->children, child_list_entry) {
+		int cz = parts_max_global_z(child);
+		if (cz > z)
+			z = cz;
+	}
+	return z;
+}
+
+static int PE_v7_GetComponentAbsoluteMaxPosZ(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts ? parts_max_global_z(parts) : 0;
+}
+
+// No active parts: the input of the engines before v14 keeps none.
+static int PE_v7_GetActiveParts(void)
+{
+	return 0;
+}
+
+// The transforms are combined at each update already.
+static void PE_v7_UpdateMatrix(possibly_unused bool message_window_show)
+{
+}
+
+/* Programs before v14 with the v14 parts library (ain v7 妻みぐい３: the
+ * activities, the widgets, the controllers, but the message API of Rance
+ * 9): the functions whose declarations are those of v14 or the old ones
+ * named. */
+static void pe_v7_register(int libno)
+{
+	struct static_library *lib = &lib_PartsEngine;
+	static_library_register(lib, "Parts_GetParentPartsNumber", PE_v14_GetParentPartsNumber);
+	static_library_register(lib, "GetComponentAbsoluteMaxPosZ", PE_v7_GetComponentAbsoluteMaxPosZ);
+	static_library_register(lib, "GetActiveParts", PE_v7_GetActiveParts);
+	static_library_register(lib, "UpdateMatrix", PE_v7_UpdateMatrix);
+	static_library_register(lib, "SetWantSaveBackScene", PE_v7_SetWantSaveBackScene);
+	static_library_register(lib, "IsWantSaveBackScene", PE_v7_IsWantSaveBackScene);
+	struct ain_hll_function *fun = get_fun(libno, "SaveBackScene");
+	if (fun && fun->nr_arguments == 1 && fun->arguments[0].type.data == AIN_REF_ARRAY_INT) {
+		static_library_register(lib, "SaveBackScene", PE_SaveBackScene);
+		static_library_register(lib, "LoadBackScene", PE_LoadBackScene);
+		static_library_register(lib, "ClearBackScene", PE_ClearBackScene);
+	}
+	fun = get_fun(libno, "Parts_SetSoundName");
+	if (fun && fun->nr_arguments == 3 && fun->arguments[0].type.data == AIN_INT
+	    && fun->arguments[1].type.data == AIN_STRING && fun->arguments[2].type.data == AIN_INT)
+		static_library_register(lib, "Parts_SetSoundName", PE_SetSoundName);
+}
+
 // Runs after link_libraries(): static_library_register() requires the
 // runtime library table to exist.
 static void PartsEngine_PostLink(void)
@@ -2229,6 +2296,8 @@ static void PartsEngine_PostLink(void)
 	if (libno < 0)
 		return;
 	pe_v14_register_wheel(libno);
+	if (ain->version < 14 && get_fun(libno, "CreateActivity") && !get_fun(libno, "GetMessageUniqueID"))
+		pe_v7_register(libno);
 	if (get_fun(libno, "AddController")) {
 		extern void pe_controller_register(void);
 		pe_controller_register();

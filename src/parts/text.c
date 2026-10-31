@@ -29,6 +29,12 @@
 static int extract_multibyte_char(const char *src, char *dst)
 {
 	unsigned char c = (unsigned char)*src;
+	if (ain_is_utf8) {
+		int n = utf8_char_len(src);
+		memcpy(dst, src, n);
+		dst[n] = '\0';
+		return n;
+	}
 	if (ain_is_gb18030 && c >= 0x81 && c <= 0xFE) {
 		/* 2-byte, or 4-byte GB18030; a character cut short by the NUL keeps
 		 * only the bytes before it */

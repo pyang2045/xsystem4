@@ -256,8 +256,22 @@ static void gb18030_char2unicode(const char *s, int *out)
 	*out = (int)unicode;
 }
 
+// The bytes of the character at s in the game's encoding.
+static int game_char_bytes(const char *s)
+{
+	if (ain_is_utf8)
+		return utf8_char_len(s);
+	if (ain_is_gb18030)
+		return gb18030_skip_char_bytes(s);
+	return SJIS_2BYTE(*s) ? 2 : 1;
+}
+
 static uint32_t char_to_code(const char *ch, enum charmap charmap)
 {
+	if (ain_is_utf8) {
+		uint32_t c = utf8_decode_char(ch, NULL);
+		return charmap == CHARMAP_SJIS ? translation_unicode_to_fnl_code(c) : c;
+	}
 	if (charmap == CHARMAP_SJIS)
 		return sjis_code(ch);
 	uint32_t translated = translation_sjis_to_unicode(sjis_code(ch));
@@ -301,7 +315,7 @@ float gfx_size_text(struct text_style *ts, const char *text)
 		float x = 0.0f;
 		while (*text) {
 			x += gfx_text_cn_width(size, *text) + edges;
-			text += ain_is_gb18030 ? gb18030_skip_char_bytes(text) : (SJIS_2BYTE(*text) ? 2 : 1);
+			text += game_char_bytes(text);
 		}
 		return x;
 	}
@@ -314,7 +328,7 @@ float gfx_size_text(struct text_style *ts, const char *text)
 	while (*text) {
 		x += font_size_char(size, char_to_code(text, size->font->charmap));
 		x += edge_advance;
-		text += ain_is_gb18030 ? gb18030_skip_char_bytes(text) : (SJIS_2BYTE(*text) ? 2 : 1);
+		text += game_char_bytes(text);
 	}
 	return x;
 }
@@ -343,7 +357,7 @@ float _gfx_render_text(Texture *dst, char *msg, struct text_render_metrics *tm)
 		float scale_x = *msg == ' ' ? tm->space_scale_x : tm->scale_x;
 		uint8_t lead = *msg;
 		uint32_t code = char_to_code(msg, tm->font_size->font->charmap);
-		msg += ain_is_gb18030 ? gb18030_skip_char_bytes(msg) : (SJIS_2BYTE(*msg) ? 2 : 1);
+		msg += game_char_bytes(msg);
 		struct glyph *glyph = font_get_glyph(tm->font_size, code, tm->weight);
 		if (!glyph && !cn_gdi)
 			continue;

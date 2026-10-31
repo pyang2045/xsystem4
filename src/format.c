@@ -19,6 +19,7 @@
 #include "system4.h"
 #include "system4/ain.h"
 #include "system4/string.h"
+#include "system4/utfsjis.h"
 #include "vm.h"
 #include "vm/heap.h"
 
@@ -143,7 +144,9 @@ static void append_fmt(struct string **s, struct fmt_spec *spec, union vm_value 
 {
 	int len;
 	char buf[DIGIT_MAX] = { [DIGIT_MAX-1] = '\0' };
-	const int width_max = spec->zenkaku ? FMT_WIDTH_MAX / 2 : FMT_WIDTH_MAX;
+	// a zenkaku character is three bytes under the UTF-8 rule
+	const int width_max = !spec->zenkaku ? FMT_WIDTH_MAX
+		: FMT_WIDTH_MAX / (sys4_get_string_charset() == SYS4_CHARSET_UTF8 ? 3 : 2);
 	switch (spec->type) {
 	case FMT_VOID:
 		return;

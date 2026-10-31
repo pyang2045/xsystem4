@@ -175,6 +175,11 @@ bool PE_SetPartsCGDetectionSize(int parts_no, struct string *cg_name, int state)
 bool PE_Save(struct page **buffer);
 bool PE_SaveWithoutHideParts(struct page **buffer);
 bool PE_Load(struct page **buffer);
+void PE_SetWantSaveBackScene(int parts_no, bool enable);
+bool PE_IsWantSaveBackScene(int parts_no);
+bool PE_SaveBackScene(struct page **buffer);
+bool PE_LoadBackScene(struct page **buffer);
+void PE_ClearBackScene(void);
 int PE_AddController(int index);
 void PE_RemoveController(struct page **erase_number_list, int index);
 bool PE_CreateParts3DLayerPluginID(int parts_no, int state);

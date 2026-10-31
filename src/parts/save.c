@@ -1538,6 +1538,76 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 
 }
 
+/*
+ * The back scene (ain v7 妻みぐい３): at each message the script saves the
+ * parts it marked with SetWantSaveBackScene (the layers of the scene, not
+ * the system's) with SaveBackScene into the ADV scene keeper, and the
+ * backlog's scene view (backscene::detail::CBackSceneView) hides the front
+ * layers and shows a saved one with LoadBackScene until ClearBackScene.
+ * The snapshot holds those parts and their subtrees in the parts record
+ * layout. Showing a snapshot is not done yet: LoadBackScene leaves the
+ * screen as it is.
+ */
+void PE_SetWantSaveBackScene(int parts_no, bool enable)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->want_back_scene = enable;
+}
+
+bool PE_IsWantSaveBackScene(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->want_back_scene;
+}
+
+static bool parts_in_back_scene(struct parts *parts)
+{
+	for (; parts; parts = parts->parent) {
+		if (parts->want_back_scene)
+			return true;
+	}
+	return false;
+}
+
+bool PE_SaveBackScene(struct page **buffer)
+{
+	if (!buffer)
+		return false;
+	PE_UpdateComponent(0);
+	struct iarray_writer w;
+	iarray_init_writer(&w, "XBS");
+	iarray_write(&w, CURRENT_SAVE_VERSION);
+	unsigned count_pos = iarray_writer_pos(&w);
+	iarray_write(&w, 0);
+	unsigned count = 0;
+	struct parts *parts;
+	PARTS_LIST_FOREACH(parts) {
+		if (!parts_in_back_scene(parts) || parts_is_controller_root(parts))
+			continue;
+		save_parts(&w, parts, CURRENT_SAVE_VERSION);
+		count++;
+	}
+	iarray_write_at(&w, count_pos, count);
+	if (*buffer) {
+		delete_page_vars(*buffer);
+		free_page(*buffer);
+	}
+	*buffer = iarray_to_page(&w);
+	iarray_free_writer(&w);
+	return true;
+}
+
+bool PE_LoadBackScene(struct page **buffer)
+{
+	struct iarray_reader r;
+	return buffer && *buffer && iarray_init_reader(&r, *buffer, "XBS");
+}
+
+void PE_ClearBackScene(void)
+{
+}
+
 bool PE_SaveWithoutHideParts(struct page **buffer)
 {
 	return parts_engine_save(buffer, false);

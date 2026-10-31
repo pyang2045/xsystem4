@@ -59,9 +59,11 @@ static uint16_t slot_to_sjis(int k)
 	return (slot_rows[k / SLOTS_PER_ROW] << 8) | trail;
 }
 
-uint32_t translation_sjis_to_unicode(uint16_t code)
+uint32_t translation_sjis_to_unicode(uint32_t code)
 {
-	if (!nr_slots)
+	if (code & TEXT_CODE_UNICODE)
+		return code & ~TEXT_CODE_UNICODE;
+	if (!nr_slots || code > 0xffff)
 		return 0;
 	int row = slot_row_of_lead[code >> 8];
 	if (!row)
@@ -152,6 +154,17 @@ static bool is_ideograph(uint32_t c)
 {
 	return (c >= 0x3400 && c <= 0x4DBF) || (c >= 0x4E00 && c <= 0x9FFF)
 		|| (c >= 0xF900 && c <= 0xFAFF) || (c >= 0x20000 && c <= 0x3134F);
+}
+
+uint32_t translation_unicode_to_fnl_code(uint32_t c)
+{
+	uint8_t b[2];
+	int len;
+	if (c < 0x80)
+		return c;
+	if (is_ideograph(c) || !unicode_to_sjis(c, b, &len))
+		return TEXT_CODE_UNICODE | c;
+	return len == 1 ? b[0] : (b[0] << 8) | b[1];
 }
 
 static int find_slot(uint32_t c)
@@ -436,7 +449,7 @@ struct font *translation_font(void)
 {
 	static struct font *font;
 	static bool tried;
-	if (font || tried || !translation_loaded)
+	if (font || tried || (!translation_loaded && !ain_is_utf8))
 		return font;
 	tried = true;
 

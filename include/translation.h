@@ -45,11 +45,20 @@ bool translation_write_pot(struct ain *ain, const char *path);
 // Call before the VM runs. Errors abort; mismatches are warned about.
 void translation_apply(struct ain *ain, const char *po_path);
 
-// The Unicode character behind an assigned SJIS code, or 0.
-uint32_t translation_sjis_to_unicode(uint16_t sjis_code);
+// The Unicode character behind an assigned SJIS code or a TEXT_CODE_UNICODE
+// code, or 0.
+uint32_t translation_sjis_to_unicode(uint32_t sjis_code);
+
+/* A character of a UTF-8 game (ain_is_utf8) for the .fnl: its SJIS code
+ * where the .fnl draws it (kana, punctuation, the JIS X 0208 rows, but not
+ * the ideographs, as translated text), else TEXT_CODE_UNICODE | c, which
+ * the .fnl draws with translation_font(). */
+#define TEXT_CODE_UNICODE 0x80000000u
+uint32_t translation_unicode_to_fnl_code(uint32_t c);
 
 // TrueType font for the assigned codes (--locale-font, else a system CJK
-// font, else the mincho font). NULL when no translation is loaded.
+// font, else the mincho font). NULL when no translation is loaded and the
+// game is not a UTF-8 one.
 struct font *translation_font(void);
 
 extern char *translation_font_path;

@@ -3234,6 +3234,7 @@ static bool pactex_apply_native_type(struct ex_tree *node, struct parts *p)
 	if (type < 0)
 		return false;
 	p->component_type = type;
+	p->has_widget_type = type <= PACTEX_EPT_RADIO_BOX;
 	if (type == PACTEX_EPT_LAYOUT_BOX)
 		pactex_apply_layout_box(type_info, p);
 	free(p->user_component_name);

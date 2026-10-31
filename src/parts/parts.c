@@ -3402,6 +3402,15 @@ void PE_SetComponentType(int parts_no, int type, int state)
 	if (!parts_state_valid(--state))
 		return;
 	struct parts *parts = parts_get(parts_no);
+	// The widgets of the older games with the v14 parts library (ain v7
+	// 妻みぐい３: CButtonParts and the like): 0 to 9 as v14.
+	if (type >= 0 && type <= 9 && type != 8) {
+		parts->component_type = type;
+		parts->has_widget_type = true;
+		parts_dirty(parts);
+		return;
+	}
+	parts->has_widget_type = false;
 	enum parts_type pt = PARTS_UNINITIALIZED;
 	switch (type) {
 	case 8:  pt = PARTS_LAYOUT_BOX; break;
@@ -3459,6 +3468,8 @@ int PE_GetComponentType(int parts_no, int state)
 	struct parts *parts = parts_try_get(parts_no);
 	if (!parts)
 		return -1;
+	if (parts->has_widget_type)
+		return parts->component_type;
 
 	switch (parts->states[state].type) {
 	case PARTS_LAYOUT_BOX: return 8;

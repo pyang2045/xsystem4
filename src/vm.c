@@ -5186,7 +5186,11 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 	}
 	case DG_STR_TO_METHOD: {
 		// Resolve method name string to function index
-		// v14: stack has [obj_page, string_slot], arg = delegate type
+		// v14: stack has [obj_page, string_slot], arg = delegate type.
+		// Up to ain v8 the delegate type is not an operand but pushed
+		// after the name (ain v7 妻みぐい３: PUSH 381; DG_STR_TO_METHOD).
+		if (instructions[DG_STR_TO_METHOD].nr_args == 0)
+			stack_pop();
 		int str_slot = stack_pop().i;
 		struct string *name = heap_get_string(str_slot);
 

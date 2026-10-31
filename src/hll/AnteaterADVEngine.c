@@ -46,6 +46,10 @@ struct adv_log {
 };
 
 static bool enabled = true;
+// ain v7 (妻みぐい３): a voice is a name (AddVoice(string), GetADVLogVoice
+// with a ref string), kept in voice_names with an empty filter; the save
+// holds the names in place of the numbers.
+static bool voice_by_name;
 
 // Trace (XSYS4_STAGE2_TRACE): what the backlog holds, so that a run's log
 // shows what a restart (system.Reset) left in it.
@@ -257,6 +261,12 @@ bool ADVLogList_Save(struct page **iarray)
 		for (unsigned i = 0; i < log->nr_lines; i++) {
 			iarray_write_string(&b, log->lines[i]);
 		}
+		if (voice_by_name) {
+			iarray_write(&b, log->nr_voice_names);
+			for (unsigned i = 0; i < log->nr_voice_names; i++)
+				iarray_write_string(&b, log->voice_names[i]);
+			continue;
+		}
 		iarray_write(&b, log->nr_voices);
 		for (unsigned i = 0; i < log->nr_voices; i++) {
 			iarray_write(&b, log->voices[i]);
@@ -319,6 +329,16 @@ bool ADVLogList_Load(struct page **data)
 			goto error;
 		}
 
+		if (voice_by_name) {
+			log->voice_names = xcalloc(nr_voices ? nr_voices : 1, sizeof(struct string*));
+			log->voice_filters = xcalloc(nr_voices ? nr_voices : 1, sizeof(struct string*));
+			for (int i = 0; i < nr_voices; i++) {
+				log->voice_names[i] = iarray_read_string(&r);
+				log->voice_filters[i] = make_string("", 0);
+			}
+			log->nr_voice_names = nr_voices;
+			continue;
+		}
 		log->voices = xcalloc(nr_voices, sizeof(int));
 		for (int i = 0; i < nr_voices; i++) {
 			log->voices[i] = iarray_read(&r);
@@ -529,6 +549,41 @@ static void AnteaterADVEngine_ModuleFini(void)
 static void AnteaterADVEngine_ADVLogList_AddText_with_window(struct string **text, possibly_unused int window_no)
 {
 	ADVLogList_AddText(text);
+}
+
+// ain v7 (妻みぐい３): (string Text, int WindowNo), the text by value.
+static void AnteaterADVEngine_ADVLogList_AddText_value_with_window(struct string *text,
+		possibly_unused int window_no)
+{
+	ADVLogList_AddText(&text);
+}
+
+static void AnteaterADVEngine_v7_AddVoice(struct string *voice_name)
+{
+	if (!enabled) return;
+	struct adv_log *log = current_log();
+	log->voice_names = xrealloc_array(log->voice_names, log->nr_voice_names,
+			log->nr_voice_names + 1, sizeof(struct string*));
+	log->voice_filters = xrealloc_array(log->voice_filters, log->nr_voice_names,
+			log->nr_voice_names + 1, sizeof(struct string*));
+	log->voice_names[log->nr_voice_names] = string_dup(voice_name);
+	log->voice_filters[log->nr_voice_names] = make_string("", 0);
+	log->nr_voice_names++;
+}
+
+static int AnteaterADVEngine_v7_GetNumofADVLogVoice(int log_no)
+{
+	return log_entry(log_no)->nr_voice_names;
+}
+
+static void AnteaterADVEngine_v7_GetADVLogVoice(int log_no, int index, struct string **voice)
+{
+	struct adv_log *log = log_entry(log_no);
+	if (index < 0 || (unsigned)index >= log->nr_voice_names)
+		VM_ERROR("Invalid voice number: %d", index);
+	if (*voice)
+		free_string(*voice);
+	*voice = string_ref(log->voice_names[index]);
 }
 
 // v14 wrappers: short names with different signatures
@@ -852,9 +907,23 @@ static void AnteaterADVEngine_PreLink(void)
 	if (fun && fun->nr_arguments == 1 && fun->arguments[0].type.data == AIN_WRAP)
 		static_library_replace(&lib_AnteaterADVEngine, "Load", AnteaterADVEngine_v14_Load);
 
+	fun = get_fun(libno, "ADVLogList_AddVoice");
+	if (fun && fun->nr_arguments == 1 && fun->arguments[0].type.data == AIN_STRING) {
+		voice_by_name = true;
+		static_library_replace(&lib_AnteaterADVEngine, "ADVLogList_AddVoice",
+				AnteaterADVEngine_v7_AddVoice);
+		static_library_replace(&lib_AnteaterADVEngine, "ADVLogList_GetNumofADVLogVoice",
+				AnteaterADVEngine_v7_GetNumofADVLogVoice);
+		static_library_replace(&lib_AnteaterADVEngine, "ADVLogList_GetADVLogVoice",
+				AnteaterADVEngine_v7_GetADVLogVoice);
+	}
+
 	// Legacy: ADVLogList_AddText with window_no argument
 	fun = get_fun(libno, "ADVLogList_AddText");
 	if (fun && fun->nr_arguments == 2) {
-		static_library_replace(&lib_AnteaterADVEngine, "ADVLogList_AddText", AnteaterADVEngine_ADVLogList_AddText_with_window);
+		static_library_replace(&lib_AnteaterADVEngine, "ADVLogList_AddText",
+			fun->arguments[0].type.data == AIN_STRING
+			? (void *)AnteaterADVEngine_ADVLogList_AddText_value_with_window
+			: (void *)AnteaterADVEngine_ADVLogList_AddText_with_window);
 	}
 }
