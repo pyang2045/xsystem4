@@ -505,8 +505,11 @@ void parts_checkbox_set_checked(struct parts *parts, bool checked)
 	}
 	if (old != cb->checked && parts->delegate_index >= 0) {
 		const int vars[1] = { checked };
-		parts_enqueue_message_vars(23, parts->no, parts->delegate_index,
-				parts->unique_id, 1, vars);
+		if (parts_v7_activities)
+			parts_msg_push(parts, PARTS_MSG_CHANGED_FLAG, "b", vars[0]);
+		else
+			parts_enqueue_message_vars(23, parts->no, parts->delegate_index,
+					parts->unique_id, 1, vars);
 	}
 }
 

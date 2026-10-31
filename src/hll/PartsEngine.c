@@ -2223,6 +2223,16 @@ static void PartsEngine_PreLink(void)
 
 /* SaveBackScene and the rest with the ain v7 declarations (ref array<int>
  * buffers): src/parts/save.c. */
+/* The keyboard focus of a text box: this engine has no text box to give it. */
+static void PE_v7_SetFocus(possibly_unused int parts_no)
+{
+}
+
+/* Swipes are touch input, which this engine does not send: none to stop. */
+static void PE_v7_StopSwipe(void)
+{
+}
+
 static void PE_v7_SetWantSaveBackScene(int parts_no, bool enable)
 {
 	PE_SetWantSaveBackScene(parts_no, enable);
@@ -2368,6 +2378,10 @@ static void pe_v7_register(int libno)
 	    && fun->arguments[1].type.data == AIN_STRING && fun->arguments[2].type.data == AIN_INT)
 		static_library_register(lib, "Parts_SetSoundName", PE_SetSoundName);
 	pe_v14_register_checkbox(libno);
+	pe_v14_register_backlog();
+	static_library_register(lib, "PauseMotion", PE_PauseMotion);
+	static_library_register(lib, "SetFocus", PE_v7_SetFocus);
+	static_library_register(lib, "Parts_StopSwipe", PE_v7_StopSwipe);
 }
 
 // Runs after link_libraries(): static_library_register() requires the

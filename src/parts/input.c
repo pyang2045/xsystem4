@@ -550,6 +550,9 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 		parts_msg_push(parts, PARTS_MSG_MOUSE_CLICK,
 				"iii", cur_pos.x, cur_pos.y, VK_LBUTTON);
 		parts_msg_push(parts, PARTS_MSG_KEY_UP, "i", VK_LBUTTON);
+		if (parts_v7_activities && parts->component_type == PARTS_COMPONENT_CHECKBOX
+				&& parts->checkbox)
+			parts_checkbox_set_checked(parts, !parts->checkbox->checked);
 	}
 }
 
@@ -1122,6 +1125,30 @@ void PE_UpdateInputState(int passed_time)
 	PARTS_LIST_FOREACH_REVERSE(parts) {
 		parts_update_mouse(parts, cur_pos, cur_clicking, passed_time,
 				&hover_consumed, &click_consumed);
+	}
+
+	if (parts_v7_activities) {
+		// The Whole wheel event, once a notch: the wheel stays set until a
+		// script clears it, as the message wait polls it too.
+		static bool wheel_sent;
+		int forward, back;
+		mouse_get_wheel(&forward, &back);
+		if (!forward && !back) {
+			wheel_sent = false;
+		} else if (!wheel_sent) {
+			parts_msg_push(NULL, PARTS_MSG_MOUSE_WHEEL, "ii", forward, back);
+			wheel_sent = true;
+		}
+		// The bars take their own clicks and drags (scrollbar.c).
+		struct parts *bar = NULL;
+		PARTS_LIST_FOREACH_REVERSE(parts) {
+			if (parts->global.show && parts_scrollbar_has_look(parts)
+					&& parts_scrollbar_hittest(parts, cur_pos) != PARTS_SCROLLBAR_MISS) {
+				bar = parts;
+				break;
+			}
+		}
+		parts_scrollbar_input(cur_pos, cur_clicking, prev_clicking, bar);
 	}
 
 	// Drag movement processing

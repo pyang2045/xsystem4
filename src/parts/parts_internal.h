@@ -1103,6 +1103,8 @@ enum parts_message_type {
 	PARTS_MSG_KEY_TRIGGER    = 14,
 	PARTS_MSG_KEY_DOWN       = 15,
 	PARTS_MSG_KEY_UP         = 17,
+	PARTS_MSG_SCROLL         = 20,	// ain v7: the bar's position and its largest
+	PARTS_MSG_CHANGED_FLAG   = 22,	// ain v7: a check box's value
 };
 
 // v14: the types the input update sends, by the type function of each

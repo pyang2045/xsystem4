@@ -35,6 +35,7 @@ struct parts_message {
 	int type;
 	int variables[PARTS_MSG_MAX_VARS];
 	int nr_variables;
+	unsigned bool_vars; // bit i: variable i is a bool (type 3)
 };
 
 static STAILQ_HEAD(, parts_message) msg_queue =
@@ -51,10 +52,12 @@ void parts_msg_push(struct parts* parts, int type, const char *fmt, ...)
 		return;
 
 	struct parts_message *msg = xmalloc(sizeof(*msg));
-	msg->parts_no = parts->no;
-	msg->delegate_index = parts->delegate_index;
+	// No parts: a Whole event (ain v7 妻みぐい３: the backlog's wheel).
+	msg->parts_no = parts ? parts->no : 0;
+	msg->delegate_index = parts ? parts->delegate_index : -1;
 	msg->type = type;
 	msg->nr_variables = 0;
+	msg->bool_vars = 0;
 
 	va_list ap;
 	va_start(ap, fmt);
@@ -64,6 +67,10 @@ void parts_msg_push(struct parts* parts, int type, const char *fmt, ...)
 		}
 		switch (*p) {
 		case 'i':
+			msg->variables[msg->nr_variables++] = va_arg(ap, int);
+			break;
+		case 'b':
+			msg->bool_vars |= 1u << msg->nr_variables;
 			msg->variables[msg->nr_variables++] = va_arg(ap, int);
 			break;
 		default:
@@ -123,9 +130,11 @@ int PE_GetMessageVariableCount(void)
 	return msg ? msg->nr_variables : 0;
 }
 
-int PE_GetMessageVariableType(possibly_unused int index)
+int PE_GetMessageVariableType(int index)
 {
-	// In the current implementation, all variables are integers.
+	struct parts_message *msg = STAILQ_FIRST(&msg_queue);
+	if (msg && index >= 0 && index < msg->nr_variables && (msg->bool_vars >> index & 1))
+		return 3;
 	return 1;
 }
 
@@ -144,9 +153,9 @@ float PE_GetMessageVariableFloat(possibly_unused int index)
 	return 0.0f;
 }
 
-bool PE_GetMessageVariableBool(possibly_unused int index)
+bool PE_GetMessageVariableBool(int index)
 {
-	return false;
+	return PE_GetMessageVariableInt(index) != 0;
 }
 
 void PE_GetMessageVariableString(possibly_unused int index, struct string **out)

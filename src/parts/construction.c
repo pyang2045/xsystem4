@@ -2202,6 +2202,11 @@ bool parts_build_construction_process(struct parts *parts,
 	uint8_t *pixels = NULL;
 	struct parts_cp_op *op;
 	TAILQ_FOREACH(op, &cproc->ops, entry) {
+		// 妻みぐい３: the backlog makes an empty line's text 675 x 0. There is
+		// nothing to draw on, and a framebuffer of it is incomplete.
+		if (t->handle && (t->w <= 0 || t->h <= 0) && op->type != PARTS_CP_CREATE
+				&& op->type != PARTS_CP_CREATE_PIXEL_ONLY && op->type != PARTS_CP_CG)
+			continue;
 		const bool on_pixels = cp_op_on_pixels(op);
 		if (pixels && !on_pixels) {
 			gfx_update_texture_with_pixels(t, pixels);

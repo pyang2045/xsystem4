@@ -216,8 +216,11 @@ void parts_scrollbar_update(void)
 			continue;
 		if (parts->delegate_index >= 0) {
 			const int vars[2] = { sb->pos, scrollbar_max(sb) };
-			parts_enqueue_message_vars(21, parts->no, parts->delegate_index,
-					parts->unique_id, 2, vars);
+			if (parts_v7_activities)
+				parts_msg_push(parts, PARTS_MSG_SCROLL, "ii", vars[0], vars[1]);
+			else
+				parts_enqueue_message_vars(21, parts->no, parts->delegate_index,
+						parts->unique_id, 2, vars);
 		}
 		sb->reported_pos = sb->pos;
 		sb->reported_rate = sb->rate;
