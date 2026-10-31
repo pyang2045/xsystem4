@@ -74,6 +74,10 @@ bool game_charset_is_gbk(void);
 bool game_charset_is_utf8(void);
 // GBK or UTF-8: game strings are not SJIS and must be decoded with game_to_utf8.
 bool game_charset_is_not_sjis(void);
+// An engine key spelled in SJIS (pactex keys, CG name suffixes), in the
+// game's spelling: converted to UTF-8 for UTF-8 games, unchanged otherwise.
+// The result stays valid for the whole run.
+const char *sjis_key(const char *sjis);
 char *game_to_utf8(const char *s, size_t len);
 char *utf8_to_game(const char *s, size_t len);
 int rename_noreplace(const char *from, const char *to);

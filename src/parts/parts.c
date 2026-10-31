@@ -3512,7 +3512,11 @@ static void parts_button_apply_cg(struct parts *parts)
 	const char *base = parts->button_cg_name;
 	if (!base)
 		return;
-	const char *const *suffix = strstr(base, "\xa3\xaf") ? gbk : sjis;
+	// UTF-8 games spell the SJIS names in UTF-8 (sjis_key).
+	const char *suffix[4];
+	bool gbk_name = strstr(base, "\xa3\xaf");
+	for (int i = 0; i < 4; i++)
+		suffix[i] = gbk_name ? gbk[i] : sjis_key(sjis[i]);
 	char name[512];
 	bool disabled = false;
 	if (parts->button_disabled) {

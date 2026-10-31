@@ -186,7 +186,10 @@ static void checkbox_cg_name(const struct parts_checkbox *cb, bool checked, int 
 		"\x81\x5e\x96\xb3\x8c\xf8", // ／無効
 	};
 	const bool gbk = game_charset_is_gbk();
-	const char *const *suffix = gbk ? suffix_gbk : suffix_sjis;
+	// UTF-8 games spell the SJIS names in UTF-8 (sjis_key).
+	const char *suffix[4];
+	for (int i = 0; i < 4; i++)
+		suffix[i] = gbk ? suffix_gbk[i] : sjis_key(suffix_sjis[i]);
 	out[0] = '\0';
 	if (!cb->cg_name)
 		return;
@@ -197,7 +200,7 @@ static void checkbox_cg_name(const struct parts_checkbox *cb, bool checked, int 
 		snprintf(out, size, "%s%s", cb->over_checked_cg_name, suffix[state]);
 	else
 		snprintf(out, size, "%s%s%s", cb->cg_name,
-				gbk ? "\xa3\xaf\x99\x7a\xb2\xe9" : "\x81\x5e\x83\x60\x83\x46\x83\x62\x83\x4e", // ／檢查, ／チェック
+				gbk ? "\xa3\xaf\x99\x7a\xb2\xe9" : sjis_key("\x81\x5e\x83\x60\x83\x46\x83\x62\x83\x4e"), // ／檢查, ／チェック
 				suffix[state]);
 }
 

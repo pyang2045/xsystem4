@@ -30,6 +30,7 @@
 
 #include "system4.h"
 #include "system4/file.h"
+#include "system4/hashtable.h"
 #include "system4/string.h"
 #include "system4/utfsjis.h"
 
@@ -66,6 +67,19 @@ bool game_charset_is_utf8(void)
 bool game_charset_is_not_sjis(void)
 {
 	return game_charset_is_gbk() || game_charset_is_utf8();
+}
+
+const char *sjis_key(const char *sjis)
+{
+	if (!game_charset_is_utf8() || !sjis)
+		return sjis;
+	static struct hash_table *cache = NULL;
+	if (!cache)
+		cache = ht_create(512);
+	struct ht_slot *slot = ht_put(cache, sjis, NULL);
+	if (!slot->value)
+		slot->value = sjis2utf(sjis, 0);
+	return slot->value;
 }
 
 static char *iconv_strict(const char *s, size_t len, const char *to, const char *from)

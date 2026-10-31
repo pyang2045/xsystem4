@@ -1735,13 +1735,13 @@ static bool SealEngine_Tool_ReloadPolyDataEXFile(struct string *name, struct str
 
 			/* Found matching instance — apply properties from EX text */
 			float scale;
-			if (ex_text_get_float(text->text, "\x83\x58\x83\x50\x81\x5B\x83\x8B" /* スケール (Shift-JIS) */, &scale)) {
+			if (ex_text_get_float(text->text, sjis_key("\x83\x58\x83\x50\x81\x5B\x83\x8B") /* スケール (Shift-JIS) */, &scale)) {
 				ri->scale[0] = ri->scale[1] = ri->scale[2] = scale;
 				ri->local_transform_needs_update = true;
 			}
 
 			float offset[3];
-			if (ex_text_get_float3(text->text, "\x83\x49\x83\x74\x83\x5A\x83\x62\x83\x67\x88\xCA\x92\x75" /* オフセット位置 */, offset)) {
+			if (ex_text_get_float3(text->text, sjis_key("\x83\x49\x83\x74\x83\x5A\x83\x62\x83\x67\x88\xCA\x92\x75") /* オフセット位置 */, offset)) {
 				ri->pos[0] = offset[0];
 				ri->pos[1] = offset[1];
 				ri->pos[2] = offset[2];
@@ -1813,15 +1813,15 @@ static bool SealEngine_Tool_ReloadMotionDataEXFile(struct string *obj, struct st
 
 			/* Try to extract frame range from EX text */
 			float begin_frame, end_frame;
-			if (ex_text_get_float(text->text, "\x8aJ\x8en\x83t\x83\x8c\x81[\x83\x80" /* 開始フレーム */, &begin_frame) &&
-			    ex_text_get_float(text->text, "\x8fI\x97\xb9\x83t\x83\x8c\x81[\x83\x80" /* 終了フレーム */, &end_frame)) {
+			if (ex_text_get_float(text->text, sjis_key("\x8aJ\x8en\x83t\x83\x8c\x81[\x83\x80") /* 開始フレーム */, &begin_frame) &&
+			    ex_text_get_float(text->text, sjis_key("\x8fI\x97\xb9\x83t\x83\x8c\x81[\x83\x80") /* 終了フレーム */, &end_frame)) {
 				RE_motion_set_frame_range(motion, begin_frame, end_frame);
 			}
 
 			/* Loop frame range */
 			float loop_begin, loop_end;
-			if (ex_text_get_float(text->text, "\x83\x8b\x81[\x83v\x8aJ\x8en\x83t\x83\x8c\x81[\x83\x80" /* ループ開始フレーム */, &loop_begin) &&
-			    ex_text_get_float(text->text, "\x83\x8b\x81[\x83v\x8fI\x97\xb9\x83t\x83\x8c\x81[\x83\x80" /* ループ終了フレーム */, &loop_end)) {
+			if (ex_text_get_float(text->text, sjis_key("\x83\x8b\x81[\x83v\x8aJ\x8en\x83t\x83\x8c\x81[\x83\x80") /* ループ開始フレーム */, &loop_begin) &&
+			    ex_text_get_float(text->text, sjis_key("\x83\x8b\x81[\x83v\x8fI\x97\xb9\x83t\x83\x8c\x81[\x83\x80") /* ループ終了フレーム */, &loop_end)) {
 				RE_motion_set_loop_frame_range(motion, loop_begin, loop_end);
 			}
 

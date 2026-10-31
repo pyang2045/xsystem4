@@ -71,6 +71,20 @@ struct activity_part {
  * editor's SetEndKey of 2, 32 and 27). */
 #define MAX_ACTIVITY_END_KEYS 256
 
+/* The intent data of an activity's parts (programs before v14, ain v7
+ * 妻みぐい３): a parts whose pactex node has 遷移先 (a list of destination
+ * activity files) and 遷移方法 (the intent type) has it.
+ * activity::detail::CASPartsActivity@BindEndEvent binds a click to each
+ * parts that has it, and the click hands the destinations and the type to
+ * the script's CActivityIntentData, which ends the activity's loop
+ * (UpdateActivity). An empty destination closes the activity. */
+struct activity_intent {
+	char parts_name[256];
+	int type;
+	int nr_dests;
+	char **dests;
+};
+
 struct activity {
 	char name[256];
 	struct activity_part parts[MAX_ACTIVITY_PARTS];
@@ -80,7 +94,23 @@ struct activity {
 	/* The end keys (see end_key_insert): unique, in ascending order. */
 	int end_keys[MAX_ACTIVITY_END_KEYS];
 	int nr_end_keys;
+	/* Not in the save section: a restored image's activities are read
+	 * from their pactex again. */
+	struct activity_intent *intents;
+	int nr_intents;
 };
+
+static void activity_intents_free(struct activity *act)
+{
+	for (int i = 0; i < act->nr_intents; i++) {
+		for (int j = 0; j < act->intents[i].nr_dests; j++)
+			free(act->intents[i].dests[j]);
+		free(act->intents[i].dests);
+	}
+	free(act->intents);
+	act->intents = NULL;
+	act->nr_intents = 0;
+}
 
 static struct activity activities[MAX_ACTIVITIES];
 static int nr_activities = 0;
@@ -139,6 +169,8 @@ void pe_v14_activity_parts_released(int parts_no)
 // (0x4b30f0, 0x4b4bf0): no activity name is taken and the numbers start over.
 void pe_v14_activity_reset(void)
 {
+	for (int i = 0; i < nr_activities; i++)
+		activity_intents_free(&activities[i]);
 	nr_activities = 0;
 	next_activity_parts_no = ACTIVITY_PARTS_BASE;
 	free(controller_released);
@@ -353,7 +385,7 @@ static struct ex_list *pactex_key_list(struct ex_tree *node, const struct pactex
 static bool pactex_str_has(const char *s, const struct pactex_key *key)
 {
 	PK_FOR_EACH(key, i) {
-		if (strstr(s, key->name[i]))
+		if (strstr(s, sjis_key(key->name[i])))
 			return true;
 	}
 	return false;
@@ -365,7 +397,7 @@ static bool pactex_str_has(const char *s, const struct pactex_key *key)
 static bool pactex_name_contains(struct ex_tree *node, const char *pattern)
 {
 	if (!node->name) return false;
-	return strstr(node->name->text, pattern) != NULL;
+	return strstr(node->name->text, sjis_key(pattern)) != NULL;
 }
 
 /* Whether node's name contains any spelling of key. */
@@ -421,6 +453,7 @@ static struct ex_tree *pactex_find_type_info(struct ex_tree *component)
 static int pactex_get_int(struct ex_tree *node, const char *name, int def)
 {
 	if (node->is_leaf) return def;
+	name = sjis_key(name);
 	for (unsigned i = 0; i < node->nr_children; i++) {
 		struct ex_tree *c = &node->children[i];
 		if (!c->is_leaf) continue;
@@ -435,6 +468,7 @@ static int pactex_get_int(struct ex_tree *node, const char *name, int def)
 static bool pactex_find_int(struct ex_tree *node, const char *name, int *v)
 {
 	if (node->is_leaf) return false;
+	name = sjis_key(name);
 	for (unsigned i = 0; i < node->nr_children; i++) {
 		struct ex_tree *c = &node->children[i];
 		if (!c->is_leaf || !c->name || strcmp(c->name->text, name) != 0) continue;
@@ -523,6 +557,7 @@ static void pactex_apply_click_permission(struct ex_tree *node, int parts_no)
 static struct ex_list *pactex_get_list(struct ex_tree *node, const char *name)
 {
 	if (node->is_leaf) return NULL;
+	name = sjis_key(name);
 	for (unsigned i = 0; i < node->nr_children; i++) {
 		struct ex_tree *c = &node->children[i];
 		if (!c->is_leaf) continue;
@@ -679,7 +714,7 @@ static struct ex_value *pactex_message_value(struct ex_tree *node, enum pactex_m
 	for (unsigned i = 0; i < node->nr_children; i++) {
 		struct ex_tree *c = &node->children[i];
 		if (c->is_leaf && c->name &&
-				(!strcmp(c->name->text, pactex_message_keys[key].sjis) ||
+				(!strcmp(c->name->text, sjis_key(pactex_message_keys[key].sjis)) ||
 				 !strcmp(c->name->text, pactex_message_keys[key].gbk)))
 			return &c->leaf.value;
 	}
@@ -711,7 +746,7 @@ static void pactex_apply_key_wait(struct ex_tree *type_info, int parts_no);
 
 static bool pactex_apply_message_window(struct ex_tree *type_info, const char *ptype, int parts_no)
 {
-	if (!ptype || (strcmp(ptype, "\x83\x81\x83\x62\x83\x5a\x81\x5b\x83\x57\x83\x45\x83\x42\x83\x93\x83\x68\x83\x45") &&
+	if (!ptype || (strcmp(ptype, sjis_key("\x83\x81\x83\x62\x83\x5a\x81\x5b\x83\x57\x83\x45\x83\x42\x83\x93\x83\x68\x83\x45")) &&
 			strcmp(ptype, "\xd0\xc5\xcf\xa2\xb4\xb0\xbf\xda")))
 		return false;
 	struct parts *parts = parts_get(parts_no);
@@ -750,7 +785,7 @@ static bool pactex_apply_message_window(struct ex_tree *type_info, const char *p
 	// window's own (SJIS spelling only).
 	for (unsigned i = 0; i < type_info->nr_children; i++) {
 		struct ex_tree *ruby = &type_info->children[i];
-		if (ruby->is_leaf || !ruby->name || strcmp(ruby->name->text, "\x83\x8b\x83\x72"))
+		if (ruby->is_leaf || !ruby->name || strcmp(ruby->name->text, sjis_key("\x83\x8b\x83\x72")))
 			continue;
 		PE_SetMessageWindowRubyFont(parts_no,
 			pactex_message_number(ruby, PACTEX_MW_FACE, 0),
@@ -779,7 +814,7 @@ static bool pactex_apply_message_window(struct ex_tree *type_info, const char *p
  * loader/getter behavior; an arbitrary PARTS_TEXT state is not a text widget. */
 static bool pactex_name_is(struct ex_tree *node, const char *sjis, const char *gbk)
 {
-	return node->name && (!strcmp(node->name->text, sjis) || !strcmp(node->name->text, gbk));
+	return node->name && (!strcmp(node->name->text, sjis_key(sjis)) || !strcmp(node->name->text, gbk));
 }
 
 /* The value of the leaf named sjis or gbk among node's children. */
@@ -1005,15 +1040,38 @@ static int pactex_native_type(const char *name)
 	if (!name)
 		return -1;
 	for (int i = 0; i < PACTEX_EPT_COUNT; i++) {
-		if (!strcmp(name, pactex_ept_names_sjis[i]) || !strcmp(name, pactex_ept_names[i]))
+		if (!strcmp(name, sjis_key(pactex_ept_names_sjis[i])) || !strcmp(name, pactex_ept_names[i]))
 			return i;
 	}
 	return -1;
 }
 
+/*
+ * Older pactex files (妻みぐい３: パーツバージョン 11) store パーツタイプ as a
+ * number. It is the list above without the eight types v14 added after
+ * ラジオボタンボックス (メッセージウィンドウ .. ユーザコンポーネント): 0..9 are
+ * the same, 10 and up are the v14 type + 8. Read from the keys each number's
+ * 種類別情報 holds in the game's 25 pactex files (10: 通常状態 ..; 11: ＣＧ名
+ * 変形 サーフェイスエリア; 13: テキスト ルビ装飾; 16: 表示タイプ 幅リスト 数値;
+ * 17: 矩形モード; 18: 手順リスト; 20: フラット名 FPS); the executable has no
+ * type names to check against.
+ */
+static const char *pactex_old_type_name(int type)
+{
+	if (type >= 10)
+		type += 8;
+	if (type < 0 || type >= PACTEX_EPT_COUNT)
+		return NULL;
+	return sjis_key(pactex_ept_names_sjis[type]);
+}
+
 static const char *pactex_parts_type_name(struct ex_tree *node)
 {
-	return pactex_key_string(node, &PK_PARTS_TYPE);
+	const char *name = pactex_key_string(node, &PK_PARTS_TYPE);
+	int type;
+	if (!name && pactex_key_find_int(node, &PK_PARTS_TYPE, &type))
+		name = pactex_old_type_name(type);
+	return name;
 }
 
 /* Low-level state types the loader builds (see pactex_apply_low_level_state);
@@ -1022,9 +1080,9 @@ static int pactex_low_level_type(struct ex_tree *state)
 {
 	const char *type = pactex_parts_type_name(state);
 	if (!type) return -1;
-	if (!strcmp(type, "\x83\x65\x83\x4c\x83\x58\x83\x67\x83\x70\x81\x5b\x83\x63")) /* テキストパーツ */
+	if (!strcmp(type, sjis_key("\x83\x65\x83\x4c\x83\x58\x83\x67\x83\x70\x81\x5b\x83\x63"))) /* テキストパーツ */
 		return PACTEX_EPT_TEXT;
-	if (!strcmp(type, "\x82\x62\x82\x66\x83\x70\x81\x5b\x83\x63")) /* ＣＧパーツ */
+	if (!strcmp(type, sjis_key("\x82\x62\x82\x66\x83\x70\x81\x5b\x83\x63"))) /* ＣＧパーツ */
 		return PACTEX_EPT_CG;
 	switch (pactex_native_type(type)) {
 	case PACTEX_EPT_CG: return PACTEX_EPT_CG;
@@ -2874,7 +2932,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 	}
 
 	/* Determine parts type from type_info (SJIS or GBK) */
-	const char *ptype = pactex_key_string(type_info, &PK_PARTS_TYPE);
+	const char *ptype = pactex_parts_type_name(type_info);
 
 	if (pactex_apply_message_window(type_info, ptype, parts_no))
 		return;
@@ -3052,8 +3110,8 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 	 *     キーダウン状態/    ← key-down (state 3)
 	 */
 	int state_idx = 0;
-	bool low_level = ptype && (!strcmp(ptype, PK_MULTI_LEVEL.name[0]) ||
-		!strcmp(ptype, pactex_ept_names_sjis[PACTEX_EPT_LOW_LEVEL]) ||
+	bool low_level = ptype && (!strcmp(ptype, sjis_key(PK_MULTI_LEVEL.name[0])) ||
+		!strcmp(ptype, sjis_key(pactex_ept_names_sjis[PACTEX_EPT_LOW_LEVEL])) ||
 		!strcmp(ptype, "\xb5\xcd\xb5\xc8\xbc\x89\xb2\xbf\xbc\xfe")); /* 低等級部件 */
 	for (unsigned i = 0; i < type_info->nr_children; i++) {
 		struct ex_tree *state = &type_info->children[i];
@@ -3090,7 +3148,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 
 		/* ＣＧ判定部件 (CG Detection Parts) in normal state → mark as clickable button */
 		if (pe_state == 1) {
-			const char *stype = pactex_key_string(state, &PK_PARTS_TYPE);
+			const char *stype = pactex_parts_type_name(state);
 			if (stype && pactex_str_has(stype, &PK_CG_DETECT)) {
 				PE_SetClickable(parts_no, true);
 			}
@@ -3110,6 +3168,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 static const char *pactex_get_exact_string(struct ex_tree *node, const char *name)
 {
 	if (!node || node->is_leaf) return NULL;
+	name = sjis_key(name);
 	for (unsigned i = 0; i < node->nr_children; i++) {
 		struct ex_tree *c = &node->children[i];
 		if (c->is_leaf && c->name && !strcmp(c->name->text, name)
@@ -3198,6 +3257,57 @@ static bool pactex_apply_native_type(struct ex_tree *node, struct parts *p)
 	return true;
 }
 
+static struct activity_intent *activity_intent_find(struct activity *act, const char *parts_name)
+{
+	for (int i = 0; i < act->nr_intents; i++) {
+		if (!strcmp(act->intents[i].parts_name, parts_name))
+			return &act->intents[i];
+	}
+	return NULL;
+}
+
+// The parts' intent data, made empty (SetActivityIntentData, the pactex).
+static struct activity_intent *activity_intent_set(struct activity *act, const char *parts_name,
+		int type)
+{
+	struct activity_intent *in = activity_intent_find(act, parts_name);
+	if (in) {
+		for (int j = 0; j < in->nr_dests; j++)
+			free(in->dests[j]);
+		in->nr_dests = 0;
+	} else {
+		act->intents = xrealloc_array(act->intents, act->nr_intents, act->nr_intents + 1,
+				sizeof(*act->intents));
+		in = &act->intents[act->nr_intents++];
+		snprintf(in->parts_name, sizeof(in->parts_name), "%s", parts_name);
+	}
+	in->type = type;
+	return in;
+}
+
+static void activity_intent_add_dest(struct activity_intent *in, const char *dest)
+{
+	in->dests = xrealloc_array(in->dests, in->nr_dests, in->nr_dests + 1, sizeof(*in->dests));
+	in->dests[in->nr_dests++] = xstrdup(dest);
+}
+
+/* 遷移先 and 遷移方法 of a parts node (see struct activity_intent). A string
+ * item that is not one reads as an empty destination. */
+static void pactex_read_intent(struct activity *act, struct ex_tree *node)
+{
+	static const char dest_key[] = "\x91\x4a\x88\xda\x90\xe6";		// 遷移先
+	static const char type_key[] = "\x91\x4a\x88\xda\x95\xfb\x96\x40";	// 遷移方法
+	struct ex_list *dests = pactex_get_list(node, dest_key);
+	if (!dests || !node->name)
+		return;
+	struct activity_intent *in = activity_intent_set(act, node->name->text,
+			pactex_get_int(node, type_key, 0));
+	for (unsigned i = 0; i < dests->nr_items; i++) {
+		struct ex_value *v = &dests->items[i].value;
+		activity_intent_add_dest(in, v->type == EX_STRING ? v->s->text : "");
+	}
+}
+
 /* Recursively create PE parts entries from a pactex component branch.
  * A 部件タイプ from the native table decides the widget type (see
  * pactex_apply_native_type). Otherwise the type is guessed structurally:
@@ -3220,6 +3330,7 @@ static void pactex_create_component(struct activity *act, struct ex_tree *node,
 		snprintf(ap->name, sizeof(ap->name), "%s", node->name->text);
 		ap->number = parts_no;
 	}
+	pactex_read_intent(act, node);
 
 	/* Set parent-child relationship */
 	if (parent_no >= 0)
@@ -3350,7 +3461,7 @@ static void pactex_read_end_keys(struct activity *act, struct ex *ex)
 {
 	struct ex_list *keys = NULL;
 	PK_FOR_EACH(&PK_END_KEY, i) {
-		if ((keys = ex_get_list(ex, PK_END_KEY.name[i])))
+		if ((keys = ex_get_list(ex, sjis_key(PK_END_KEY.name[i]))))
 			break;
 	}
 	if (!keys)
@@ -3438,8 +3549,8 @@ static bool pactex_load(struct activity *act, struct ex *ex)
 			snprintf(ap->name, sizeof(ap->name), "%s", gbk->text);
 			free_string(gbk);
 		} else {
-			snprintf(ap->name, sizeof(ap->name),
-				"\x83\x8b\x81\x5b\x83\x67\x83\x70\x81\x5b\x83\x63");
+			snprintf(ap->name, sizeof(ap->name), "%s",
+				sjis_key("\x83\x8b\x81\x5b\x83\x67\x83\x70\x81\x5b\x83\x63"));
 		}
 		ap->number = root_no;
 	}
@@ -3503,6 +3614,8 @@ static bool PartsEngine_CreateActivity(struct string *name)
 	act->nr_parts = 0;
 	act->nr_close_parts = 0;
 	act->nr_end_keys = 0;
+	act->intents = NULL;
+	act->nr_intents = 0;
 	nr_activities++;
 	return true;
 }
@@ -3537,7 +3650,9 @@ void pe_v14_append_int_list(int out_slot, const struct page *list);
  * user components, and the next battle's panel, loaded under the name that
  * had become free again, got none (SetComponent skips a registered
  * activity and parts name), so its buttons hung at the layer's origin. */
-static bool PartsEngine_ReleaseActivity(struct string *name, int erase_list)
+/* The release; the released parts' delegate indices go to the end of
+ * *erase (an array<int> page). */
+static bool activity_release(struct string *name, struct page **erase)
 {
 	int idx = find_activity(name);
 	if (activity_trace())
@@ -3554,15 +3669,44 @@ static bool PartsEngine_ReleaseActivity(struct string *name, int erase_list)
 		if (!parts_is_controller_root(p))
 			parts_release(p->no);
 	}
-	pe_v14_append_int_list(erase_list, delegate_indices);
 	if (delegate_indices) {
+		for (int i = 0; i < delegate_indices->nr_vars; i++)
+			*erase = array_pushback(*erase, delegate_indices->values[i], AIN_ARRAY_INT, -1);
 		delete_page_vars(delegate_indices);
 		free_page(delegate_indices);
 	}
+	activity_intents_free(act);
 	if (idx < nr_activities - 1)
 		activities[idx] = activities[nr_activities - 1];
 	nr_activities--;
 	return true;
+}
+
+// v14: wrap<array<int>> EraseNumberList (a heap slot).
+static bool PartsEngine_ReleaseActivity(struct string *name, int erase_list)
+{
+	struct page *list = NULL;
+	bool r = activity_release(name, &list);
+	pe_v14_append_int_list(erase_list, list);
+	if (list) {
+		delete_page_vars(list);
+		free_page(list);
+	}
+	return r;
+}
+
+// ain v7: ref array<int> EraseNumberList.
+static bool PartsEngine_ReleaseActivity_v7(struct string *name, struct page **erase_list)
+{
+	if (erase_list)
+		return activity_release(name, erase_list);
+	struct page *list = NULL;
+	bool r = activity_release(name, &list);
+	if (list) {
+		delete_page_vars(list);
+		free_page(list);
+	}
+	return r;
 }
 
 static bool PartsEngine_ReadActivityFile(struct string *name, struct string *filename, bool edit)
@@ -3738,6 +3882,25 @@ static bool PartsEngine_GetActivityParts(int index, struct string *name, int par
 	return true;
 }
 
+// ain v7: ref string PartsName, ref int Number.
+static bool PartsEngine_GetActivityParts_v7(int index, struct string *name,
+		struct string **parts_name, int *number)
+{
+	int idx = find_activity(name);
+	if (idx < 0) return false;
+	struct activity *act = &activities[idx];
+	if (index < 0 || index >= act->nr_parts) return false;
+	struct activity_part *ap = &act->parts[index];
+	if (parts_name) {
+		if (*parts_name)
+			free_string(*parts_name);
+		*parts_name = cstr_to_string(ap->name);
+	}
+	if (number)
+		*number = ap->number;
+	return true;
+}
+
 static bool PartsEngine_IsExistActivityPartsByName(struct string *name, struct string *parts_name)
 {
 	// The root's sentinel entry has an empty name, but it is not a named
@@ -3794,6 +3957,23 @@ static int PartsEngine_GetActivityPartsNumber(struct string *name, struct string
 	return -1;
 }
 
+// ain v7: void GetActivityPartsName(ref string Out, string Name, int Number).
+static void PartsEngine_GetActivityPartsName_v7(struct string **out, struct string *name, int number)
+{
+	int idx = find_activity(name);
+	if (!out || idx < 0)
+		return;
+	struct activity *act = &activities[idx];
+	for (int i = 0; i < act->nr_parts; i++) {
+		if (act->parts[i].number == number) {
+			if (*out)
+				free_string(*out);
+			*out = cstr_to_string(act->parts[i].name);
+			return;
+		}
+	}
+}
+
 static struct string *PartsEngine_GetActivityPartsName(struct string *name, int number)
 {
 	int idx = find_activity(name);
@@ -3834,6 +4014,61 @@ static bool PartsEngine_IsExistActivityCloseParts(struct string *name, struct st
 	}
 	return false;
 }
+/* The intent data: see struct activity_intent. */
+static void PartsEngine_SetActivityIntentData(struct string *name, struct string *parts_name,
+		struct string *dest, int type)
+{
+	int idx = find_activity(name);
+	if (idx < 0) return;
+	activity_intent_add_dest(activity_intent_set(&activities[idx], parts_name->text, type),
+			dest->text);
+}
+
+static void PartsEngine_AddActivityIntentDataDestination(struct string *name,
+		struct string *parts_name, struct string *dest)
+{
+	int idx = find_activity(name);
+	if (idx < 0) return;
+	struct activity_intent *in = activity_intent_find(&activities[idx], parts_name->text);
+	if (in)
+		activity_intent_add_dest(in, dest->text);
+}
+
+static struct activity_intent *intent_get(struct string *name, struct string *parts_name)
+{
+	int idx = find_activity(name);
+	return idx < 0 ? NULL : activity_intent_find(&activities[idx], parts_name->text);
+}
+
+static bool PartsEngine_IsExistActivityIntentData(struct string *name, struct string *parts_name)
+{
+	return intent_get(name, parts_name) != NULL;
+}
+
+static int PartsEngine_NumofActivityIntentDataDestination(struct string *name,
+		struct string *parts_name)
+{
+	struct activity_intent *in = intent_get(name, parts_name);
+	return in ? in->nr_dests : 0;
+}
+
+static void PartsEngine_GetActivityIntentDataDestination(struct string **out, int index,
+		struct string *name, struct string *parts_name)
+{
+	struct activity_intent *in = intent_get(name, parts_name);
+	if (!out || !in || index < 0 || index >= in->nr_dests)
+		return;
+	if (*out)
+		free_string(*out);
+	*out = cstr_to_string(in->dests[index]);
+}
+
+static int PartsEngine_GetActivityIntentDataType(struct string *name, struct string *parts_name)
+{
+	struct activity_intent *in = intent_get(name, parts_name);
+	return in ? in->type : 0;
+}
+
 static void PartsEngine_AddActivityLockedParts(struct string *name, struct string *parts) {}
 static bool PartsEngine_IsExistActivityLockedParts(struct string *name, struct string *parts) { return false; }
 
@@ -3886,13 +4121,43 @@ static bool PartsEngine_Parts_IsPartsPixelDecide(int parts_no)
 
 /* Register the Activity API into lib_PartsEngine. Called from
  * PartsEngine's _PostLink when the AIN declares CreateActivity (v14). */
+// Whether argument `arg` of the PartsEngine function `name` is declared `type`.
+static bool activity_arg_is(int lib_no, const char *name, int arg, enum ain_data_type type)
+{
+	int fno = lib_no >= 0 ? ain_get_library_function(ain, lib_no, name) : -1;
+	if (fno < 0)
+		return false;
+	const struct ain_hll_function *f = &ain->libraries[lib_no].functions[fno];
+	return arg < f->nr_arguments && f->arguments && f->arguments[arg].type.data == type;
+}
+
+/* The intent functions take the place of the empty ones only under the
+ * declarations of ain v7 (妻みぐい３): GetActivityIntentDataDestination
+ * (ref string Out, int Index, string Name, string PartsName). */
+static bool activity_intent_declared(void)
+{
+	int lib = ain_get_library(ain, "PartsEngine");
+	int fno = lib >= 0 ? ain_get_library_function(ain, lib, "GetActivityIntentDataDestination") : -1;
+	if (fno < 0)
+		return false;
+	const struct ain_hll_function *f = &ain->libraries[lib].functions[fno];
+	return f->nr_arguments == 4 && f->arguments
+		&& f->arguments[0].type.data == AIN_REF_STRING
+		&& f->arguments[1].type.data == AIN_INT
+		&& f->arguments[2].type.data == AIN_STRING
+		&& f->arguments[3].type.data == AIN_STRING;
+}
+
 void pe_v14_activity_prelink(void)
 {
 	struct static_library *lib = &lib_PartsEngine;
+	int lib_no = ain_get_library(ain, "PartsEngine");
 	static_library_register(lib, "Parts_IsPartsPixelDecide", PartsEngine_Parts_IsPartsPixelDecide);
 	static_library_register(lib, "IsExistActivity", PartsEngine_IsExistActivity);
 	static_library_register(lib, "CreateActivity", PartsEngine_CreateActivity);
-	static_library_register(lib, "ReleaseActivity", PartsEngine_ReleaseActivity);
+	static_library_register(lib, "ReleaseActivity", activity_arg_is(lib_no, "ReleaseActivity", 1,
+			AIN_REF_ARRAY_INT) ? (void *)PartsEngine_ReleaseActivity_v7
+			: (void *)PartsEngine_ReleaseActivity);
 	static_library_register(lib, "SaveActivityEXText", PartsEngine_SaveActivityEXText);
 	static_library_register(lib, "LoadActivityEXText", PartsEngine_LoadActivityEXText);
 	static_library_register(lib, "ReadActivityFile", PartsEngine_ReadActivityFile);
@@ -3902,13 +4167,31 @@ void pe_v14_activity_prelink(void)
 	static_library_register(lib, "RemoveActivityParts", PartsEngine_RemoveActivityParts);
 	static_library_register(lib, "RemoveAllActivityParts", PartsEngine_RemoveAllActivityParts);
 	static_library_register(lib, "NumofActivityParts", PartsEngine_NumofActivityParts);
-	static_library_register(lib, "GetActivityParts", PartsEngine_GetActivityParts);
+	static_library_register(lib, "GetActivityParts", activity_arg_is(lib_no, "GetActivityParts", 2,
+			AIN_REF_STRING) ? (void *)PartsEngine_GetActivityParts_v7
+			: (void *)PartsEngine_GetActivityParts);
 	static_library_register(lib, "IsExistActivityPartsByName", PartsEngine_IsExistActivityPartsByName);
 	static_library_register(lib, "IsExistActivityPartsByNumber", PartsEngine_IsExistActivityPartsByNumber);
 	static_library_register(lib, "GetActivityPartsNumber", PartsEngine_GetActivityPartsNumber);
-	static_library_register(lib, "GetActivityPartsName", PartsEngine_GetActivityPartsName);
+	static_library_register(lib, "GetActivityPartsName", activity_arg_is(lib_no,
+			"GetActivityPartsName", 0, AIN_REF_STRING)
+			? (void *)PartsEngine_GetActivityPartsName_v7
+			: (void *)PartsEngine_GetActivityPartsName);
 	static_library_register(lib, "AddActivityCloseParts", PartsEngine_AddActivityCloseParts);
 	static_library_register(lib, "IsExistActivityCloseParts", PartsEngine_IsExistActivityCloseParts);
+	if (activity_intent_declared()) {
+		static_library_register(lib, "SetActivityIntentData", PartsEngine_SetActivityIntentData);
+		static_library_register(lib, "AddActivityIntentDataDestination",
+				PartsEngine_AddActivityIntentDataDestination);
+		static_library_register(lib, "IsExistActivityIntentData",
+				PartsEngine_IsExistActivityIntentData);
+		static_library_register(lib, "NumofActivityIntentDataDestination",
+				PartsEngine_NumofActivityIntentDataDestination);
+		static_library_register(lib, "GetActivityIntentDataDestination",
+				PartsEngine_GetActivityIntentDataDestination);
+		static_library_register(lib, "GetActivityIntentDataType",
+				PartsEngine_GetActivityIntentDataType);
+	}
 	static_library_register(lib, "AddActivityLockedParts", PartsEngine_AddActivityLockedParts);
 	static_library_register(lib, "IsExistActivityLockedParts", PartsEngine_IsExistActivityLockedParts);
 	static_library_register(lib, "SetActivityEndKey", PartsEngine_SetActivityEndKey);

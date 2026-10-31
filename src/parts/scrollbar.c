@@ -260,11 +260,16 @@ static const char *const scrollbar_state_suffix_sjis[3] = {
 	"\x81\x5e\x83\x49\x83\x93", // ／オン
 	"\x81\x5e\x83\x5f\x83\x45\x83\x93", // ／ダウン
 };
-#define scrollbar_state_suffix (game_charset_is_gbk() ? scrollbar_state_suffix_gbk : scrollbar_state_suffix_sjis)
+// UTF-8 games spell the SJIS names in UTF-8 (sjis_key).
+static const char *scrollbar_state_suffix(int state)
+{
+	return game_charset_is_gbk() ? scrollbar_state_suffix_gbk[state]
+		: sjis_key(scrollbar_state_suffix_sjis[state]);
+}
 #define SCROLLBAR_BAR_SUFFIX_GBK "\xa3\xaf\xa5\xd0\xa9\x60"	// ／バー (0x7d9cf8)
 #define SCROLLBAR_BG_SUFFIX_GBK "\xa3\xaf\xb1\xb3\xbe\xb0"		// ／背景 (0x7d9cf0)
-#define SCROLLBAR_BAR_SUFFIX (game_charset_is_gbk() ? SCROLLBAR_BAR_SUFFIX_GBK : "\x81\x5e\x83\x6f\x81\x5b")
-#define SCROLLBAR_BG_SUFFIX (game_charset_is_gbk() ? SCROLLBAR_BG_SUFFIX_GBK : "\x81\x5e\x94\x77\x8c\x69")
+#define SCROLLBAR_BAR_SUFFIX (game_charset_is_gbk() ? SCROLLBAR_BAR_SUFFIX_GBK : sjis_key("\x81\x5e\x83\x6f\x81\x5b"))
+#define SCROLLBAR_BG_SUFFIX (game_charset_is_gbk() ? SCROLLBAR_BG_SUFFIX_GBK : sjis_key("\x81\x5e\x94\x77\x8c\x69"))
 
 static bool scrollbar_vertical(const struct parts *parts)
 {
@@ -360,11 +365,11 @@ static void scrollbar_look_build(struct parts *parts)
 		snprintf(base, sizeof base, "%s", look->over_bar_name);
 	else
 		snprintf(base, sizeof base, "%s%s", look->cg_name, SCROLLBAR_BAR_SUFFIX);
-	snprintf(name, sizeof name, "%s%s", base, scrollbar_state_suffix[0]);
+	snprintf(name, sizeof name, "%s%s", base, scrollbar_state_suffix(0));
 	if (scrollbar_load(&look->bar[0], name)) {
 		look->bar_cg_length = scrollbar_vertical(parts) ? look->bar[0].h : look->bar[0].w;
 		for (int i = 1; i < 3; i++) {
-			snprintf(name, sizeof name, "%s%s", base, scrollbar_state_suffix[i]);
+			snprintf(name, sizeof name, "%s%s", base, scrollbar_state_suffix(i));
 			scrollbar_load(&look->bar[i], name);
 		}
 	}

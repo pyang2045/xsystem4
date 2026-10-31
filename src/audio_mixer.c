@@ -892,7 +892,7 @@ void channel_close(struct channel *ch)
 #define GROUP_NUMBER_SJIS  "\x83\x4f\x83\x8b\x81\x5b\x83\x76\x94\xd4\x8d\x86" /* グループ番号 */
 #define GROUP_VOICE_SJIS   "\x91\xce\x89\x9e\x89\xb9\x90\xba\x83\x4f\x83\x8b\x81\x5b\x83\x76\x94\xd4\x8d\x86" /* 対応音声グループ番号 */
 #define GROUP_DEFAULT_SJIS "\x83\x66\x83\x74\x83\x48\x83\x8b\x83\x67\x83\x7b\x83\x8a\x83\x85\x81\x5b\x83\x80" /* デフォルトボリューム */
-#define GROUP_NAME(n) (game_charset_is_gbk() ? GROUP_##n##_GBK : GROUP_##n##_SJIS)
+#define GROUP_NAME(n) (game_charset_is_gbk() ? GROUP_##n##_GBK : sjis_key(GROUP_##n##_SJIS))
 #define VOLUME_SAV "Volume.sav"
 
 // The internal volumes of the main EX file (top-level floats; their names in
@@ -908,7 +908,7 @@ void channel_close(struct channel *ch)
 #define INTERNAL_BGM_SJIS   INTERNAL_PREFIX_SJIS "\x82\x61\x82\x66\x82\x6c" /* ＢＧＭ */
 #define INTERNAL_SE_SJIS    INTERNAL_PREFIX_SJIS "\x8c\xf8\x89\xca\x89\xb9" /* 効果音 */
 #define INTERNAL_VOICE_SJIS INTERNAL_PREFIX_SJIS "\x89\xb9\x90\xba" /* 音声 */
-#define INTERNAL_NAME(n) (game_charset_is_gbk() ? INTERNAL_##n##_GBK : INTERNAL_##n##_SJIS)
+#define INTERNAL_NAME(n) (game_charset_is_gbk() ? INTERNAL_##n##_GBK : sjis_key(INTERNAL_##n##_SJIS))
 
 struct groups_config {
 	int nr;
@@ -1161,7 +1161,7 @@ static void legacy_mixers_init(void)
 		// NOTE: Older games don't have an explicit master channel.
 		//       We add an extra mixer in this case for consistency.
 		int need_master = 1;
-		if (!strcmp(config.mixer_channels[0], "Master") || !strcmp(config.mixer_channels[0], SJIS_MASTER)) {
+		if (!strcmp(config.mixer_channels[0], "Master") || !strcmp(config.mixer_channels[0], sjis_key(SJIS_MASTER))) {
 			need_master = 0;
 		}
 		nr_mixers = config.mixer_nr_channels + need_master;
@@ -1188,7 +1188,7 @@ static void legacy_mixers_init(void)
 		mixers[i].parent = parent;
 		parent->children = xrealloc_array(parent->children, parent->nr_children, parent->nr_children+1, sizeof(struct mixer*));
 		parent->children[parent->nr_children++] = &mixers[i];
-		if (!strcmp(mixers[i].name, "Voice") || !strcmp(mixers[i].name, SJIS_VOICE)) {
+		if (!strcmp(mixers[i].name, "Voice") || !strcmp(mixers[i].name, sjis_key(SJIS_VOICE))) {
 			parent = &mixers[i];
 		}
 	}
