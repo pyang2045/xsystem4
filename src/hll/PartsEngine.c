@@ -2229,6 +2229,10 @@ static void PartsEngine_PostLink(void)
 	if (libno < 0)
 		return;
 	pe_v14_register_wheel(libno);
+	if (get_fun(libno, "AddController")) {
+		extern void pe_controller_register(void);
+		pe_controller_register();
+	}
 	// v14 Activity system + pactex loader (declaration-driven)
 	if (get_fun(libno, "CreateActivity")) {
 		extern void pe_v14_activity_prelink(void);

@@ -3865,26 +3865,14 @@ void parts_controller_set_stack(int nr, const int *ids)
 // be the top one. Dohna Dohna's scenes pass -1 and its CASPartsLayer passes
 // the top controller's ID (AFL_Parts_AddTopLayer).
 //
-// Older engines: the game only ever passes -1, and the active controller is
-// always the top of the stack at that point, so this degenerates to a simple
-// push; the new ID is the position.
+// Older engines: the same placement, without root parts; IDs are the lowest
+// free number (ctrl_alloc_id), so pushes and pops keep ID == position. Games
+// that only pass -1 with the active controller on top get a plain push. 妻み
+// ぐい３ (ain v7) has the same AFL_Parts library: AFL_Parts_AddTopLayer passes
+// GetControllerID(GetControllerLength() - 1). Not checked against
+// Tsumamigui3.exe (its HLL functions carry no names to find them by).
 int PE_AddController(int index)
 {
-	if (ain->version < 14) {
-		if (index != -1)
-			VM_ERROR("index != -1 not supported (got %d)", index);
-		if (ctrl_stack.nr_controllers > 0 &&
-				ctrl_stack.active != ctrl_stack.nr_controllers - 1)
-			VM_ERROR("active controller is not at the top of the stack");
-		if (ctrl_stack.nr_controllers >= PARTS_CONTROLLER_STACK_MAX)
-			VM_ERROR("controller stack overflow");
-
-		int no = ctrl_stack.nr_controllers;
-		ctrl_insert(no, no);
-		ctrl_stack.active = no;
-		return no;
-	}
-
 	int pos = parts_controller_index(index);
 	pos = pos >= 0 ? pos + 1 : ctrl_active_index() + 1;
 	// The original adds nothing once there are 10000 controllers and still
@@ -3895,8 +3883,8 @@ int PE_AddController(int index)
 	int id = ctrl_alloc_id();
 	ctrl_insert(pos, id);
 	ctrl_stack.active = id;
-	// The ID is the number of the controller's root parts (0x53d220).
-	if (parts_table)
+	// v14: the ID is the number of the controller's root parts (0x53d220).
+	if (ain->version >= 14 && parts_table)
 		ctrl_root_create(id);
 	ctrl_resort_from(pos + 1);
 	return id;

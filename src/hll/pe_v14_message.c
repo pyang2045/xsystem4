@@ -303,6 +303,20 @@ static int PE_v14_GetSystemOverlayController(void)
 	return PARTS_CONTROLLER_SYSTEM_OVERLAY;
 }
 
+/* The controller accessors are not v14-only: 妻みぐい３ (ain v7) declares
+ * them too. Registered for every game that declares them, at _PostLink. */
+void pe_controller_register(void)
+{
+	struct static_library *lib = &lib_PartsEngine;
+	static_library_register(lib, "GetActiveController", PE_v14_GetActiveController);
+	static_library_register(lib, "SetActiveController", PE_v14_SetActiveController);
+	static_library_register(lib, "GetControllerLength", PE_v14_GetControllerLength);
+	static_library_register(lib, "GetControllerID", PE_v14_GetControllerID);
+	static_library_register(lib, "GetControllerIndex", PE_v14_GetControllerIndex);
+	static_library_register(lib, "MoveController", PE_v14_MoveController);
+	static_library_register(lib, "GetSystemOverlayController", PE_v14_GetSystemOverlayController);
+}
+
 /* --- Message window (v14 ADV dialogue) --- thin adapters over the
  * upstream parts text/CG API, from the fork's verified behaviour. */
 
@@ -562,13 +576,6 @@ void pe_v14_message_register(void)
 	static_library_register(lib, "SeekMessage", PE_v14_SeekMessage);
 	static_library_register(lib, "SetEventID", PE_v14_SetEventID);
 	static_library_register(lib, "GetUniqueID", PE_v14_GetUniqueID);
-	static_library_register(lib, "GetActiveController", PE_v14_GetActiveController);
-	static_library_register(lib, "SetActiveController", PE_v14_SetActiveController);
-	static_library_register(lib, "GetControllerLength", PE_v14_GetControllerLength);
-	static_library_register(lib, "GetControllerID", PE_v14_GetControllerID);
-	static_library_register(lib, "GetControllerIndex", PE_v14_GetControllerIndex);
-	static_library_register(lib, "MoveController", PE_v14_MoveController);
-	static_library_register(lib, "GetSystemOverlayController", PE_v14_GetSystemOverlayController);
 	static_library_register(lib, "SetMessageWindowActive", PE_v14_SetMessageWindowActive);
 	static_library_register(lib, "SetMessageWindowText", PE_v14_SetMessageWindowText);
 	static_library_register(lib, "FixMessageWindowText",
