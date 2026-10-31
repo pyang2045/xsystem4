@@ -10,23 +10,24 @@ Touch: tap = click, two-finger tap or a tap outside the picture = right click, 1
 
 ## Build
 
-Needs Xcode and Homebrew's `bison` and `flex` (libsys4's parser uses bison 3).
+Needs Xcode (with the iOS platform installed: Xcode > Settings > Components) and Homebrew's
+`bison`, `flex` and `cmake` (libsys4's parser uses bison 3).
 
-```sh
-ios/build_deps.sh device sim-x86_64       # static libraries into ios-deps/ (sim-arm64 on Apple Silicon)
-```
+The libraries come from `ios/build_deps.sh PLATFORM...` (`device`, `sim-x86_64`, `sim-arm64`):
+it downloads pinned, sha256-checked releases of SDL2, freetype, libffi, libjpeg-turbo, libpng,
+libwebp, ogg, vorbis, FLAC, opus, libsndfile and cglm and builds them as static libraries into
+`ios-deps/PLATFORM` (about 2½ minutes per platform; `XSYS4_IOS_DEPS` puts `ios-deps`
+elsewhere). A library is rebuilt when the script changes; when nothing changed it returns at once.
 
-`ios/build_deps.sh` downloads pinned, sha256-checked releases of SDL2, freetype, libffi,
-libjpeg-turbo, libpng, libwebp, ogg, vorbis, FLAC, opus, libsndfile and cglm, and builds them
-(about 2½ minutes per platform). `XSYS4_IOS_DEPS` puts `ios-deps` elsewhere.
-
-**Xcode:** open `ios/xsystem4.xcodeproj` (targets `xsystem4`, the app, and `sys4`, libsys4).
-Choose your team under Signing & Capabilities and run. Debug builds keep the `XSYS4_*` test
-hooks, Release builds drop them.
+**Xcode:** open `ios/xsystem4.xcodeproj`, choose your team under Signing & Capabilities and
+run. Targets: `xsystem4` (the app), `sys4` (libsys4) and `ios-deps`, which runs
+`ios/build_deps.sh` for the platform being built, so the first build also builds the
+libraries. Debug builds keep the `XSYS4_*` test hooks, Release builds drop them.
 
 **Without Xcode's IDE:**
 
 ```sh
+ios/build_deps.sh device
 ios/cross.sh device > ios-deps/cross-device.ini
 meson setup --cross-file ios-deps/cross-device.ini -Ddebugger=disabled build-ios-device
 ninja -C build-ios-device

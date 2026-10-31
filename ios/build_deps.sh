@@ -6,19 +6,29 @@
 # Sources are downloaded (sha256-checked) into ios-deps/src; each platform installs into
 # ios-deps/PLATFORM/{include,lib,lib/pkgconfig}. ios-deps is xsystem4/ios-deps (gitignored)
 # unless $XSYS4_IOS_DEPS names another folder. zlib and iconv come from the SDK. iOS 17.0.
+# A library is rebuilt when this script changes (versions, flags); a platform whose stamp
+# matches the script is skipped at once, so the Xcode project runs this on every build.
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
 top="${XSYS4_IOS_DEPS:-$here/../ios-deps}"
-[ $# -ge 1 ] || { sed -n '2,8p' "$0"; exit 1; }
+[ $# -ge 1 ] || { sed -n '2,10p' "$0"; exit 1; }
 MIN=17.0
 mkdir -p "$top/src"; top="$(cd "$top" && pwd)"
+self="$(shasum -a 256 "$0" | cut -c1-16)"  # build key: this script's contents
+current=1
+for plat in "$@"; do
+	[ "$(cat "$top/$plat/build_deps.stamp" 2>/dev/null)" = "$self" ] || current=0
+done
+[ $current = 0 ] || { echo "ios-deps up to date: $*"; exit 0; }
 
 fetch() {  # name url sha256
 	f="$top/src/$(basename "$2")"
 	[ -f "$f" ] || curl -fL# -o "$f" "$2"
 	echo "$3  $f" | shasum -a 256 -c - >/dev/null || { echo "bad checksum: $f" >&2; exit 1; }
 	d="$top/src/$1"
-	[ -d "$d" ] || { mkdir -p "$d"; tar -xf "$f" -C "$d" --strip-components 1; }
+	[ "$(cat "$d/.tarball" 2>/dev/null)" = "$(basename "$f")" ] && return
+	rm -rf "$d"; mkdir -p "$d"; tar -xf "$f" -C "$d" --strip-components 1
+	basename "$f" > "$d/.tarball"
 }
 fetch SDL2 https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.tar.gz 5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165
 fetch freetype https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz 0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289
@@ -48,7 +58,7 @@ for plat in "$@"; do
 	export PKG_CONFIG_LIBDIR="$pfx/lib/pkgconfig" PKG_CONFIG_PATH=""
 	cm() {  # name [cmake args]
 		n=$1; shift
-		[ -f "$bld/$n.done" ] && return
+		[ "$(cat "$bld/$n.done" 2>/dev/null)" = "$self" ] && return
 		rm -rf "$bld/$n"
 		cmake -S "$top/src/$n" -B "$bld/$n" -G Ninja -DCMAKE_SYSTEM_NAME=iOS \
 			-DCMAKE_OSX_SYSROOT=$sdk -DCMAKE_OSX_ARCHITECTURES=$arch -DCMAKE_SYSTEM_PROCESSOR=$arch \
@@ -60,17 +70,17 @@ for plat in "$@"; do
 			&& cmake --build "$bld/$n" >>"$bld/$n.log" 2>&1 \
 			&& cmake --install "$bld/$n" >>"$bld/$n.log" 2>&1 \
 			|| { echo "$plat $n failed: see $bld/$n.log" >&2; exit 1; }
-		touch "$bld/$n.done"; echo "$plat: $n"
+		echo "$self" > "$bld/$n.done"; echo "$plat: $n"
 	}
 	ac() {  # name [configure args]
 		n=$1; shift
-		[ -f "$bld/$n.done" ] && return
+		[ "$(cat "$bld/$n.done" 2>/dev/null)" = "$self" ] && return
 		rm -rf "$bld/$n"; mkdir -p "$bld/$n"
 		(cd "$bld/$n" && CC="$(xcrun --sdk $sdk -f clang)" CFLAGS="$cflags $map" LDFLAGS="$cflags" \
 			"$top/src/$n/configure" --host=$host --prefix="$pfx" --disable-shared --enable-static "$@" \
 			&& make -j8 && make install) >"$bld/$n.log" 2>&1 \
 			|| { echo "$plat $n failed: see $bld/$n.log" >&2; exit 1; }
-		touch "$bld/$n.done"; echo "$plat: $n"
+		echo "$self" > "$bld/$n.done"; echo "$plat: $n"
 	}
 	mkdir -p "$pfx/lib/pkgconfig"  # zlib is the SDK's
 	printf 'Name: zlib\nDescription: zlib (iOS SDK)\nVersion: 1.2.12\nLibs: -lz\nCflags:\n' \
@@ -106,5 +116,6 @@ for pc in glob.glob(os.path.join(sys.argv[1], '*.pc')):
         if k in fields: out.append(k + ': ' + ' '.join(v for v in fields[k] if v))
     open(pc, 'w').write('\n'.join(out) + '\n')
 PY
+	echo "$self" > "$pfx/build_deps.stamp"
 	echo "$plat: done -> $pfx"
 done

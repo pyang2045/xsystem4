@@ -218,9 +218,10 @@ class Project:
             "TARGETED_DEVICE_FAMILY": "2",
             "IPHONEOS_DEPLOYMENT_TARGET": MIN_IOS,
             "ONLY_ACTIVE_ARCH": "YES",  # ios-deps holds one arch per platform folder
-            "XS_DEPS": deps + "/device",
-            "XS_DEPS[sdk=iphonesimulator*][arch=x86_64]": deps + "/sim-x86_64",
-            "XS_DEPS[sdk=iphonesimulator*][arch=arm64]": deps + "/sim-arm64",
+            "XS_DEPS_ROOT": deps,
+            "XS_DEPS": "$(XS_DEPS_ROOT)/device",
+            "XS_DEPS[sdk=iphonesimulator*][arch=x86_64]": "$(XS_DEPS_ROOT)/sim-x86_64",
+            "XS_DEPS[sdk=iphonesimulator*][arch=arm64]": "$(XS_DEPS_ROOT)/sim-arm64",
             "XS_SRC": "$(PROJECT_DIR)/" + self.rel(XS),
             "GCC_C_LANGUAGE_STANDARD": "c11",
             "CLANG_ENABLE_OBJC_ARC": "YES",
@@ -288,6 +289,36 @@ res="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
 cp "$XS_SRC/COPYING" "$res/COPYING.xsystem4"
 rm -f "$res/shaders/metal/glsl2msl.py"
 '''
+        # ios/build_deps.sh for the platform being built; it returns at once when up to date.
+        # A clean environment: Xcode's exported settings would steer CMake and configure.
+        deps_sh = r'''case "$PLATFORM_NAME" in
+iphoneos) plats=device ;;
+iphonesimulator)
+	plats=
+	for a in $ARCHS; do
+		case $a in x86_64) plats="$plats sim-x86_64" ;; arm64) plats="$plats sim-arm64" ;; esac
+	done ;;
+*) echo "error: no iOS libraries for $PLATFORM_NAME"; exit 1 ;;
+esac
+exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS_ROOT" \
+	PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+	/bin/sh "$XS_SRC/ios/build_deps.sh" $plats
+'''
+        deps_target = self.add("target-deps", "PBXAggregateTarget", name="ios-deps", productName="ios-deps",
+                               buildConfigurationList=self.config_list("deps", {"PRODUCT_NAME": "ios-deps"},
+                                                                       {"PRODUCT_NAME": "ios-deps"}),
+                               buildPhases=[self.phase("deps-build", "PBXShellScriptBuildPhase", [],
+                                                       name="Build libraries (ios/build_deps.sh)",
+                                                       inputPaths=[], inputFileListPaths=[], outputPaths=[],
+                                                       outputFileListPaths=[], alwaysOutOfDate="1",
+                                                       shellPath="/bin/sh", shellScript=deps_sh)],
+                               dependencies=[])
+
+        def depends_on(target, name):
+            proxy = self.add(("proxy", name), "PBXContainerItemProxy", containerPortal=self.oid("project"),
+                             proxyType="1", remoteGlobalIDString=target, remoteInfo=name)
+            return self.add(("dep", name), "PBXTargetDependency", target=target, targetProxy=proxy)
+
         rules = [
             self.add("rule-bison", "PBXBuildRule", compilerSpec="com.apple.compilers.proxy.script",
                      filePatterns="*.y", fileType="pattern.proxy", inputFiles=[], isEditable="1", script=bison,
@@ -306,7 +337,7 @@ rm -f "$res/shaders/metal/glsl2msl.py"
                         buildConfigurationList=self.config_list("sys4", sys4_settings, sys4_settings),
                         buildPhases=[self.phase("sys4-sources", "PBXSourcesBuildPhase",
                                                 [self.buildfile(self.fileref(self.xs(p)), "sys4") for p in self.sys4])],
-                        buildRules=rules, dependencies=[])
+                        buildRules=rules, dependencies=[depends_on(deps_target, "ios-deps")])
 
         version_phase = self.phase("app-version", "PBXShellScriptBuildPhase", [], name="Generate version.h",
                                    inputPaths=[], inputFileListPaths=[], outputFileListPaths=[],
@@ -350,16 +381,13 @@ rm -f "$res/shaders/metal/glsl2msl.py"
                                   outputPaths=["$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/COPYING.xsystem4"],
                                   shellPath="/bin/sh", shellScript=finish)
 
-        proxy = self.add("proxy-sys4", "PBXContainerItemProxy", containerPortal=self.oid("project"),
-                         proxyType="1", remoteGlobalIDString=sys4, remoteInfo="sys4")
-        dep = self.add("dep-sys4", "PBXTargetDependency", target=sys4, targetProxy=proxy)
         app_product = self.add("app-product", "PBXFileReference", explicitFileType="wrapper.application",
                                includeInIndex="0", path=cfg.name + ".app", sourceTree="BUILT_PRODUCTS_DIR")
         app = self.add("target-app", "PBXNativeTarget", name=cfg.name, productName=cfg.name,
                        productReference=app_product, productType="com.apple.product-type.application",
                        buildConfigurationList=self.config_list("app", app_settings(1), app_settings(0)),
                        buildPhases=[version_phase, src_phase, link_phase, res_phase] + copies + [finish_phase],
-                       buildRules=[], dependencies=[dep])
+                       buildRules=[], dependencies=[depends_on(sys4, "sys4")])
 
         main = self.add(("group", "main"), "PBXGroup", sourceTree="<group>", children=[
             self.group(cfg.name, [plist_ref] + icon_refs, "support"),
@@ -368,17 +396,17 @@ rm -f "$res/shaders/metal/glsl2msl.py"
             self.group("Resources", [fonts, metal] + extra_refs, "resources"),
             self.group("Frameworks", fw_refs, "frameworks"),
             self.group("Products", [app_product, sys4_product], "products"),
+            self.group("Build", [self.fileref(self.xs("ios/build_deps.sh"))], "build"),
         ])
         products = self.oid("group", "products")
         self.objects[self.oid("project")] = dict(
             isa="PBXProject",
             attributes=dict(BuildIndependentTargetsInParallel="1", LastUpgradeCheck="1600",
-                            TargetAttributes={app: dict(CreatedOnToolsVersion="16.0"),
-                                              sys4: dict(CreatedOnToolsVersion="16.0")}),
+                            TargetAttributes={t: dict(CreatedOnToolsVersion="16.0") for t in (app, sys4, deps_target)}),
             buildConfigurationList=self.config_list("project", debug, release),
             compatibilityVersion="Xcode 14.0", developmentRegion=cfg.region, hasScannedForEncodings="0",
             knownRegions=sorted({cfg.region, "en", "Base"}), mainGroup=main, productRefGroup=products, projectDirPath="",
-            projectRoot="", targets=[app, sys4])
+            projectRoot="", targets=[app, sys4, deps_target])
         return app
 
     SAFE = re.compile(r"^[A-Za-z0-9_$/.]+$")

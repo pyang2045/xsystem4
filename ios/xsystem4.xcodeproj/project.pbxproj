@@ -679,6 +679,25 @@
 			isa = PBXBuildFile;
 			fileRef = 99C5FF516FD16E2DF1FD68D4;
 		};
+		2366BBE9CCFAF056979432EB = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build libraries (ios/build_deps.sh)";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "case \"$PLATFORM_NAME\" in\niphoneos) plats=device ;;\niphonesimulator)\n\tplats=\n\tfor a in $ARCHS; do\n\t\tcase $a in x86_64) plats=\"$plats sim-x86_64\" ;; arm64) plats=\"$plats sim-arm64\" ;; esac\n\tdone ;;\n*) echo \"error: no iOS libraries for $PLATFORM_NAME\"; exit 1 ;;\nesac\nexec env -i HOME=\"$HOME\" DEVELOPER_DIR=\"$DEVELOPER_DIR\" XSYS4_IOS_DEPS=\"$XS_DEPS_ROOT\" \\\n\tPATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin\" \\\n\t/bin/sh \"$XS_SRC/ios/build_deps.sh\" $plats\n";
+		};
 		23C04F03D89877A4418CAAE2 = {
 			isa = PBXBuildFile;
 			fileRef = FA43B3F37F16F29874E984C9;
@@ -700,6 +719,15 @@
 			name = sts_mixer.h;
 			path = ../include/sts_mixer.h;
 			sourceTree = SOURCE_ROOT;
+		};
+		24FFEFE85ED40BF619755987 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				43E66C65E8B339DAE5DC288E,
+				41C0E661C76C57227B0DF373,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		25A2FC14F0A1313926E9AE76 = {
 			isa = PBXFileReference;
@@ -842,9 +870,10 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 				);
-				XS_DEPS = "$(PROJECT_DIR)/../ios-deps/device";
-				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(PROJECT_DIR)/../ios-deps/sim-arm64";
-				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(PROJECT_DIR)/../ios-deps/sim-x86_64";
+				XS_DEPS = "$(XS_DEPS_ROOT)/device";
+				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(XS_DEPS_ROOT)/sim-arm64";
+				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(XS_DEPS_ROOT)/sim-x86_64";
+				XS_DEPS_ROOT = "$(PROJECT_DIR)/../ios-deps";
 				XS_SRC = "$(PROJECT_DIR)/..";
 			};
 			name = Release;
@@ -1005,11 +1034,6 @@
 			path = ../src/hll/MainSurface.c;
 			sourceTree = SOURCE_ROOT;
 		};
-		3BA809E190572036979A6C80 = {
-			isa = PBXTargetDependency;
-			target = AA8F6B68278546EE45C4176F;
-			targetProxy = E2C160559645E6C79DB23689;
-		};
 		3BB4488855127ADF9155432A = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
@@ -1044,6 +1068,9 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					96A7630FA4CE30A5A107BCC5 = {
+						CreatedOnToolsVersion = 16.0;
+					};
 					AA8F6B68278546EE45C4176F = {
 						CreatedOnToolsVersion = 16.0;
 					};
@@ -1067,7 +1094,15 @@
 			targets = (
 				EB6844E070B7479781170E03,
 				AA8F6B68278546EE45C4176F,
+				96A7630FA4CE30A5A107BCC5,
 			);
+		};
+		3E1E0B8FEF6C5DA5C146C4CC = {
+			isa = PBXFileReference;
+			lastKnownFileType = text;
+			name = build_deps.sh;
+			path = build_deps.sh;
+			sourceTree = SOURCE_ROOT;
 		};
 		3E432FAA16FAE33121353F1F = {
 			isa = PBXFileReference;
@@ -1125,6 +1160,11 @@
 			path = ../src/hll/Float.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		4087059A60F1F7458B130153 = {
+			isa = PBXTargetDependency;
+			target = AA8F6B68278546EE45C4176F;
+			targetProxy = B5DE76898BC666D04C9E24E3;
+		};
 		4095790498D2D108D8E31730 = {
 			isa = PBXBuildFile;
 			fileRef = 9CBE37F4D49CF6F3F752C0DD;
@@ -1155,6 +1195,13 @@
 			path = ../include/vm/heap.h;
 			sourceTree = SOURCE_ROOT;
 		};
+		41C0E661C76C57227B0DF373 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "ios-deps";
+			};
+			name = Release;
+		};
 		41F4D2B14322DA455D436164 = {
 			isa = PBXBuildFile;
 			fileRef = CA9616AA6FA1A2FD4BF4D6B6;
@@ -1180,6 +1227,13 @@
 			name = buffer.c;
 			path = ../subprojects/libsys4/src/buffer.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		43E66C65E8B339DAE5DC288E = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "ios-deps";
+			};
+			name = Debug;
 		};
 		4438C7D37F25B7DA4B33DCF5 = {
 			isa = PBXFileReference;
@@ -1711,6 +1765,7 @@
 				C4E49923A572A079BC06D6BF,
 				682963F31574CA174937BF1B,
 				01A9B9067DE6351E20F1A93E,
+				E00F28C8C330FB4062E84130,
 			);
 			sourceTree = "<group>";
 		};
@@ -2159,6 +2214,13 @@
 			name = movie_plmpeg.c;
 			path = ../src/movie_plmpeg.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		7670EEB466CBB99556B6908C = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D02361E9C90FD3DDAE7EB3D;
+			proxyType = 1;
+			remoteGlobalIDString = 96A7630FA4CE30A5A107BCC5;
+			remoteInfo = "ios-deps";
 		};
 		76A69B12FC1058CB1E18DD7A = {
 			isa = PBXFileReference;
@@ -2668,6 +2730,17 @@
 			path = ../subprojects/libsys4/include/system4/rou.h;
 			sourceTree = SOURCE_ROOT;
 		};
+		96A7630FA4CE30A5A107BCC5 = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 24FFEFE85ED40BF619755987;
+			buildPhases = (
+				2366BBE9CCFAF056979432EB,
+			);
+			dependencies = (
+			);
+			name = "ios-deps";
+			productName = "ios-deps";
+		};
 		96F59BAC1DC42D856CA3CD1A = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.c;
@@ -2724,6 +2797,11 @@
 			name = vmMusic.c;
 			path = ../src/hll/vmMusic.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		9C380AC8729E21A72D9BFE98 = {
+			isa = PBXTargetDependency;
+			target = 96A7630FA4CE30A5A107BCC5;
+			targetProxy = 7670EEB466CBB99556B6908C;
 		};
 		9C3A0E787620EDEC54133510 = {
 			isa = PBXBuildFile;
@@ -2933,7 +3011,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(XS_DEPS)/lib",
 				);
-				MARKETING_VERSION = 5;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"-Wl,-stack_size,0x20000000",
 					"-lSDL2",
@@ -3028,6 +3106,7 @@
 				DA305E84DB2D32B26CDAE771,
 			);
 			dependencies = (
+				9C380AC8729E21A72D9BFE98,
 			);
 			name = sys4;
 			productName = sys4;
@@ -3397,6 +3476,13 @@
 			name = vmSurface.c;
 			path = ../src/hll/vmSurface.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		B5DE76898BC666D04C9E24E3 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D02361E9C90FD3DDAE7EB3D;
+			proxyType = 1;
+			remoteGlobalIDString = AA8F6B68278546EE45C4176F;
+			remoteInfo = sys4;
 		};
 		B6784A91C912F088A8A54CDC = {
 			isa = PBXBuildFile;
@@ -4105,6 +4191,14 @@
 			path = ../src/hll/FileDialog.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		E00F28C8C330FB4062E84130 = {
+			isa = PBXGroup;
+			children = (
+				3E1E0B8FEF6C5DA5C146C4CC,
+			);
+			name = Build;
+			sourceTree = "<group>";
+		};
 		E0DEEC1957DD96EBED5B5A50 = {
 			isa = PBXBuildFile;
 			fileRef = 5F3494D9FC77FC0BFFF04267;
@@ -4179,13 +4273,6 @@
 			);
 			name = include;
 			sourceTree = "<group>";
-		};
-		E2C160559645E6C79DB23689 = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3D02361E9C90FD3DDAE7EB3D;
-			proxyType = 1;
-			remoteGlobalIDString = AA8F6B68278546EE45C4176F;
-			remoteInfo = sys4;
 		};
 		E37588FEA5E8E08AE9BAF7C0 = {
 			isa = PBXBuildFile;
@@ -4386,7 +4473,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				3BA809E190572036979A6C80,
+				4087059A60F1F7458B130153,
 			);
 			name = xsystem4;
 			productName = xsystem4;
@@ -4520,7 +4607,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(XS_DEPS)/lib",
 				);
-				MARKETING_VERSION = 5;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"-Wl,-stack_size,0x20000000",
 					"-lSDL2",
@@ -4655,9 +4742,10 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 				);
-				XS_DEPS = "$(PROJECT_DIR)/../ios-deps/device";
-				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(PROJECT_DIR)/../ios-deps/sim-arm64";
-				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(PROJECT_DIR)/../ios-deps/sim-x86_64";
+				XS_DEPS = "$(XS_DEPS_ROOT)/device";
+				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(XS_DEPS_ROOT)/sim-arm64";
+				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(XS_DEPS_ROOT)/sim-x86_64";
+				XS_DEPS_ROOT = "$(PROJECT_DIR)/../ios-deps";
 				XS_SRC = "$(PROJECT_DIR)/..";
 			};
 			name = Debug;
