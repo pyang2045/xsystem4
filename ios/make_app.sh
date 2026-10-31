@@ -5,10 +5,10 @@
 #
 # CONFIG is an app config (see ios/app.py; ios/xsystem4.json is the plain app). BUILD_DIR is a
 # meson build made with ios/cross.sh. Writes OUT_DIR/NAME.app: engine, shaders/metal, fonts/,
-# COPYING.xsystem4 and the config's icon and resources; the game is not included (it goes in
-# the app's Documents). Without SIGN_IDENTITY the app is ad-hoc signed: enough for the
-# Simulator, or for a sideloading tool to re-sign. For a device, pass "Apple Development" and
-# the profile from ios/provision.sh: it is embedded and its entitlements are signed in.
+# COPYING.xsystem4, the config's resources and its asset catalog (icon, compiled by actool);
+# the game is not included (it goes in the app's Documents). Without SIGN_IDENTITY the app
+# is ad-hoc signed: enough for the Simulator, or for a sideloading tool to re-sign. For a
+# device, pass "Apple Development" and the profile from ios/provision.sh.
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
 [ $# -ge 3 ] || { sed -n '2,12p' "$0"; exit 1; }
@@ -30,6 +30,15 @@ app_py resources "$cfg" | while IFS="$(printf '\t')" read -r dest file; do
 	cp "$file" "$app/$dest"
 done
 app_py plist "$cfg" "$rev" "$plat" > "$app/Info.plist"
+assets="$(app_py get "$cfg" assets)"
+if [ -n "$assets" ]; then
+	[ $plat = iPhoneOS ] && sdk=iphoneos || sdk=iphonesimulator
+	icon="$(mktemp)"
+	xcrun actool --compile "$app" --platform $sdk --minimum-deployment-target 17.0 --target-device ipad \
+		--app-icon AppIcon --output-partial-info-plist "$icon" --errors --warnings "$assets" >/dev/null
+	/usr/libexec/PlistBuddy -c "Merge $icon" "$app/Info.plist" >/dev/null
+	rm -f "$icon"
+fi
 plutil -lint "$app/Info.plist" >/dev/null
 if [ -n "$profile" ]; then
 	cp "$profile" "$app/embedded.mobileprovision"

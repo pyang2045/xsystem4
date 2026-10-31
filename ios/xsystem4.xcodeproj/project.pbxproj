@@ -201,6 +201,10 @@
 			path = ../src/hll/OutputLog.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		0A34D364ABF0AF1D5C603BA4 = {
+			isa = PBXBuildFile;
+			fileRef = 83B1732A67B78865831477FB;
+		};
 		0BA27652F2216E24365936AC = {
 			isa = PBXBuildFile;
 			fileRef = 687AE573EC49E8FB26B57AFB;
@@ -350,6 +354,10 @@
 			isa = PBXBuildFile;
 			fileRef = E6B2429FC2C9CC7092F3FE6A;
 		};
+		1188C08B04546190201CC501 = {
+			isa = PBXBuildFile;
+			fileRef = CE4DAFAD6FA8FF695A0B6481;
+		};
 		119F309A49230416516CDBA6 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.c;
@@ -389,6 +397,10 @@
 			path = ../src/hll/CommonSystemData.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		13A5C0B14F7AA796F8CA7F06 = {
+			isa = PBXBuildFile;
+			fileRef = F90E8445C5843EB863BF46F4;
+		};
 		13F6E49B669C631632A84556 = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -399,9 +411,6 @@
 					"$(XS_SRC)/subprojects/libsys4/include",
 					"$(XS_SRC)/subprojects/libsys4/src",
 					"$(DERIVED_FILE_DIR)",
-					"$(XS_DEPS)/include",
-					"$(XS_DEPS)/include/webp",
-					"$(XS_DEPS)/include/libpng16",
 				);
 				PRODUCT_NAME = sys4;
 				SKIP_INSTALL = YES;
@@ -681,22 +690,24 @@
 		};
 		2366BBE9CCFAF056979432EB = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				"$(XS_SRC)/ios/build_deps.sh",
+				"$(XS_SRC)/ios/xcframeworks.sh",
 			);
-			name = "Build libraries (ios/build_deps.sh)";
+			name = "Build libraries (ios/build_deps.sh, ios/xcframeworks.sh)";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(XS_DEPS_ROOT)/xcframeworks/stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "case \"$PLATFORM_NAME\" in\niphoneos) plats=device ;;\niphonesimulator)\n\tplats=\n\tfor a in $ARCHS; do\n\t\tcase $a in x86_64) plats=\"$plats sim-x86_64\" ;; arm64) plats=\"$plats sim-arm64\" ;; esac\n\tdone ;;\n*) echo \"error: no iOS libraries for $PLATFORM_NAME\"; exit 1 ;;\nesac\nexec env -i HOME=\"$HOME\" DEVELOPER_DIR=\"$DEVELOPER_DIR\" XSYS4_IOS_DEPS=\"$XS_DEPS_ROOT\" \\\n\tPATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin\" \\\n\t/bin/sh \"$XS_SRC/ios/build_deps.sh\" $plats\n";
+			shellScript = "exec env -i HOME=\"$HOME\" DEVELOPER_DIR=\"$DEVELOPER_DIR\" XSYS4_IOS_DEPS=\"$XS_DEPS_ROOT\" \\\n\tPATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin\" \\\n\t/bin/sh -c '\"$1/build_deps.sh\" device sim-x86_64 sim-arm64 && \"$1/xcframeworks.sh\"' sh \"$XS_SRC/ios\"\n";
 		};
 		23C04F03D89877A4418CAAE2 = {
 			isa = PBXBuildFile;
@@ -858,7 +869,7 @@
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_OPTIMIZATION_LEVEL = 2;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CFLAGS = (
 					"-ffile-prefix-map=$(XS_SRC:standardizepath)/=",
 				);
@@ -870,9 +881,6 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 				);
-				XS_DEPS = "$(XS_DEPS_ROOT)/device";
-				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(XS_DEPS_ROOT)/sim-arm64";
-				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(XS_DEPS_ROOT)/sim-x86_64";
 				XS_DEPS_ROOT = "$(PROJECT_DIR)/../ios-deps";
 				XS_SRC = "$(PROJECT_DIR)/..";
 			};
@@ -881,6 +889,10 @@
 		2BAE4F4C7DAA0FC6105B8819 = {
 			isa = PBXBuildFile;
 			fileRef = 1271017ABB5385E89B6E9228;
+		};
+		2CDDB7E47ECC745BB5845B6A = {
+			isa = PBXBuildFile;
+			fileRef = F3DB535A31DF7DB86529A53B;
 		};
 		2D10438B040F5EA15EA07D47 = {
 			isa = PBXFileReference;
@@ -939,6 +951,10 @@
 		31B304EB49014F4C55050DAF = {
 			isa = PBXBuildFile;
 			fileRef = FFDD9C761ED5F5A0CAFBF690;
+		};
+		32D29BDD5DB3072E2F661161 = {
+			isa = PBXBuildFile;
+			fileRef = DD66892DFAC4B29C4DEC02F0;
 		};
 		3301BB2F408C0E3D520E70BF = {
 			isa = PBXFileReference;
@@ -1020,6 +1036,10 @@
 			isa = PBXBuildFile;
 			fileRef = 0C97B9ED477E743C772C7A3E;
 		};
+		3A6C96BE6CE9EBBBF792C80C = {
+			isa = PBXBuildFile;
+			fileRef = 7D531FE4CFB248705B486DEE;
+		};
 		3B59CE63DB309B86ABF1CAA4 = {
 			isa = PBXFileReference;
 			lastKnownFileType = wrapper.framework;
@@ -1047,6 +1067,10 @@
 			name = vmDalkGaiden.c;
 			path = ../src/hll/vmDalkGaiden.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		3C0E59442E1890E6821EABEA = {
+			isa = PBXBuildFile;
+			fileRef = 7184D9780BF736502AD76D69;
 		};
 		3C207ACEA2ABB2A28DFB11EE = {
 			isa = PBXFileReference;
@@ -1337,6 +1361,7 @@
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).tab.c",
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).tab.h",
 			);
+			runOncePerArchitecture = 0;
 			script = "for b in \"$BISON\" /opt/homebrew/opt/bison/bin/bison /usr/local/opt/bison/bin/bison; do\n\t[ -n \"$b\" ] && [ -x \"$b\" ] && break\ndone\n[ -x \"$b\" ] || { echo \"error: bison 3 not found (brew install bison)\"; exit 1; }\n\"$b\" \"$INPUT_FILE_PATH\" --defines=\"$DERIVED_FILE_DIR/$INPUT_FILE_BASE.tab.h\" --output=\"$DERIVED_FILE_DIR/$INPUT_FILE_BASE.tab.c\"\n";
 		};
 		46EF0AFB42BEB55842413974 = {
@@ -1592,6 +1617,13 @@
 			path = ../include/cJSON.h;
 			sourceTree = SOURCE_ROOT;
 		};
+		50136C5A0EC9DF2FA4383F59 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = FLAC.xcframework;
+			path = "../ios-deps/xcframeworks/FLAC.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		508066AF205677B555216592 = {
 			isa = PBXBuildFile;
 			fileRef = C6738FDF27524FD163F22038;
@@ -1744,6 +1776,10 @@
 			path = System/Library/Frameworks/CoreVideo.framework;
 			sourceTree = SDKROOT;
 		};
+		586A935CA7FAAD6D9ECB33F0 = {
+			isa = PBXBuildFile;
+			fileRef = AA8742EF079760E8A8F9FAE4;
+		};
 		5888F7905384D01BB643E885 = {
 			isa = PBXBuildFile;
 			fileRef = E89A69E30276F29EAD488777;
@@ -1854,6 +1890,10 @@
 			path = ../src/hll/DrawPluginManager.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		5EA6BC042444F09ED883723E = {
+			isa = PBXBuildFile;
+			fileRef = 94772E5A88636B4F905803B2;
+		};
 		5F3494D9FC77FC0BFFF04267 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.c;
@@ -1884,12 +1924,20 @@
 			isa = PBXBuildFile;
 			fileRef = 6E9107FD8F559B7DCBFA75AE;
 		};
+		61AB70C1485A791DA24D7B55 = {
+			isa = PBXBuildFile;
+			fileRef = A923B4564AD05E2555128030;
+		};
 		61EC64148074F64719C09881 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
 			name = movie.h;
 			path = ../include/movie.h;
 			sourceTree = SOURCE_ROOT;
+		};
+		62078E635B1A5AAAD93B29CF = {
+			isa = PBXBuildFile;
+			fileRef = 50136C5A0EC9DF2FA4383F59;
 		};
 		620F44ACE629DBD0D7160EF4 = {
 			isa = PBXFileReference;
@@ -1963,6 +2011,21 @@
 		682963F31574CA174937BF1B = {
 			isa = PBXGroup;
 			children = (
+				8193FF3ACE77FAA93878356C,
+				A923B4564AD05E2555128030,
+				7184D9780BF736502AD76D69,
+				F90E8445C5843EB863BF46F4,
+				DD66892DFAC4B29C4DEC02F0,
+				F3DB535A31DF7DB86529A53B,
+				50136C5A0EC9DF2FA4383F59,
+				94772E5A88636B4F905803B2,
+				7D531FE4CFB248705B486DEE,
+				83B1732A67B78865831477FB,
+				B3B25ED17FA074C0E89322DD,
+				84A5F6ABE6B2CCE6CB4A2D70,
+				8B551B6A4CA020374E2D1EC4,
+				CE4DAFAD6FA8FF695A0B6481,
+				AA8742EF079760E8A8F9FAE4,
 				10555048B2CE8052B40057DA,
 				EF80E0B240B54E1E5E1C3BB8,
 				6FFB263C680F0F69409C0BDE,
@@ -2143,6 +2206,13 @@
 			path = ../src/dungeon/mtrand43.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		7184D9780BF736502AD76D69 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = freetype.xcframework;
+			path = "../ios-deps/xcframeworks/freetype.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		71B522227EA10477A7D02BDE = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
@@ -2228,6 +2298,10 @@
 			name = ReignEngine.c;
 			path = ../src/hll/ReignEngine.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		773AA0DF864489C6ECE25804 = {
+			isa = PBXBuildFile;
+			fileRef = B3B25ED17FA074C0E89322DD;
 		};
 		774170B16A88E9000EAC0AD7 = {
 			isa = PBXFileReference;
@@ -2346,6 +2420,13 @@
 			path = ../subprojects/libsys4/src/pcf.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		7D531FE4CFB248705B486DEE = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = vorbis.xcframework;
+			path = "../ios-deps/xcframeworks/vorbis.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		7D86B33DAE8FCBF4BC1E0F26 = {
 			isa = PBXBuildFile;
 			fileRef = F64E557C4359B7D13968EBFD;
@@ -2451,6 +2532,13 @@
 			isa = PBXBuildFile;
 			fileRef = 9B36D9BB4BE7050F9D93C957;
 		};
+		8193FF3ACE77FAA93878356C = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = SDL2.xcframework;
+			path = "../ios-deps/xcframeworks/SDL2.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		82047D1174ECE6C39CCE3A8C = {
 			isa = PBXBuildFile;
 			fileRef = BE09DBB059ACB93ADC32CDC8;
@@ -2477,11 +2565,25 @@
 			isa = PBXBuildFile;
 			fileRef = C55A664A48B4700C4F0D53C4;
 		};
+		83B1732A67B78865831477FB = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = ogg.xcframework;
+			path = "../ios-deps/xcframeworks/ogg.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		83B9A020DE5B3C0DF65BD346 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
 			name = id_pool.h;
 			path = ../include/id_pool.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		84A5F6ABE6B2CCE6CB4A2D70 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = turbojpeg.xcframework;
+			path = "../ios-deps/xcframeworks/turbojpeg.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		8596427766CABDCC2FCA48A1 = {
@@ -2561,6 +2663,13 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = Array.c;
 			path = ../src/hll/Array.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		8B551B6A4CA020374E2D1EC4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = webp.xcframework;
+			path = "../ios-deps/xcframeworks/webp.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		8C3DBB966AE351F97514DE29 = {
@@ -2721,6 +2830,13 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = flat.c;
 			path = ../src/parts/flat.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		94772E5A88636B4F905803B2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = vorbisenc.xcframework;
+			path = "../ios-deps/xcframeworks/vorbisenc.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		94B51A39DE71E1E3958DEFB6 = {
@@ -2988,6 +3104,7 @@
 		A8AEDB28A95187FB2B987AF8 = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CURRENT_PROJECT_VERSION = 1;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					_DEFAULT_SOURCE,
@@ -3002,33 +3119,11 @@
 					"$(XS_SRC)/src",
 					"$(XS_SRC)/include",
 					"$(XS_SRC)/subprojects/libsys4/include",
-					"$(XS_DEPS)/include",
-					"$(XS_DEPS)/include/SDL2",
-					"$(XS_DEPS)/include/freetype2",
-					"$(XS_DEPS)/include/opus",
 				);
 				INFOPLIST_FILE = xsystem4/Info.plist;
-				LIBRARY_SEARCH_PATHS = (
-					"$(XS_DEPS)/lib",
-				);
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"-Wl,-stack_size,0x20000000",
-					"-lSDL2",
-					"-lSDL2main",
-					"-lfreetype",
-					"-lffi",
-					"-lcglm",
-					"-lsndfile",
-					"-lFLAC",
-					"-lvorbisenc",
-					"-lvorbis",
-					"-logg",
-					"-lopus",
-					"-lturbojpeg",
-					"-lwebp",
-					"-lsharpyuv",
-					"-lpng16",
 					"-liconv",
 					"-lz",
 				);
@@ -3050,6 +3145,13 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = debug.c;
 			path = ../src/3d/debug.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A923B4564AD05E2555128030 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = SDL2main.xcframework;
+			path = "../ios-deps/xcframeworks/SDL2main.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		A923EE74EE40992179D4D34E = {
@@ -3095,11 +3197,19 @@
 			path = ../src/cJSON.c;
 			sourceTree = SOURCE_ROOT;
 		};
+		AA8742EF079760E8A8F9FAE4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = png16.xcframework;
+			path = "../ios-deps/xcframeworks/png16.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		AA8F6B68278546EE45C4176F = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E298E28A2E3D9A6C72A45FA3;
 			buildPhases = (
 				81072621CBFFF75A1EB482FE,
+				CC35E04F8B5D59D96A48BC3A,
 			);
 			buildRules = (
 				46D1AC570FD7E1305E6C9286,
@@ -3222,6 +3332,10 @@
 		B16CB92702E3C0B64D6CFFFD = {
 			isa = PBXBuildFile;
 			fileRef = 2D10438B040F5EA15EA07D47;
+		};
+		B18A827E90DC912469440EF0 = {
+			isa = PBXBuildFile;
+			fileRef = 8B551B6A4CA020374E2D1EC4;
 		};
 		B1964232429CD2338610FFDE = {
 			isa = PBXFileReference;
@@ -3466,6 +3580,13 @@
 			path = libsys4.a;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		B3B25ED17FA074C0E89322DD = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = opus.xcframework;
+			path = "../ios-deps/xcframeworks/opus.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		B44C5932048557927926C4B6 = {
 			isa = PBXBuildFile;
 			fileRef = 2FCC8A36F4FF61A0C67EAD92;
@@ -3505,6 +3626,17 @@
 		B79A8F5BC5B3478A2C3FE8DF = {
 			isa = PBXBuildFile;
 			fileRef = 1355035F0CFC84468B172E17;
+		};
+		B7DC2544904B2DC90857B5A5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = text;
+			name = xcframeworks.sh;
+			path = xcframeworks.sh;
+			sourceTree = SOURCE_ROOT;
+		};
+		B7DD4D2D3C1FAF8E1BBBCE9F = {
+			isa = PBXBuildFile;
+			fileRef = 8B551B6A4CA020374E2D1EC4;
 		};
 		B8122717205EB28AA4D74C7F = {
 			isa = PBXFileReference;
@@ -3640,6 +3772,10 @@
 			name = pe_v14_gauge.h;
 			path = ../src/hll/pe_v14_gauge.h;
 			sourceTree = SOURCE_ROOT;
+		};
+		C0052D5ADD3595BE8FA2E289 = {
+			isa = PBXBuildFile;
+			fileRef = 84A5F6ABE6B2CCE6CB4A2D70;
 		};
 		C075643F4CF3316D0D5B6FAE = {
 			isa = PBXFileReference;
@@ -3894,6 +4030,16 @@
 			path = ../src/hll/pe_v14_backlog.h;
 			sourceTree = SOURCE_ROOT;
 		};
+		CC35E04F8B5D59D96A48BC3A = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF1D3CC14097AE0139394546,
+				C0052D5ADD3595BE8FA2E289,
+				B18A827E90DC912469440EF0,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CCD52F105181D2767DAF4FDC = {
 			isa = PBXGroup;
 			children = (
@@ -3927,6 +4073,10 @@
 				);
 			};
 		};
+		CD6E4575E5F94684DB0B6EAB = {
+			isa = PBXBuildFile;
+			fileRef = 84A5F6ABE6B2CCE6CB4A2D70;
+		};
 		CD7EAD5F417149EFA0A21262 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.c;
@@ -3938,6 +4088,13 @@
 			isa = PBXBuildFile;
 			fileRef = 19B1BB81E90EDB1A6E83DA63;
 		};
+		CE4DAFAD6FA8FF695A0B6481 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = sharpyuv.xcframework;
+			path = "../ios-deps/xcframeworks/sharpyuv.xcframework";
+			sourceTree = SOURCE_ROOT;
+		};
 		CE72F28AE0127E31FAEAF2F3 = {
 			isa = PBXBuildFile;
 			fileRef = 51F4D92D64FE8C7F670D762A;
@@ -3945,6 +4102,10 @@
 		CE98731FCB1EF1B69C2887A6 = {
 			isa = PBXBuildFile;
 			fileRef = 7F5BB8BB13D4B0E6650557BF;
+		};
+		CF1D3CC14097AE0139394546 = {
+			isa = PBXBuildFile;
+			fileRef = AA8742EF079760E8A8F9FAE4;
 		};
 		CF459069D746D6AC0CB62D34 = {
 			isa = PBXFileReference;
@@ -4107,6 +4268,21 @@
 			buildActionMask = 2147483647;
 			files = (
 				AB8768DC6ACDD8E41E9D08D4,
+				FD37F03A6E4E26ED68B21E81,
+				61AB70C1485A791DA24D7B55,
+				3C0E59442E1890E6821EABEA,
+				13A5C0B14F7AA796F8CA7F06,
+				32D29BDD5DB3072E2F661161,
+				2CDDB7E47ECC745BB5845B6A,
+				62078E635B1A5AAAD93B29CF,
+				5EA6BC042444F09ED883723E,
+				3A6C96BE6CE9EBBBF792C80C,
+				0A34D364ABF0AF1D5C603BA4,
+				773AA0DF864489C6ECE25804,
+				CD6E4575E5F94684DB0B6EAB,
+				B7DD4D2D3C1FAF8E1BBBCE9F,
+				1188C08B04546190201CC501,
+				586A935CA7FAAD6D9ECB33F0,
 				F73D835AE2117FBA91E240B6,
 				165F6F1622969F689E989D25,
 				7C6FB3C60730C09E3D7B7C75,
@@ -4137,6 +4313,7 @@
 			outputFiles = (
 				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).yy.c",
 			);
+			runOncePerArchitecture = 0;
 			script = "f=flex\nfor b in /opt/homebrew/opt/flex/bin/flex /usr/local/opt/flex/bin/flex; do [ -x \"$b\" ] && f=\"$b\" && break; done\n\"$f\" -o \"$DERIVED_FILE_DIR/$INPUT_FILE_BASE.yy.c\" \"$INPUT_FILE_PATH\"\n";
 		};
 		DAB91932F6545CD7EC8F9A51 = {
@@ -4161,6 +4338,13 @@
 		DCEC302E008112DD320354EB = {
 			isa = PBXBuildFile;
 			fileRef = 244F99BBB1E30234A8582641;
+		};
+		DD66892DFAC4B29C4DEC02F0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = cglm.xcframework;
+			path = "../ios-deps/xcframeworks/cglm.xcframework";
+			sourceTree = SOURCE_ROOT;
 		};
 		DD6D862C7F5B4E47A23BFEF9 = {
 			isa = PBXFileReference;
@@ -4195,6 +4379,7 @@
 			isa = PBXGroup;
 			children = (
 				3E1E0B8FEF6C5DA5C146C4CC,
+				B7DC2544904B2DC90857B5A5,
 			);
 			name = Build;
 			sourceTree = "<group>";
@@ -4328,9 +4513,6 @@
 					"$(XS_SRC)/subprojects/libsys4/include",
 					"$(XS_SRC)/subprojects/libsys4/src",
 					"$(DERIVED_FILE_DIR)",
-					"$(XS_DEPS)/include",
-					"$(XS_DEPS)/include/webp",
-					"$(XS_DEPS)/include/libpng16",
 				);
 				PRODUCT_NAME = sys4;
 				SKIP_INSTALL = YES;
@@ -4584,6 +4766,7 @@
 		F120D5272B4FEA09F232B563 = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CURRENT_PROJECT_VERSION = 1;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					_DEFAULT_SOURCE,
@@ -4598,33 +4781,11 @@
 					"$(XS_SRC)/src",
 					"$(XS_SRC)/include",
 					"$(XS_SRC)/subprojects/libsys4/include",
-					"$(XS_DEPS)/include",
-					"$(XS_DEPS)/include/SDL2",
-					"$(XS_DEPS)/include/freetype2",
-					"$(XS_DEPS)/include/opus",
 				);
 				INFOPLIST_FILE = xsystem4/Info.plist;
-				LIBRARY_SEARCH_PATHS = (
-					"$(XS_DEPS)/lib",
-				);
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"-Wl,-stack_size,0x20000000",
-					"-lSDL2",
-					"-lSDL2main",
-					"-lfreetype",
-					"-lffi",
-					"-lcglm",
-					"-lsndfile",
-					"-lFLAC",
-					"-lvorbisenc",
-					"-lvorbis",
-					"-logg",
-					"-lopus",
-					"-lturbojpeg",
-					"-lwebp",
-					"-lsharpyuv",
-					"-lpng16",
 					"-liconv",
 					"-lz",
 				);
@@ -4660,6 +4821,13 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = json.c;
 			path = ../src/json.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		F3DB535A31DF7DB86529A53B = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = sndfile.xcframework;
+			path = "../ios-deps/xcframeworks/sndfile.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		F423B9FEC0904C92310D53CF = {
@@ -4742,9 +4910,6 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 				);
-				XS_DEPS = "$(XS_DEPS_ROOT)/device";
-				"XS_DEPS[sdk=iphonesimulator*][arch=arm64]" = "$(XS_DEPS_ROOT)/sim-arm64";
-				"XS_DEPS[sdk=iphonesimulator*][arch=x86_64]" = "$(XS_DEPS_ROOT)/sim-x86_64";
 				XS_DEPS_ROOT = "$(PROJECT_DIR)/../ios-deps";
 				XS_SRC = "$(PROJECT_DIR)/..";
 			};
@@ -4767,6 +4932,13 @@
 			lastKnownFileType = sourcecode.c.h;
 			name = translation.h;
 			path = ../include/translation.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		F90E8445C5843EB863BF46F4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = ffi.xcframework;
+			path = "../ios-deps/xcframeworks/ffi.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		F944E855648DD6428758E284 = {
@@ -4838,6 +5010,10 @@
 		FD223B5E3C0EBC24210E9A33 = {
 			isa = PBXBuildFile;
 			fileRef = E929A34BC36CEA20DDE17E4F;
+		};
+		FD37F03A6E4E26ED68B21E81 = {
+			isa = PBXBuildFile;
+			fileRef = 8193FF3ACE77FAA93878356C;
 		};
 		FD4AE2F82DE7615001C25D82 = {
 			isa = PBXFileReference;

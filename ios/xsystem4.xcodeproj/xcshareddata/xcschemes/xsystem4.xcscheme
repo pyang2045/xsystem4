@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme LastUpgradeVersion = "1600" version = "1.7">
    <BuildAction parallelizeBuildables = "YES" buildImplicitDependencies = "YES">
+      <PreActions>
+         <ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent title = "Build libraries (ios-deps/prebuild.log)" scriptText = "mkdir -p &quot;$XS_DEPS_ROOT&quot;&#10;exec &gt;&quot;$XS_DEPS_ROOT/prebuild.log&quot; 2&gt;&amp;1&#10;exec env -i HOME=&quot;$HOME&quot; DEVELOPER_DIR=&quot;$DEVELOPER_DIR&quot; XSYS4_IOS_DEPS=&quot;$XS_DEPS_ROOT&quot; \&#10;&#9;PATH=&quot;/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&quot; \&#10;&#9;/bin/sh -c '&quot;$1/build_deps.sh&quot; device sim-x86_64 sim-arm64 &amp;&amp; &quot;$1/xcframeworks.sh&quot;' sh &quot;$XS_SRC/ios&quot;&#10;" shellToInvoke = "/bin/sh">
+               <EnvironmentBuildable>
+                  <BuildableReference BuildableIdentifier = "primary" BlueprintIdentifier = "EB6844E070B7479781170E03" BuildableName = "xsystem4.app" BlueprintName = "xsystem4" ReferencedContainer = "container:xsystem4.xcodeproj"></BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
       <BuildActionEntries>
          <BuildActionEntry buildForTesting = "YES" buildForRunning = "YES" buildForProfiling = "YES" buildForArchiving = "YES" buildForAnalyzing = "YES">
             <BuildableReference BuildableIdentifier = "primary" BlueprintIdentifier = "EB6844E070B7479781170E03" BuildableName = "xsystem4.app" BlueprintName = "xsystem4" ReferencedContainer = "container:xsystem4.xcodeproj"></BuildableReference>

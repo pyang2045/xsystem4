@@ -19,10 +19,19 @@ libwebp, ogg, vorbis, FLAC, opus, libsndfile and cglm and builds them as static 
 `ios-deps/PLATFORM` (about 2½ minutes per platform; `XSYS4_IOS_DEPS` puts `ios-deps`
 elsewhere). A library is rebuilt when the script changes; when nothing changed it returns at once.
 
+`ios/xcframeworks.sh` packages them as XCFrameworks in `ios-deps/xcframeworks/`: per library
+the device build and one Simulator build holding both architectures, with the headers
+xsystem4 uses (a header that differs between the Simulator architectures is merged under
+`#if defined(__x86_64__)`).
+
 **Xcode:** open `ios/xsystem4.xcodeproj`, choose your team under Signing & Capabilities and
-run. Targets: `xsystem4` (the app), `sys4` (libsys4) and `ios-deps`, which runs
-`ios/build_deps.sh` for the platform being built, so the first build also builds the
-libraries. Debug builds keep the `XSYS4_*` test hooks, Release builds drop them.
+run. Targets: `xsystem4` (the app, linking the XCFrameworks), `sys4` (libsys4) and `ios-deps`,
+which runs `ios/build_deps.sh device sim-x86_64 sim-arm64` and `ios/xcframeworks.sh`. Xcode
+reads the XCFrameworks while it plans a build, so the scheme also runs that step as a
+pre-action, before planning: the first build of a checkout spends about 8 minutes on
+"Running pre-actions" (log: `ios-deps/prebuild.log`); later builds skip it. Any Simulator or
+device can be chosen, including "Any iOS Simulator Device" (both architectures).
+Debug builds keep the `XSYS4_*` test hooks, Release builds drop them.
 
 **Without Xcode's IDE:**
 
@@ -46,7 +55,7 @@ A JSON config names the app and adds its icon and files (see `ios/app.py` for ev
   "name": "MyGame",
   "display_name": "My Game",
   "bundle_id": "com.example.mygame",
-  "icons": "Icons",
+  "assets": "Assets.xcassets",
   "resources": {"locale/zh_CN.po": "../zh_CN.po"},
   "translations": {"zh": "locale/zh_CN.po"}
 }
@@ -54,8 +63,8 @@ A JSON config names the app and adds its icon and files (see `ios/app.py` for ev
 
 `translations` maps a language prefix to a `.po` file in the app: when the device's first
 language starts with the prefix, the dialogue comes from that file (Info.plist key
-`XSys4Translations`). `icons` is a folder with `AppIcon60x60@2x.png`,
-`AppIcon76x76@2x~ipad.png` and `AppIcon83.5x83.5@2x~ipad.png`.
+`XSys4Translations`). `assets` is an asset catalog whose `AppIcon` set holds the icon (one
+1024×1024 PNG is enough).
 
 ```sh
 python3 -I ios/app.py xcodeproj path/to/mygame.json build-ios-device   # writes MyGame.xcodeproj beside the config
@@ -68,7 +77,7 @@ added or removed.
 
 ## Notes
 
-- The icon is given as PNG files rather than an asset catalog: Xcode's `actool` refuses to
-  run unless a Simulator runtime matching the SDK is installed.
+- Xcode's `actool` (asset catalogs) and scheme builds need the iOS platform and a Simulator
+  runtime matching the SDK installed (Xcode > Settings > Components).
 - Xcode compiles with `-ffile-prefix-map`, and `build_deps.sh` likewise, so `__FILE__` strings
   in the app hold no paths from the build machine.

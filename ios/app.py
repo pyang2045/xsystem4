@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """xsystem4 as an iPad app: Info.plist, bundle resources and the Xcode project, from a config.
 
-    python3 -I ios/app.py get CONFIG KEY             name, display_name, bundle_id or version
+    python3 -I ios/app.py get CONFIG KEY             name, display_name, bundle_id, version, assets
     python3 -I ios/app.py plist CONFIG [BUILD PLATFORM]
     python3 -I ios/app.py resources CONFIG           "BUNDLE_PATH<TAB>SOURCE" lines
     python3 -I ios/app.py xcodeproj CONFIG MESON_BUILD_DIR
@@ -16,8 +16,7 @@ the Xcode project (NAME.xcodeproj) and its Info.plist (NAME/Info.plist) are writ
       "bundle_id": "org.xsystem4.xsystem4",
       "version": "1.0",                    optional; default: last version tag (1.2.3 or v1.2.3)
                                            of the config's git repo
-      "icons": "Icons",                    optional folder: AppIcon60x60@2x.png,
-                                           AppIcon76x76@2x~ipad.png, AppIcon83.5x83.5@2x~ipad.png
+      "assets": "Assets.xcassets",         optional asset catalog; its AppIcon set is the icon
       "resources": {"locale/x.po": "../x.po"},   optional: bundle path -> file (same base name)
       "translations": {"zh": "locale/x.po"}      optional: language prefix -> bundle path
     }
@@ -35,10 +34,28 @@ import plistlib
 import re
 import subprocess
 import sys
+from xml.sax.saxutils import escape
 
 XS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 MIN_IOS = "17.0"
-ICONS = ["AppIcon60x60@2x.png", "AppIcon76x76@2x~ipad.png", "AppIcon83.5x83.5@2x~ipad.png"]
+# ios/xcframeworks.sh output, in link order
+LIBS = ["SDL2", "SDL2main", "freetype", "ffi", "cglm", "sndfile", "FLAC", "vorbisenc", "vorbis", "ogg",
+        "opus", "turbojpeg", "webp", "sharpyuv", "png16"]
+SYS4_LIBS = ["png16", "turbojpeg", "webp"]  # the ones libsys4 includes headers from
+
+
+# The libraries for every platform, packaged as XCFrameworks; both scripts return at once when
+# up to date. A clean environment: Xcode's exported settings would steer CMake and configure.
+DEPS_SH = r'''exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS_ROOT" \
+	PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+	/bin/sh -c '"$1/build_deps.sh" device sim-x86_64 sim-arm64 && "$1/xcframeworks.sh"' sh "$XS_SRC/ios"
+'''
+# Scheme pre-action: Xcode reads every XCFramework while planning the build, before any target
+# runs, so on a fresh checkout they must be made first. Its output goes to a log; the ios-deps
+# target runs the same step inside the build, where errors show.
+PREBUILD_SH = '''mkdir -p "$XS_DEPS_ROOT"
+exec >"$XS_DEPS_ROOT/prebuild.log" 2>&1
+''' + DEPS_SH
 
 
 def deps_dir():
@@ -57,11 +74,9 @@ class Config:
         self.region = c.get("development_region", "en")
         self.bundle_id = c["bundle_id"]
         self.version = c.get("version") or self.git_version()
-        self.icons = os.path.join(self.dir, c["icons"]) if c.get("icons") else None
-        if self.icons:
-            missing = [f for f in ICONS if not os.path.isfile(os.path.join(self.icons, f))]
-            if missing:
-                sys.exit("%s: missing in %s: %s" % (path, self.icons, ", ".join(missing)))
+        self.assets = os.path.normpath(os.path.join(self.dir, c["assets"])) if c.get("assets") else None
+        if self.assets and not os.path.isfile(os.path.join(self.assets, "AppIcon.appiconset", "Contents.json")):
+            sys.exit("%s: %s has no AppIcon.appiconset" % (path, self.assets))
         self.resources = {k: os.path.normpath(os.path.join(self.dir, v))
                           for k, v in c.get("resources", {}).items()}
         for dest, src in self.resources.items():
@@ -99,9 +114,6 @@ def info_plist(cfg, build=None, platform=None):
         "UIFileSharingEnabled": True,  # the game goes into Documents through Finder or Files
         "LSSupportsOpeningDocumentsInPlace": True,
     }
-    if cfg.icons:
-        p["CFBundleIcons~ipad"] = {"CFBundlePrimaryIcon": {
-            "CFBundleIconFiles": ["AppIcon60x60", "AppIcon76x76", "AppIcon83.5x83.5"]}}
     if cfg.translations:
         p["XSys4Translations"] = cfg.translations
     if build:  # filled in for make_app.sh; Xcode does this itself
@@ -112,8 +124,7 @@ def info_plist(cfg, build=None, platform=None):
 
 
 def resources(cfg):
-    out = [(f, os.path.join(cfg.icons, f)) for f in ICONS] if cfg.icons else []
-    return out + sorted(cfg.resources.items())
+    return sorted(cfg.resources.items())
 
 
 # --- Xcode project -----------------------------------------------------------------------
@@ -212,16 +223,13 @@ class Project:
     def build(self):
         cfg = self.cfg
         deps = "$(PROJECT_DIR)/" + self.rel(deps_dir())
+        xcf = os.path.join(deps_dir(), "xcframeworks")
         common = {
             "SDKROOT": "iphoneos",
             "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator",
             "TARGETED_DEVICE_FAMILY": "2",
             "IPHONEOS_DEPLOYMENT_TARGET": MIN_IOS,
-            "ONLY_ACTIVE_ARCH": "YES",  # ios-deps holds one arch per platform folder
             "XS_DEPS_ROOT": deps,
-            "XS_DEPS": "$(XS_DEPS_ROOT)/device",
-            "XS_DEPS[sdk=iphonesimulator*][arch=x86_64]": "$(XS_DEPS_ROOT)/sim-x86_64",
-            "XS_DEPS[sdk=iphonesimulator*][arch=arm64]": "$(XS_DEPS_ROOT)/sim-arm64",
             "XS_SRC": "$(PROJECT_DIR)/" + self.rel(XS),
             "GCC_C_LANGUAGE_STANDARD": "c11",
             "CLANG_ENABLE_OBJC_ARC": "YES",
@@ -234,21 +242,17 @@ class Project:
             "CODE_SIGN_STYLE": "Automatic",
         }
         debug = dict(common, GCC_OPTIMIZATION_LEVEL="0", DEBUG_INFORMATION_FORMAT="dwarf",
-                     ENABLE_TESTABILITY="YES")
+                     ENABLE_TESTABILITY="YES", ONLY_ACTIVE_ARCH="YES")
         release = dict(common, GCC_OPTIMIZATION_LEVEL="2", DEBUG_INFORMATION_FORMAT="dwarf-with-dsym",
-                       VALIDATE_PRODUCT="YES")
+                       VALIDATE_PRODUCT="YES", ONLY_ACTIVE_ARCH="NO")
 
         sys4_settings = {
             "PRODUCT_NAME": "sys4",
             "HEADER_SEARCH_PATHS": ["$(XS_SRC)/subprojects/libsys4/include", "$(XS_SRC)/subprojects/libsys4/src",
-                                    "$(DERIVED_FILE_DIR)", "$(XS_DEPS)/include", "$(XS_DEPS)/include/webp",
-                                    "$(XS_DEPS)/include/libpng16"],
+                                    "$(DERIVED_FILE_DIR)"],
             "GCC_PREPROCESSOR_DEFINITIONS": ["_DEFAULT_SOURCE"],
             "SKIP_INSTALL": "YES",
         }
-        libs = ["SDL2", "SDL2main", "freetype", "ffi", "cglm", "sndfile", "FLAC", "vorbisenc", "vorbis",
-                "ogg", "opus", "turbojpeg", "webp", "sharpyuv", "png16", "iconv", "z"]
-
         def app_settings(dev_hooks):
             return {
                 "PRODUCT_NAME": cfg.name,
@@ -257,15 +261,13 @@ class Project:
                 "CURRENT_PROJECT_VERSION": "1",
                 "INFOPLIST_FILE": cfg.name + "/Info.plist",
                 "HEADER_SEARCH_PATHS": ["$(DERIVED_FILE_DIR)", "$(XS_SRC)/src", "$(XS_SRC)/include",
-                                        "$(XS_SRC)/subprojects/libsys4/include", "$(XS_DEPS)/include",
-                                        "$(XS_DEPS)/include/SDL2", "$(XS_DEPS)/include/freetype2",
-                                        "$(XS_DEPS)/include/opus"],
-                "LIBRARY_SEARCH_PATHS": ["$(XS_DEPS)/lib"],
+                                        "$(XS_SRC)/subprojects/libsys4/include"],
                 "GCC_PREPROCESSOR_DEFINITIONS": ["_DEFAULT_SOURCE", "_REENTRANT", "XSYS4_IOS", "USE_METAL",
                                                  "XSYS4_DEV_HOOKS=%d" % dev_hooks,
                                                  'XSYS4_DATA_DIR=\\"/usr/local/share/xsystem4\\"'],
                 "WARNING_CFLAGS": ["-Wall", "-Wno-unused-parameter"],
-                "OTHER_LDFLAGS": ["-Wl,-stack_size,0x20000000"] + ["-l" + l for l in libs],
+                "OTHER_LDFLAGS": ["-Wl,-stack_size,0x20000000", "-liconv", "-lz"],
+                "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon" if cfg.assets else "",
             }
 
         bison = r'''for b in "$BISON" /opt/homebrew/opt/bison/bin/bison /usr/local/opt/bison/bin/bison; do
@@ -289,29 +291,16 @@ res="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
 cp "$XS_SRC/COPYING" "$res/COPYING.xsystem4"
 rm -f "$res/shaders/metal/glsl2msl.py"
 '''
-        # ios/build_deps.sh for the platform being built; it returns at once when up to date.
-        # A clean environment: Xcode's exported settings would steer CMake and configure.
-        deps_sh = r'''case "$PLATFORM_NAME" in
-iphoneos) plats=device ;;
-iphonesimulator)
-	plats=
-	for a in $ARCHS; do
-		case $a in x86_64) plats="$plats sim-x86_64" ;; arm64) plats="$plats sim-arm64" ;; esac
-	done ;;
-*) echo "error: no iOS libraries for $PLATFORM_NAME"; exit 1 ;;
-esac
-exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS_ROOT" \
-	PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-	/bin/sh "$XS_SRC/ios/build_deps.sh" $plats
-'''
         deps_target = self.add("target-deps", "PBXAggregateTarget", name="ios-deps", productName="ios-deps",
                                buildConfigurationList=self.config_list("deps", {"PRODUCT_NAME": "ios-deps"},
                                                                        {"PRODUCT_NAME": "ios-deps"}),
                                buildPhases=[self.phase("deps-build", "PBXShellScriptBuildPhase", [],
-                                                       name="Build libraries (ios/build_deps.sh)",
-                                                       inputPaths=[], inputFileListPaths=[], outputPaths=[],
-                                                       outputFileListPaths=[], alwaysOutOfDate="1",
-                                                       shellPath="/bin/sh", shellScript=deps_sh)],
+                                                       name="Build libraries (ios/build_deps.sh, ios/xcframeworks.sh)",
+                                                       inputPaths=["$(XS_SRC)/ios/build_deps.sh",
+                                                                   "$(XS_SRC)/ios/xcframeworks.sh"],
+                                                       inputFileListPaths=[], outputFileListPaths=[],
+                                                       outputPaths=["$(XS_DEPS_ROOT)/xcframeworks/stamp"],
+                                                       shellPath="/bin/sh", shellScript=DEPS_SH)],
                                dependencies=[])
 
         def depends_on(target, name):
@@ -322,21 +311,29 @@ exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS
         rules = [
             self.add("rule-bison", "PBXBuildRule", compilerSpec="com.apple.compilers.proxy.script",
                      filePatterns="*.y", fileType="pattern.proxy", inputFiles=[], isEditable="1", script=bison,
+                     runOncePerArchitecture="0",  # the generated C is the same for every arch
                      outputFiles=["$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).tab.c",
                                   "$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).tab.h"]),
             # the lexer includes the parser's header: wait for it
             self.add("rule-flex", "PBXBuildRule", compilerSpec="com.apple.compilers.proxy.script",
                      filePatterns="*.l", fileType="pattern.proxy", inputFiles=["$(DERIVED_FILE_DIR)/ini_parser.tab.h"],
-                     isEditable="1", script=flex, outputFiles=["$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).yy.c"]),
+                     isEditable="1", script=flex, outputFiles=["$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).yy.c"],
+                     runOncePerArchitecture="0"),
         ]
 
+        xcf_refs = {l: self.add(("xcf", l), "PBXFileReference", lastKnownFileType="wrapper.xcframework",
+                                name=l + ".xcframework", path=self.rel(os.path.join(xcf, l + ".xcframework")),
+                                sourceTree="SOURCE_ROOT") for l in LIBS}
         sys4_product = self.add("sys4-product", "PBXFileReference", explicitFileType="archive.ar",
                                 includeInIndex="0", path="libsys4.a", sourceTree="BUILT_PRODUCTS_DIR")
         sys4 = self.add("target-sys4", "PBXNativeTarget", name="sys4", productName="sys4",
                         productReference=sys4_product, productType="com.apple.product-type.library.static",
                         buildConfigurationList=self.config_list("sys4", sys4_settings, sys4_settings),
                         buildPhases=[self.phase("sys4-sources", "PBXSourcesBuildPhase",
-                                                [self.buildfile(self.fileref(self.xs(p)), "sys4") for p in self.sys4])],
+                                                [self.buildfile(self.fileref(self.xs(p)), "sys4") for p in self.sys4]),
+                                     # for their headers; the app links them
+                                     self.phase("sys4-link", "PBXFrameworksBuildPhase",
+                                                [self.buildfile(xcf_refs[l], "sys4-link") for l in SYS4_LIBS])],
                         buildRules=rules, dependencies=[depends_on(deps_target, "ios-deps")])
 
         version_phase = self.phase("app-version", "PBXShellScriptBuildPhase", [], name="Generate version.h",
@@ -350,7 +347,8 @@ exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS
                       "CoreGraphics", "CoreMotion", "CoreVideo", "Foundation", "Metal", "OpenGLES",
                       "QuartzCore", "UIKit"]
         weak = ["CoreHaptics", "GameController"]
-        fw_refs, fw_files = [], [self.buildfile(sys4_product, "link")]
+        fw_refs = []
+        fw_files = [self.buildfile(sys4_product, "link")] + [self.buildfile(xcf_refs[l], "link") for l in LIBS]
         for fw in frameworks + weak:
             r = self.add(("fw", fw), "PBXFileReference", lastKnownFileType="wrapper.framework",
                          name=fw + ".framework", path="System/Library/Frameworks/%s.framework" % fw,
@@ -362,7 +360,10 @@ exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS
         plist_ref = self.fileref(cfg.name + "/Info.plist")
         fonts = self.fileref(self.xs("fonts"), folder=True)
         metal = self.fileref(self.xs("shaders/metal"), folder=True)
-        icon_refs = [self.fileref(self.rel(os.path.join(cfg.icons, f))) for f in ICONS] if cfg.icons else []
+        icon_refs = []
+        if cfg.assets:
+            icon_refs = [self.add(("ref", "assets"), "PBXFileReference", lastKnownFileType="folder.assetcatalog",
+                                  name=os.path.basename(cfg.assets), path=self.rel(cfg.assets), sourceTree="SOURCE_ROOT")]
         res_phase = self.phase("app-resources", "PBXResourcesBuildPhase",
                                [self.buildfile(r, "res") for r in [fonts] + icon_refs])
         copies = [self.phase("app-copy-shaders", "PBXCopyFilesBuildPhase", [self.buildfile(metal, "copy")],
@@ -394,9 +395,10 @@ exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS
             self.group("xsystem4", self.tree(self.engine + self.engine_h, ".", "engine"), "engine"),
             self.group("libsys4", self.tree(self.sys4 + self.sys4_h, "subprojects/libsys4", "sys4"), "sys4"),
             self.group("Resources", [fonts, metal] + extra_refs, "resources"),
-            self.group("Frameworks", fw_refs, "frameworks"),
+            self.group("Frameworks", [xcf_refs[l] for l in LIBS] + fw_refs, "frameworks"),
             self.group("Products", [app_product, sys4_product], "products"),
-            self.group("Build", [self.fileref(self.xs("ios/build_deps.sh"))], "build"),
+            self.group("Build", [self.fileref(self.xs("ios/build_deps.sh")),
+                                 self.fileref(self.xs("ios/xcframeworks.sh"))], "build"),
         ])
         products = self.oid("group", "products")
         self.objects[self.oid("project")] = dict(
@@ -447,13 +449,23 @@ exec env -i HOME="$HOME" DEVELOPER_DIR="$DEVELOPER_DIR" XSYS4_IOS_DEPS="$XS_DEPS
                'BuildableName = "%s.app" BlueprintName = "%s" ReferencedContainer = "container:%s.xcodeproj">'
                '</BuildableReference>' % (app, cfg.name, cfg.name, cfg.name))
         with open(os.path.join(schemes, cfg.name + ".xcscheme"), "w") as f:
-            f.write(SCHEME % (ref, ref, ref))
+            pre = escape(PREBUILD_SH, {'"': "&quot;", "\n": "&#10;", "\t": "&#9;"})
+            f.write(SCHEME % (pre, ref, ref, ref, ref))
         return proj
 
 
 SCHEME = '''<?xml version="1.0" encoding="UTF-8"?>
 <Scheme LastUpgradeVersion = "1600" version = "1.7">
    <BuildAction parallelizeBuildables = "YES" buildImplicitDependencies = "YES">
+      <PreActions>
+         <ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent title = "Build libraries (ios-deps/prebuild.log)" scriptText = "%s" shellToInvoke = "/bin/sh">
+               <EnvironmentBuildable>
+                  %s
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
       <BuildActionEntries>
          <BuildActionEntry buildForTesting = "YES" buildForRunning = "YES" buildForProfiling = "YES" buildForArchiving = "YES" buildForAnalyzing = "YES">
             %s
@@ -486,7 +498,7 @@ def main():
     cmd, cfg = sys.argv[1], Config(sys.argv[2])
     if cmd == "get":
         keys = {"name": cfg.name, "display_name": cfg.display_name, "bundle_id": cfg.bundle_id,
-                "version": cfg.version}
+                "version": cfg.version, "assets": cfg.assets or ""}
         print(keys[sys.argv[3]])
     elif cmd == "plist":
         sys.stdout.write(info_plist(cfg, *sys.argv[3:5]) if len(sys.argv) >= 5 else info_plist(cfg))
