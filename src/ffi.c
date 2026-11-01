@@ -1349,11 +1349,41 @@ static void link_libraries(void)
 
 bool libraries_initialized = false;
 
+/*
+ * XSYS4_LINK_REPORT=<file>: write what each AIN declaration was bound to, then
+ * exit. A line is "library.function arguments offset", the offset counted from
+ * init_libraries, or "-" when nothing is bound. tools/link-report.py turns the
+ * offsets into names; the diff of two reports shows which bindings a change
+ * moved, per game.
+ */
+static void write_link_report(const char *path)
+{
+	FILE *f = fopen(path, "w");
+	if (!f)
+		ERROR("Can't write link report: %s", path);
+	for (int i = 0; i < ain->nr_libraries; i++) {
+		struct ain_library *lib = &ain->libraries[i];
+		for (int j = 0; j < lib->nr_functions; j++) {
+			void *fun = libraries[i] ? libraries[i][j].fun : NULL;
+			fprintf(f, "%s.%s %d ", lib->name, lib->functions[j].name, lib->functions[j].nr_arguments);
+			if (fun)
+				fprintf(f, "%td\n", (char*)fun - (char*)init_libraries);
+			else
+				fprintf(f, "-\n");
+		}
+	}
+	fclose(f);
+	_exit(0);
+}
+
 void init_libraries(void)
 {
 	library_run_all("_PreLink");
 	link_libraries();
 	library_run_all("_PostLink");
+	const char *report = getenv("XSYS4_LINK_REPORT");
+	if (report)
+		write_link_report(report);
 	library_run_all("_ModuleInit");
 	libraries_initialized = true;
 }
