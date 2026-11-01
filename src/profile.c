@@ -128,6 +128,9 @@ static const struct {
 		},
 		// Its config screens read all three (■入力 tab of the config).
 		.hll = { .mouse_cursor_configs = true },
+		// The legacy score fires (41 on the JP script, 39 on the Chinese one, whose
+		// text is valid SJIS too), and text with a TrueType face came out as GBK.
+		.lang = { .strings_are_sjis = true },
 	},
 	// Keep last: it takes every game the rows above don't.
 	{

@@ -114,6 +114,8 @@ struct hll_features {
 struct lang_features {
 	// Arrays typed by element, with shared struct pages, and generic options.
 	bool typed_arrays;
+	// The script's strings are SJIS whatever the legacy GB18030 score says.
+	bool strings_are_sjis;
 };
 
 // One game's oddities, keyed by name in src/hacks.c.

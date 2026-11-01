@@ -778,7 +778,7 @@ int main(int argc, char *argv[])
 			ain_is_utf8 = true;
 			sys4_set_string_charset(SYS4_CHARSET_UTF8);
 			WARNING("Detected UTF-8 strings in AIN (utf8=%d/%d)", sc.utf8_valid, sc.nonascii);
-		} else if (sc.legacy > 5) {
+		} else if (sc.legacy > 5 && !profile.lang.strings_are_sjis) {
 			ain_is_gb18030 = true;
 			WARNING("Detected GB18030 encoding in AIN (score=%d), enabling Chinese text support", sc.legacy);
 	WARNING("AINCHECK: msgf=%d nr_messages=%d messages=%p", ain->msgf, ain->nr_messages, (void*)ain->messages);

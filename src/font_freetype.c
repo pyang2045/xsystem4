@@ -26,6 +26,8 @@
 #include "system4/string.h"
 #include "system4/utfsjis.h"
 
+#include "translation.h"
+
 #include "gfx/gfx.h"
 #include "gfx/font.h"
 #include "xsystem4.h"
@@ -142,12 +144,15 @@ static bool ft_font_get_glyph(struct font_size *size, struct glyph *glyph, uint3
  * it: the default gothic font lacks characters the CN scripts use (for
  * example U+83C8), which otherwise show as .notdef boxes. Only the bitmap
  * comes from the other face; the CN grid does not use the glyph's advance,
- * so the spacing does not change. Other games keep the .notdef glyph.
+ * so the spacing does not change. A patch's CJK font lacks the note its text
+ * keeps (translation_load_sjis_table) in the same way. Other games keep the
+ * .notdef glyph.
  */
 static FT_Face ft_font_fallback_face(struct font_ft *font, uint32_t code, unsigned size)
 {
 	extern struct font *font_ttf[2];
-	if (!code || !gfx_text_cn_gdi() || FT_Get_Char_Index(font->font, code))
+	if (!code || !(gfx_text_cn_gdi() || translation_has_sjis_table())
+			|| FT_Get_Char_Index(font->font, code))
 		return font->font;
 	for (int i = 0; i < 2; i++) {
 		struct font *other = font_ttf[i];
