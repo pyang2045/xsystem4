@@ -8,7 +8,8 @@ This fork
 ---------
 
 This fork (branch `haharanman-on-usada`) runs AliceSoft's **母爛漫 (Haharanman, 2019, ain
-v14)**, Japanese release, on macOS and iPadOS. It builds on
+v14)**, Japanese release, on macOS and iPadOS, and **妻みぐい３ (Tsumamigui 3, ain v7)**,
+Traditional Chinese release, on macOS. It builds on
 [USADA-KARROT's fork](https://github.com/USADA-KARROT/xsystem4), which adds the ain v14 engine
 of Dohna Dohna (the `X_*` opcodes, the v14 HLL libraries, PartsEngine activities, the
 KiwiSoundEngine sound groups) and the Chinese GBK releases. Additions in this fork:
@@ -17,6 +18,19 @@ KiwiSoundEngine sound groups) and the Chinese GBK releases. Additions in this fo
   release: pactex key spellings in one table for both encodings, config sliders and check
   boxes, the EX table's sound groups. Also: v14 construction commands and filters, v15 flats
   and flat origin modes, TALT CG atlases, ruby readings in message windows, ト書き windows.
+* **妻みぐい３ (ain v7).** The title, new game and the map, save, load and quick save, the
+  settings, the backlog with voice replay, the back scene, the CG, 回想 and music modes, sound
+  groups and the ending movie. Each was tested on its own; the game has not been played through
+  from start to end.
+* **Game text in UTF-8.** A game whose `.ain` strings are UTF-8 is detected at startup and runs
+  on the same charset switch as SJIS and GBK: string functions count characters, and the engine's
+  own names (pactex keys, parts and mixer names) are looked up in the game's encoding.
+* **Versions kept apart.** Games from ain v1 to v14 have different APIs, and a change for one
+  must not reach another. `src/profile.c` has one row per generation (`classic`, 妻みぐい３'s
+  `activities_v7`, v14) holding its bindings, tables of functions and behaviours; each
+  generation's parts code is in `src/parts/{classic,v7,v14}/`. `meson test` rejects version checks
+  in API code, and `tools/link-report.py` shows what each of a game's declarations is bound to,
+  to compare before and after a change. See [docs/game-profiles.md](docs/game-profiles.md).
 * **Saving and loading in v14 games.** Generic arrays, scenes carried across a save (their
   activities, user components and button state), the backlog, appended EX files, quick save,
   and resuming in the right overload when a save was made mid-event.
@@ -31,7 +45,8 @@ KiwiSoundEngine sound groups) and the Chinese GBK releases. Additions in this fo
   [ios/README.md](ios/README.md).
 * **APEG movies without FFmpeg** (pl_mpeg backend), as used for the Haharanman ending.
 * `XSYS4_*` test and trace environment variables behind `-Ddev_hooks` (on by default; off for
-  release builds).
+  release builds), including which HLL functions a run called (`XSYS4_HLL_CALLED`) and which of
+  them are placeholders (`XSYS4_STUB_LOG`).
 
 Compatiblity
 ------------
