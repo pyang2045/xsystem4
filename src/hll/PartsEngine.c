@@ -2079,26 +2079,24 @@ static bool PartsEngine_Parts_SetPartsCGThread(int number, struct string *cgname
  * the component's own flag is changed, not its effective eligibility. */
 static void PE_v14_SetWheelable(int parts_no, bool enable)
 {
-	if (profile.parts.wheelable_parts && parts_no > 0)
+	if (parts_no > 0)
 		parts_get(parts_no)->wheelable = enable;
 }
 
 static void pe_v14_register_wheel(int libno)
 {
-	if (!profile.parts.wheelable_parts)
-		return;
 	struct ain_hll_function *fun = get_fun(libno, "Parts_SetWheelable");
 	if (!fun || fun->nr_arguments != 2 || !fun->arguments
 			|| !pe_v14_numeral_arg_shape(&fun->return_type, 'v')
 			|| !pe_v14_numeral_arg_shape(&fun->arguments[0].type, 'i')
 			|| !pe_v14_numeral_arg_shape(&fun->arguments[1].type, 'b'))
 		return;
-	// Before the activity stub; unknown declarations keep their binding.
+	// Unknown declarations keep their binding.
 	static_library_register(&lib_PartsEngine, "Parts_SetWheelable", PE_v14_SetWheelable);
 }
 
 /* Fill the v14-only names into the runtime library table. Called from
- * PartsEngine_PostLink, gated on the v14 declaration set; register only
+ * the v14 row's postlink, gated on the v14 declaration set; register only
  * fills entries that are still NULL after link_libraries(). */
 static void pe_v14_register_batch(int libno)
 {
@@ -2172,7 +2170,6 @@ static void pe_v14_register_batch(int libno)
 	pe_v14_register_checkbox(libno);
 	pe_v14_register_sound_names(libno);
 #include "pe_v14_prelink.h"
-#include "profile.h"
 }
 
 static void PartsEngine_PreLink(void)
@@ -2191,10 +2188,8 @@ static void PartsEngine_PreLink(void)
 				PE_v14_UpdateComponent);
 	}
 
-	if (get_fun(libno, "GetMessageUniqueID")) {
-		extern void pe_v14_message_replace(void);
-		pe_v14_message_replace();
-	}
+	if (profile.parts.bindings->prelink)
+		profile.parts.bindings->prelink(libno);
 
 	fun = get_fun(libno, "Save");
 	if (fun && fun->nr_arguments >= 1
@@ -2396,6 +2391,8 @@ static void pe_v7_register(int libno)
 	if (fun && fun->nr_arguments == 3 && fun->arguments[0].type.data == AIN_INT
 	    && fun->arguments[1].type.data == AIN_STRING && fun->arguments[2].type.data == AIN_INT)
 		static_library_register(lib, "Parts_SetSoundName", PE_SetSoundName);
+	if (get_fun(libno, "SetCheckBoxColor"))
+		static_library_register(lib, "SetCheckBoxColor", PE_v7_SetCheckBoxColor);
 	pe_v14_register_checkbox(libno);
 	pe_v14_register_backlog();
 	static_library_register(lib, "PauseMotion", PE_PauseMotion);
@@ -2403,30 +2400,66 @@ static void pe_v7_register(int libno)
 	static_library_register(lib, "Parts_StopSwipe", PE_v7_StopSwipe);
 }
 
-// Runs after link_libraries(): static_library_register() requires the
-// runtime library table to exist.
-static void PartsEngine_PostLink(void)
+static void bind_controllers(int libno)
 {
-	int libno = ain_get_library(ain, "PartsEngine");
-	if (libno < 0)
-		return;
-	pe_v14_register_wheel(libno);
-	if (profile.parts.v7_bindings)
-		pe_v7_register(libno);
 	if (get_fun(libno, "AddController")) {
 		extern void pe_controller_register(void);
 		pe_controller_register();
 	}
-	// v14 Activity system + pactex loader (declaration-driven)
+}
+
+static void v14_prelink(int libno)
+{
+	if (get_fun(libno, "GetMessageUniqueID")) {
+		extern void pe_v14_message_replace(void);
+		pe_v14_message_replace();
+	}
+}
+
+static void v14_postlink(int libno)
+{
+	pe_v14_register_wheel(libno);
+	bind_controllers(libno);
+	// Activity system + pactex loader (declaration-driven)
 	if (get_fun(libno, "CreateActivity")) {
 		extern void pe_v14_activity_prelink(void);
 		pe_v14_activity_prelink();
 	}
-
-	// v14 new functions (not in the upstream export table)
+	// New functions (not in the upstream export table)
 	if (get_fun(libno, "GetMessageUniqueID")) {
 		extern void pe_v14_message_register(void);
 		pe_v14_message_register();
 		pe_v14_register_batch(libno);
 	}
+}
+
+static void v7_postlink(int libno)
+{
+	extern void pe_v14_activity_prelink(void);
+	pe_v7_register(libno);
+	bind_controllers(libno);
+	pe_v14_activity_prelink();
+}
+
+const struct parts_bindings parts_bindings_v14 = {
+	.prelink = v14_prelink,
+	.postlink = v14_postlink,
+	.select = pe_upper_left_select_function,
+};
+
+const struct parts_bindings parts_bindings_v7 = {
+	.postlink = v7_postlink,
+};
+
+const struct parts_bindings parts_bindings_classic = {
+	.postlink = bind_controllers,
+};
+
+// Runs after link_libraries(): static_library_register() requires the
+// runtime library table to exist.
+static void PartsEngine_PostLink(void)
+{
+	int libno = ain_get_library(ain, "PartsEngine");
+	if (libno >= 0 && profile.parts.bindings->postlink)
+		profile.parts.bindings->postlink(libno);
 }

@@ -39,6 +39,8 @@ int xref_null_src_var = -1;
 
 struct hll_function {
 	void *fun;
+	// Bound by static_library_fill: any registration takes its place.
+	bool is_fill;
 	ffi_cif cif;
 	unsigned int nr_args;
 	ffi_type **args;
@@ -1207,6 +1209,7 @@ static void link_static_library_function(struct hll_function *dst, struct ain_hl
 	dst->fun = funcptr;
 
 	dst->nr_args = src->nr_arguments;
+	free(dst->args);
 	dst->args = xcalloc(dst->nr_args, sizeof(ffi_type*));
 
 	for (unsigned int i = 0; i < dst->nr_args; i++) {
@@ -1351,8 +1354,8 @@ static void link_libraries(void)
 bool libraries_initialized = false;
 
 /*
- * XSYS4_LINK_REPORT=<file>: write what each AIN declaration was bound to, then
- * exit. A line is "library.function arguments offset", the offset counted from
+ * XSYS4_LINK_REPORT=<file>: write the behaviour row and what each AIN declaration
+ * was bound to, then exit. A line is "library.function arguments offset", the offset counted from
  * init_libraries, or "-" when nothing is bound. tools/link-report.py turns the
  * offsets into names; the diff of two reports shows which bindings a change
  * moved, per game.
@@ -1362,6 +1365,7 @@ static void write_link_report(const char *path)
 	FILE *f = fopen(path, "w");
 	if (!f)
 		ERROR("Can't write link report: %s", path);
+	profile_report(f);
 	for (int i = 0; i < ain->nr_libraries; i++) {
 		struct ain_library *lib = &ain->libraries[i];
 		for (int j = 0; j < lib->nr_functions; j++) {
@@ -1406,24 +1410,50 @@ void static_library_replace(struct static_library *lib, const char *name, void *
 	ERROR("No library function '%s.%s'", lib->name, name);
 }
 
-/* Register a function into the runtime library array directly.
- * Must be called AFTER link_libraries() has run (i.e., from _ModuleInit). */
-void static_library_register(struct static_library *lib, const char *name, void *fun)
+/* The runtime table's entry and declaration of a function, if the game declares it. */
+static struct hll_function *runtime_function(struct static_library *lib, const char *name,
+		struct ain_hll_function **declaration)
 {
 	if (!libraries)
-		return;  // link_libraries() hasn't run yet
+		return NULL;  // link_libraries() hasn't run yet
 	for (int i = 0; i < ain->nr_libraries; i++) {
-		if (strcmp(ain->libraries[i].name, lib->name))
-			continue;
-		if (!libraries[i])
+		if (strcmp(ain->libraries[i].name, lib->name) || !libraries[i])
 			continue;
 		for (int j = 0; j < ain->libraries[i].nr_functions; j++) {
 			if (!strcmp(ain->libraries[i].functions[j].name, name)) {
-				if (!libraries[i][j].fun)
-					link_static_library_function(&libraries[i][j], &ain->libraries[i].functions[j], fun);
-				return;
+				*declaration = &ain->libraries[i].functions[j];
+				return &libraries[i][j];
 			}
 		}
 	}
-	// Not found in AIN — silently ignore (function not used by this game)
+	return NULL;
+}
+
+/* Bind a function the export table left empty, or that only has a fill. Two
+ * functions for one declaration are a mistake: the first stays and this warns.
+ * Must be called AFTER link_libraries() has run (i.e., from _PostLink). */
+void static_library_register(struct static_library *lib, const char *name, void *fun)
+{
+	struct ain_hll_function *declaration;
+	struct hll_function *dst = runtime_function(lib, name, &declaration);
+	if (!dst)
+		return;
+	if (!dst->fun || dst->is_fill) {
+		link_static_library_function(dst, declaration, fun);
+		dst->is_fill = false;
+	} else if (dst->fun != fun) {
+		WARNING("%s.%s: bound already, a second function is ignored", lib->name, name);
+	}
+}
+
+/* Bind a placeholder (a stub, a fallback for another declaration): it stays
+ * only if nothing else binds this declaration, whichever runs first. */
+void static_library_fill(struct static_library *lib, const char *name, void *fun)
+{
+	struct ain_hll_function *declaration;
+	struct hll_function *dst = runtime_function(lib, name, &declaration);
+	if (dst && !dst->fun) {
+		link_static_library_function(dst, declaration, fun);
+		dst->is_fill = true;
+	}
 }

@@ -10,13 +10,10 @@
  * by the export table (PE_SetOnCursorShowLinkPartsNumber, which has the v14
  * behaviour for a program of v14 and later).
  *
- * Registered before pe_v14_prelink.h fills the still-empty entries with
- * stubs, and only under the declaration the game has: a declaration of
- * another shape keeps the binding it has. */
+ * Only under the declaration the game has: a declaration of another shape
+ * keeps the binding it has. */
 static void pe_v14_register_sound_names(int libno)
 {
-	if (!profile.parts.v14_bindings)
-		return;
 	static const struct {
 		const char *name;
 		void *fun;

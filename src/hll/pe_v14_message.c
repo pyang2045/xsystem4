@@ -451,11 +451,6 @@ static int PE_v14_GetActiveParts(void)
 	return PE_GetActivePartsNumber();
 }
 
-static int PE_v14_GetClickNumber(void)
-{
-	return PE_GetClickPartsNumber();
-}
-
 /* SetClickMissSoundName (0x57bd27) and GetClickMissSoundName (0x57bd66)
  * write and read one string of the engine object (+0x1e4). No reader of it
  * was found in the parts engine (0x530000..0x5c0000, nor through the input
@@ -474,7 +469,6 @@ static struct string *PE_v14_GetClickMissSoundName(void)
 {
 	return click_miss_sound_name ? string_dup(click_miss_sound_name) : string_ref(&EMPTY_STRING);
 }
-static void PE_v14_StopSoundWithoutSystemSound(void) {}
 static void PE_v14_SetEnableInput(possibly_unused bool enable) {}
 static bool PE_v14_IsEnableInput(void) { return true; }
 static void PE_v14_SetWantSaveBackScene(possibly_unused int n, possibly_unused bool enable) {}
@@ -488,7 +482,7 @@ static void *save_thumbnail_binding(void)
 {
 	int lib = ain_get_library(ain, "PartsEngine");
 	int fno = lib >= 0 ? ain_get_library_function(ain, lib, "SaveThumbnail") : -1;
-	if (fno < 0 || !profile.parts.v14_bindings)
+	if (fno < 0)
 		return PE_v14_SaveThumbnail;
 	const struct ain_hll_function *f = &ain->libraries[lib].functions[fno];
 	if (f->return_type.data != AIN_BOOL || f->nr_arguments != 2 || !f->arguments
@@ -538,7 +532,7 @@ static void *message_fade_select_function(const struct ain_hll_function *f, void
 		{ "SetEnableSpeedUp", AIN_VOID, 2, { AIN_INT, AIN_BOOL }, PE_SetEnableSpeedUp },
 		{ "IsEnableSpeedUp", AIN_BOOL, 1, { AIN_INT }, PE_IsEnableSpeedUp },
 	};
-	if (!profile.parts.v14_bindings || !f->name || (f->nr_arguments && !f->arguments))
+	if (!f->name || (f->nr_arguments && !f->arguments))
 		return fallback;
 	for (unsigned i = 0; i < sizeof(shapes) / sizeof(shapes[0]); i++) {
 		if (strcmp(f->name, shapes[i].name))
@@ -583,8 +577,7 @@ void pe_v14_message_register(void)
 		message_fade_binding("FixMessageWindowText", PE_v14_FixMessageWindowText));
 	static_library_register(lib, "IsFixedMessageWindowText",
 		message_fade_binding("IsFixedMessageWindowText", PE_v14_IsFixedMessageWindowText));
-	// Ahead of the empty ones of pe_v14_prelink.h, which stay for a
-	// declaration of another shape: the first registration is the one kept.
+	// A declaration of another shape keeps the empty one of pe_v14_prelink.h.
 	static const char *const fade_names[] = {
 		"SetMessageWindowTextSpeed", "GetMessageWindowTextSpeed",
 		"SetEnableSpeedUp", "IsEnableSpeedUp",
@@ -599,8 +592,7 @@ void pe_v14_message_register(void)
 	static_library_register(lib, "GetMessageWindowTextArea", PE_GetMessageWindowTextArea);
 	static_library_register(lib, "SetMessageWindowTextFont", PE_v14_SetMessageWindowTextFont);
 	static_library_register(lib, "SetMessageWindowTextSpace", PE_v14_SetMessageWindowTextSpace);
-	// Ahead of the empty ones of pe_v14_prelink.h (GetMessageWindowRubyFont
-	// stays empty).
+	// GetMessageWindowRubyFont stays empty (pe_v14_prelink.h).
 	static_library_register(lib, "SetMessageWindowRubyFont", PE_SetMessageWindowRubyFont);
 	static_library_register(lib, "SetMessageWindowRubyCharSpace", PE_SetMessageWindowRubyCharSpace);
 	static_library_register(lib, "GetMessageWindowRubyCharSpace", PE_GetMessageWindowRubyCharSpace);
@@ -608,8 +600,7 @@ void pe_v14_message_register(void)
 	static_library_register(lib, "GetMessageWindowRubyLineSpace", PE_GetMessageWindowRubyLineSpace);
 	static_library_register(lib, "SetKeyWaitShow", PE_v14_SetKeyWaitShow);
 	static_library_register(lib, "IsKeyWaitShow", PE_IsKeyWaitShow);
-	// The rest of the key wait mark (native cases 513 to 520), ahead of the
-	// empty ones of pe_v14_prelink.h: the first registration is the one kept.
+	// The rest of the key wait mark (native cases 513 to 520).
 	static_library_register(lib, "SetKeyWaitCGName", PE_SetKeyWaitCGName);
 	static_library_register(lib, "GetKeyWaitCGName", PE_v14_GetKeyWaitCGName);
 	static_library_register(lib, "SetKeyWaitFlatName", PE_SetKeyWaitFlatName);
@@ -619,10 +610,8 @@ void pe_v14_message_register(void)
 	static_library_register(lib, "GetKeyWaitPosY", PE_GetKeyWaitPosY);
 	static_library_register(lib, "GetKeyWaitPosZ", PE_GetKeyWaitPosZ);
 	static_library_register(lib, "GetActiveParts", PE_v14_GetActiveParts);
-	static_library_register(lib, "GetClickNumber", PE_v14_GetClickNumber);
 	static_library_register(lib, "SetClickMissSoundName", PE_v14_SetClickMissSoundName);
 	static_library_register(lib, "GetClickMissSoundName", PE_v14_GetClickMissSoundName);
-	static_library_register(lib, "StopSoundWithoutSystemSound", PE_v14_StopSoundWithoutSystemSound);
 	static_library_register(lib, "SetEnableInput", PE_v14_SetEnableInput);
 	static_library_register(lib, "IsEnableInput", PE_v14_IsEnableInput);
 	static_library_register(lib, "SetWantSaveBackScene", PE_v14_SetWantSaveBackScene);

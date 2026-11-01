@@ -10,11 +10,23 @@
 #define SYSTEM4_PROFILE_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 struct ain;
+struct ain_hll_function;
 struct parts_widget_ops;
 struct parts_controller_ops;
 struct parts_input_ops;
+
+// How a generation binds PartsEngine (src/hll/PartsEngine.c). Any can be NULL.
+struct parts_bindings {
+	// Before the link: changes the export table.
+	void (*prelink)(int libno);
+	// After the link: fills what the export table does not have.
+	void (*postlink)(int libno);
+	// Picks the function for one declaration, or returns dflt.
+	void *(*select)(const struct ain_hll_function *f, void *dflt);
+};
 
 // PartsEngine. Two generations: v14 (Haharanman, Dohna Dohna) and ain v7 with
 // activities (妻みぐい３). Engines older than these have none of it.
@@ -23,6 +35,7 @@ struct parts_features {
 	const struct parts_widget_ops *widgets;
 	const struct parts_controller_ops *controllers;
 	const struct parts_input_ops *input;
+	const struct parts_bindings *bindings;
 
 	/* ---- v14 ---- */
 	// Local and global transforms as a tree, anchors, rotation, hit boxes.
@@ -43,8 +56,10 @@ struct parts_features {
 	bool native_construction;
 	// PE_Update with no time passed falls back to the wall clock.
 	bool update_clock_fallback;
-	// The declarations written for v14 (gauges, numerals, sound names, ...).
-	bool v14_bindings;
+	// A pactex panel's アルファグラデーション.
+	bool panel_alpha_gradation;
+	// A pactex button's text.
+	bool pactex_button_text;
 
 	/* ---- v14 and ain v7 with activities ---- */
 	// Check boxes, scrollbars, layout boxes as widgets of an activity.
@@ -53,8 +68,6 @@ struct parts_features {
 	bool activity_save;
 
 	/* ---- ain v7 with activities ---- */
-	// The declarations written for ain v7 with activities.
-	bool v7_bindings;
 	// Hidden parts are not hovered, no hover state without a click, KeyPress.
 	bool activity_pointer;
 	// The Whole key and wheel events.
@@ -67,9 +80,7 @@ struct parts_features {
 	bool layers_by_position;
 	// has_widget_type, no_back_scene and the input depth in the save.
 	bool save_activity_fields;
-
-	/* ---- other ---- */
-	// PartsEngine.Update also advances the parts movies (all of ain v7).
+	// PartsEngine.Update also advances the parts movies.
 	bool movies_in_update;
 };
 
@@ -111,6 +122,8 @@ struct game_quirks {
 };
 
 struct game_profile {
+	// The row of src/profile.c.
+	const char *row;
 	struct parts_features parts;
 	struct hll_features hll;
 	struct lang_features lang;
@@ -123,5 +136,8 @@ extern struct game_profile profile;
 
 // Call once, as soon as the ain is open.
 void profile_init(const struct ain *ain);
+
+// One line for the link report: the row and every behaviour it turned on.
+void profile_report(FILE *f);
 
 #endif /* SYSTEM4_PROFILE_H */

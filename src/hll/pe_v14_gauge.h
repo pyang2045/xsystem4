@@ -132,13 +132,10 @@ static bool pe_v14_gauge_arg_shape(const struct ain_type *type, enum ain_data_ty
 	return !type->array_type;
 }
 
-/* Register before pe_v14_prelink.h fills still-empty entries with stubs.
- * Unknown declarations retain those bindings, rather than receiving a C
- * function with an incompatible CIF. */
+/* Unknown declarations keep the stubs of pe_v14_prelink.h, rather than
+ * receiving a C function with an incompatible CIF. */
 static void pe_v14_register_gauges(int libno)
 {
-	if (!profile.parts.v14_bindings)
-		return;
 	static const struct {
 		const char *name;
 		void *fun;

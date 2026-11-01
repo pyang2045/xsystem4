@@ -12,7 +12,13 @@ a C function by name. When a game declares a function differently, or it behaves
 whole, register another function in the library's `_PreLink` or `_PostLink`
 (`static_library_replace`, `static_library_register`), or give the library another name
 (`MainEXFile_v7` in `resolve_library_name`). The shape selectors in `src/hll/hll_shape_select.c`
-choose by declaration.
+choose by declaration. PartsEngine's generations have their own `prelink`, `postlink` and `select` in
+the `bindings` of their row (`src/hll/PartsEngine.c`).
+
+Order does not decide a binding. `static_library_fill` binds a placeholder, which stays only if nothing
+else binds that declaration; `static_library_register` binds a real function, takes a fill's place, and
+warns if another real function is bound already (`bound already`). Fix that warning: one of the two is
+dead code.
 
 **A whole function differs and other engine code calls it too: an ops table.** Write one function per
 generation (`v14_begin_input`, `v7_begin_input`, `classic_begin_input`) and list them in the tables of
@@ -25,14 +31,17 @@ turn it on in the rows of `src/profile.c` that have it, and test `profile.parts.
 
 ## 2. Only `src/profile.c` looks at the version
 
-`src/profile.c` is a table with a row per engine generation. A field left out of a row is false, and a
-new field is added to the rows that want it, so a change for 妻みぐい３ cannot reach Haharanman or an
-older game. A game that fits no row gets a new row.
+`src/profile.c` is a table with a row per engine generation: how to recognise it, then its PartsEngine,
+HLL and language behaviours. `profile_init` only picks the first row that matches and copies it, and
+sets nothing by version itself. A field left out of a row is false, and a new field is added to the rows
+that want it, so a change for 妻みぐい３ cannot reach Haharanman or an older game. A game that fits no row
+gets a new row; one that declares activities or v14 messages on the last row gets a warning at startup.
 
 Name a field for what it does (`controller_ids`), not when it applies (`is_v14`).
 
-`tools/check-version-gates.sh` (`meson test`) fails on `ain->version` outside `src/profile.c` and the
-files of rule 3, and on game names outside `src/hacks.c`.
+`tools/check-version-gates.sh` (`meson test`) fails on a version read outside `src/profile.c` and the
+files of rule 3, when the number of checks in those files changes, and on comparing a game name outside
+`src/hacks.c`.
 
 ## 3. The VM follows the bytecode
 
@@ -47,8 +56,8 @@ Shared code tests the quirk, never the name.
 
 ## Checking a change
 
-- `XSYS4_LINK_REPORT=<file> xsystem4 <game>`, then `tools/link-report.py <binary> <file>`: what every
-  declaration of that game is bound to. Diff the report before and after a change, for each game; a
+- `XSYS4_LINK_REPORT=<file> xsystem4 <game>`, then `tools/link-report.py <binary> <file>`: the game's row
+  with its behaviours as bytes (`#profile`), and what every declaration is bound to. Diff the report before and after a change, for each game; a
   change for one game should not move another's.
 - `xsystem4 test/Run/test.ain`: the classic row (`All tests passed`).
 - The scripted runs of each game (see the port's `CLAUDE.md`).

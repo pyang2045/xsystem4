@@ -3071,7 +3071,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 		 * before v14 have no panels and read none. */
 		int grad[4] = { 0, 0, 0, 0 };
 		struct ex_list *gl = pactex_key_list(type_info, &PK_ALPHA_GRADATION);
-		for (unsigned i = 0; profile.parts.v14_bindings && gl && i < 4 && i < gl->nr_items; i++) {
+		for (unsigned i = 0; profile.parts.panel_alpha_gradation && gl && i < 4 && i < gl->nr_items; i++) {
 			if (gl->items[i].value.type == EX_INT)
 				grad[i] = gl->items[i].value.i;
 		}
@@ -3088,7 +3088,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 		 * the widget shows <base>／普通 (SJIS ／通常), ／オン, ／ダウン, and
 		 * <base>／無効 while disabled (see parts_button_set_cg_name). */
 		const char *cg_base = pactex_key_string(type_info, &PK_CG_NAME);
-		if (profile.parts.v14_bindings)
+		if (profile.parts.pactex_button_text)
 			pactex_apply_button_text(type_info, parts_no);
 		if (cg_base) {
 			parts_button_set_cg_name(parts_get(parts_no), cg_base);
@@ -4212,6 +4212,6 @@ void pe_v14_activity_prelink(void)
 	static_library_register(lib, "IsExistActivityEndKey", PartsEngine_IsExistActivityEndKey);
 	static_library_register(lib, "NumofActivityEndKey", PartsEngine_NumofActivityEndKey);
 	static_library_register(lib, "GetActivityEndKey", PartsEngine_GetActivityEndKey);
-	static_library_register(lib, "SetEnableInputProcess", PartsEngine_SetEnableInputProcess);
-	static_library_register(lib, "Parts_SetWheelable", PartsEngine_Parts_SetWheelable);
+	static_library_fill(lib, "SetEnableInputProcess", PartsEngine_SetEnableInputProcess);
+	static_library_fill(lib, "Parts_SetWheelable", PartsEngine_Parts_SetWheelable);
 }

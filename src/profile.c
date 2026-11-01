@@ -6,7 +6,10 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 
+#include "system4.h"
 #include "system4/ain.h"
 
 #include "profile.h"
@@ -16,45 +19,7 @@ struct game_profile profile;
 extern const struct parts_widget_ops parts_widget_v14, parts_widget_v7, parts_widget_classic;
 extern const struct parts_controller_ops parts_controller_v14, parts_controller_v7, parts_controller_classic;
 extern const struct parts_input_ops parts_input_v14, parts_input_v7, parts_input_classic;
-
-static const struct parts_features parts_v14 = {
-	.widgets = &parts_widget_v14,
-	.controllers = &parts_controller_v14,
-	.input = &parts_input_v14,
-	.native_transforms = true,
-	.native_compositing = true,
-	.typed_components = true,
-	.controller_ids = true,
-	.input_sessions = true,
-	.wheelable_parts = true,
-	.native_message_window = true,
-	.native_construction = true,
-	.update_clock_fallback = true,
-	.v14_bindings = true,
-	.activity_widgets = true,
-	.activity_save = true,
-};
-
-static const struct parts_features parts_activities_v7 = {
-	.widgets = &parts_widget_v7,
-	.controllers = &parts_controller_v7,
-	.input = &parts_input_v7,
-	.activity_widgets = true,
-	.activity_save = true,
-	.v7_bindings = true,
-	.activity_pointer = true,
-	.whole_key_events = true,
-	.widget_parts_messages = true,
-	.margin_relayout = true,
-	.layers_by_position = true,
-	.save_activity_fields = true,
-};
-
-static const struct parts_features parts_classic = {
-	.widgets = &parts_widget_classic,
-	.controllers = &parts_controller_classic,
-	.input = &parts_input_classic,
-};
+extern const struct parts_bindings parts_bindings_v14, parts_bindings_v7, parts_bindings_classic;
 
 static bool has_parts_function(const struct ain *ain, const char *name)
 {
@@ -62,20 +27,50 @@ static bool has_parts_function(const struct ain *ain, const char *name)
 	return libno >= 0 && ain_get_library_function((struct ain *)ain, libno, name) >= 0;
 }
 
-void profile_init(const struct ain *ain)
+static bool is_v14(const struct ain *ain)
 {
-	// An ain below v14 with activities has the v7 declaration set; the
-	// message functions of v14 tell a v14 script apart.
-	if (ain->version >= 14)
-		profile.parts = parts_v14;
-	else if (has_parts_function(ain, "CreateActivity") && !has_parts_function(ain, "GetMessageUniqueID"))
-		profile.parts = parts_activities_v7;
-	else
-		profile.parts = parts_classic;
-	profile.parts.movies_in_update = ain->version == 7;
+	return ain->version >= 14;
+}
 
-	if (ain->version >= 14) {
-		profile.hll = (struct hll_features) {
+// The message functions of v14 tell a v14 script apart.
+static bool is_activities_v7(const struct ain *ain)
+{
+	return ain->version == 7 && has_parts_function(ain, "CreateActivity")
+		&& !has_parts_function(ain, "GetMessageUniqueID");
+}
+
+static const struct {
+	const char *name;
+	bool (*match)(const struct ain *ain);
+	struct parts_features parts;
+	struct hll_features hll;
+	struct lang_features lang;
+	// 1280x720 when AliceStart.ini has no size, if this function is declared.
+	const char *view_720p_with;
+} rows[] = {
+	{
+		.name = "v14",
+		.match = is_v14,
+		.parts = {
+			.widgets = &parts_widget_v14,
+			.controllers = &parts_controller_v14,
+			.input = &parts_input_v14,
+			.bindings = &parts_bindings_v14,
+			.native_transforms = true,
+			.native_compositing = true,
+			.typed_components = true,
+			.controller_ids = true,
+			.input_sessions = true,
+			.wheelable_parts = true,
+			.native_message_window = true,
+			.native_construction = true,
+			.update_clock_fallback = true,
+			.panel_alpha_gradation = true,
+			.pactex_button_text = true,
+			.activity_widgets = true,
+			.activity_save = true,
+		},
+		.hll = {
 			.adv_log_v14 = true,
 			.window_settings_v14 = true,
 			.mouse_cursor_configs = true,
@@ -83,9 +78,78 @@ void profile_init(const struct ain *ain)
 			.math_clock_seed = true,
 			.wheel_notches = true,
 			.msgskip_v14 = true,
-		};
-		profile.lang.typed_arrays = true;
-		profile.default_view_720p = has_parts_function(ain, "SeekMessage");
-	}
-	profile.hll.sound_groups = ain->version == 14 || ain->version == 7;
+			.sound_groups = true,
+		},
+		.lang = { .typed_arrays = true },
+		.view_720p_with = "SeekMessage",
+	},
+	{
+		.name = "activities_v7",
+		.match = is_activities_v7,
+		.parts = {
+			.widgets = &parts_widget_v7,
+			.controllers = &parts_controller_v7,
+			.input = &parts_input_v7,
+			.bindings = &parts_bindings_v7,
+			.activity_widgets = true,
+			.activity_save = true,
+			.activity_pointer = true,
+			.whole_key_events = true,
+			.widget_parts_messages = true,
+			.margin_relayout = true,
+			.layers_by_position = true,
+			.save_activity_fields = true,
+			.movies_in_update = true,
+		},
+		.hll = { .sound_groups = true },
+	},
+	// Keep last: it takes every game the rows above don't.
+	{
+		.name = "classic",
+		.parts = {
+			.widgets = &parts_widget_classic,
+			.controllers = &parts_controller_classic,
+			.input = &parts_input_classic,
+			.bindings = &parts_bindings_classic,
+		},
+	},
+};
+
+void profile_init(const struct ain *ain)
+{
+	size_t i = 0;
+	while (rows[i].match && !rows[i].match(ain))
+		i++;
+	profile.row = rows[i].name;
+	profile.parts = rows[i].parts;
+	profile.hll = rows[i].hll;
+	profile.lang = rows[i].lang;
+	profile.default_view_720p = rows[i].view_720p_with
+		&& has_parts_function(ain, rows[i].view_720p_with);
+
+	// No row was written for such a game: say so, rather than bind half of one.
+	if (!rows[i].match && (has_parts_function(ain, "CreateActivity")
+			|| has_parts_function(ain, "GetMessageUniqueID")))
+		WARNING("ain v%d declares PartsEngine activities or v14 messages, "
+			"but no row of src/profile.c matches it", ain->version);
+}
+
+static void report_bytes(FILE *f, const void *p, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+		fprintf(f, "%02x", ((const unsigned char *)p)[i]);
+}
+
+void profile_report(FILE *f)
+{
+	fprintf(f, "#profile %s:", profile.row);
+	report_bytes(f, &profile.parts.native_transforms,
+		sizeof(profile.parts) - offsetof(struct parts_features, native_transforms));
+	fputc(':', f);
+	report_bytes(f, &profile.hll, sizeof(profile.hll));
+	fputc(':', f);
+	report_bytes(f, &profile.lang, sizeof(profile.lang));
+	fputc(':', f);
+	report_bytes(f, &profile.quirks, sizeof(profile.quirks));
+	fprintf(f, ":%d -\n", profile.default_view_720p);
 }
