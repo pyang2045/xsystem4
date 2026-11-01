@@ -144,8 +144,8 @@ static bool ft_font_get_glyph(struct font_size *size, struct glyph *glyph, uint3
  * it: the default gothic font lacks characters the CN scripts use (for
  * example U+83C8), which otherwise show as .notdef boxes. Only the bitmap
  * comes from the other face; the CN grid does not use the glyph's advance,
- * so the spacing does not change. A patch's CJK font lacks the note its text
- * keeps (translation_load_sjis_table) in the same way. Other games keep the
+ * so the spacing does not change. A patch's CJK font lacks the note and heart
+ * from translation_load_sjis_table in the same way. Other games keep the
  * .notdef glyph.
  */
 static FT_Face ft_font_fallback_face(struct font_ft *font, uint32_t code, unsigned size)

@@ -77,8 +77,12 @@ void translation_load_sjis_table(const char *path)
 	for (size_t code = 0x100; code < sjis_table_size; code++) {
 		uint16_t v = data[code * 2] | (data[code * 2 + 1] << 8);
 		// Longinus.ini: YF_CODING, XIN_CODING. The note and the heart have no GBK
-		// code; the patch's text keeps their SJIS codes.
-		if (v < 0x100 || code == 0x81F4 || code == 0x818A)
+		// code; the patch's text keeps these SJIS codes for them (♂ in CP932).
+		if (code == 0x81F4 || code == 0x818A) {
+			sjis_table[code] = code == 0x81F4 ? 0x266A : 0x2665;
+			continue;
+		}
+		if (v < 0x100)
 			continue;
 		char gbk[2] = { v >> 8, v & 0xFF };
 		char *in = gbk;
