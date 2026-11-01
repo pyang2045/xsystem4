@@ -5867,8 +5867,9 @@ static void vm_execute(void)
 				trace_left--;
 			}
 		}
-		// Heartbeat: log current function every 50M instructions
-		if (unlikely((insn_count & 0x2FFFFFF) == 0)) {
+#if XSYS4_DEV_HOOKS
+		// Heartbeat: log current function every 2^26 (about 67M) instructions
+		if (unlikely((insn_count & 0x3FFFFFF) == 0)) {
 			int cfno = (call_stack_ptr > 0) ? call_stack[call_stack_ptr-1].fno : -1;
 			WARNING("heartbeat: %lluM insns fno=%d depth=%d ip=0x%X op=0x%X",
 				insn_count/1000000, cfno, call_stack_ptr, instr_ptr, opcode);
@@ -5891,6 +5892,7 @@ static void vm_execute(void)
 				}
 			}
 		}
+#endif
 		// Periodically pump events (~every 256K instructions)
 		// to prevent OS "not responding" and keep screen alive.
 		if (unlikely((insn_count & 0x3FFFF) == 0)) {
