@@ -47,23 +47,6 @@ static void PE_v14_CheckBoxChecked(int number, bool check)
 		parts_checkbox_set_checked(parts, check);
 }
 
-/* void SetCheckBoxColor(int Number, int Red, int Green, int Blue) */
-static void PE_v7_SetCheckBoxColor(int number, int r, int g, int b)
-{
-	struct parts *parts = pe_v14_checkbox(number);
-	if (!parts)
-		return;
-	struct parts_checkbox *cb = parts_get_checkbox(parts);
-	if (cb->show_color && cb->r == r && cb->g == g && cb->b == b)
-		return;
-	cb->r = r;
-	cb->g = g;
-	cb->b = b;
-	cb->show_color = true;
-	parts_checkbox_rebuild(parts);
-	parts_dirty(parts);
-}
-
 /* bool IsCheckBoxChecked(int Number): case 238 -> 0x5911a0 (+0xf1). */
 static bool PE_v14_IsCheckBoxChecked(int number)
 {

@@ -21,8 +21,11 @@ warns if another real function is bound already (`bound already`). Fix that warn
 dead code.
 
 **A whole function differs and other engine code calls it too: an ops table.** Write one function per
-generation (`v14_begin_input`, `v7_begin_input`, `classic_begin_input`) and list them in the tables of
-`src/parts/parts_internal.h`. The `PE_` function only calls `profile.parts.input->begin_input()`.
+generation (`v14_begin_input`, `v7_begin_input`, `classic_begin_input`) in that generation's folder,
+`src/parts/v14/`, `src/parts/v7/` or `src/parts/classic/`, and list it in the generation's table there. The
+folders are included at the end of `parts.c`, `input.c`, `render.c` and `layoutbox.c`, so they see those
+files' statics. A change for 妻みぐい３ should then show in the diff as `src/parts/v7/`, `src/hll/pe_v7.h` or
+its row, and nothing else; anything more reaches another game. The `PE_` function only calls `profile.parts.input->begin_input()`.
 Each generation has its own table even where its entries are another's functions, so a change for one
 generation replaces an entry in its table and leaves the shared function alone.
 

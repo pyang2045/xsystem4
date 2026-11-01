@@ -915,19 +915,19 @@ bool parts_is_controller_root(struct parts *parts);
 // of the controller it belongs to (after loading a save).
 void parts_controller_relink_roots(void);
 
-// pe_v14_activity.c
+// pe_activity.c
 // A controller is releasing the parts of this number; if it is an activity
 // component (a pactex part), remember that. The activity table keeps its
 // entries (and IsExistActivity its answer) when a controller releases parts.
-void pe_v14_activity_parts_released(int parts_no);
-void pe_v14_activity_reset(void);
+void pe_activity_parts_released(int parts_no);
+void pe_activity_reset(void);
 struct iarray_writer;
 struct iarray_reader;
-void pe_v14_activity_save(struct iarray_writer *w);
-void pe_v14_activity_load(struct iarray_reader *r);
+void pe_activity_save(struct iarray_writer *w);
+void pe_activity_load(struct iarray_reader *r);
 void parts_v14_restart(void);
 void pe_v14_message_reset(void);
-bool pe_v14_activity_number_released(int parts_no);
+bool pe_activity_number_released(int parts_no);
 
 struct parts *parts_try_get(int parts_no);
 struct parts *parts_get(int parts_no);

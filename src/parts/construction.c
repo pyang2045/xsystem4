@@ -1481,7 +1481,7 @@ static int cp_circle_coverage(int dx, int dy, int r)
  * coverage for, as offsets from the centre: dx0..dx1, both included. 1 for
  * one run of them (a disc's rows are one run each), 0 when there is none or
  * the radius is not drawn, -1 when they are not one run. The pactex loader
- * colours what v14 command 100 writes by them (pe_v14_activity.c). */
+ * colours what v14 command 100 writes by them (pe_activity.c). */
 int parts_cp_circle_cells(int r, int dy, int *dx0, int *dx1)
 {
 	if (r <= 0 || r > PARTS_CP_CIRCLE_MAX_RADIUS || dy < -r || dy > r)
@@ -1525,7 +1525,7 @@ int parts_cp_circle_cells(int r, int dy, int *dx0, int *dx1)
  * itself (0x507350, 0x5074b0 -> 0x4cbb20 -> 0x5b0b80): the colour and the
  * alpha replace a covered pixel's. There is no operation of their own: the
  * pactex loader adds command 3's fills over the covered runs
- * (parts_cp_circle_cells) and 102's alpha (pe_v14_activity.c).
+ * (parts_cp_circle_cells) and 102's alpha (pe_activity.c).
  */
 static void build_fill_circle(uint8_t *pixels, int tw, int th, const struct parts_cp_pixel *op, bool blend)
 {

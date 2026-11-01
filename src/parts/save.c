@@ -85,7 +85,7 @@
  * the sound numbers of its record. The numbers of a parts with names are
  * made from them again.
  *
- * The activity section (SAVE_ACTIVITIES in hll/pe_v14_activity.c) follows
+ * The activity section (SAVE_ACTIVITIES in hll/pe_activity.c) follows
  * the sound names; it is always written by a v14 engine. The unique ID
  * section (SAVE_UNIQUE_IDS) follows it and precedes the controller IDs: its
  * mark, a count and, for each parts with a unique ID (PE_v14_SetEventID;
@@ -1551,7 +1551,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		save_cg_deforms(&w, save_hidden);
 		save_wheelable(&w, save_hidden);
 		save_sound_names(&w, save_hidden);
-		pe_v14_activity_save(&w);
+		pe_activity_save(&w);
 		save_unique_ids(&w, save_hidden);
 		save_user_components(&w, save_hidden);
 		save_buttons(&w, save_hidden);
@@ -1799,7 +1799,7 @@ bool PE_Load(struct page **buffer)
 			return false;
 		}
 		load_sound_names(&r);
-		pe_v14_activity_load(&r);
+		pe_activity_load(&r);
 		load_unique_ids(&r);
 		load_user_components(&r);
 		load_buttons(&r);

@@ -83,3 +83,4 @@ install_subdir('fonts', install_dir : get_option('datadir') / 'xsystem4')
 install_data('debugger.scm', install_dir : get_option('datadir') / 'xsystem4')
 
 test('version gates', find_program('tools/check-version-gates.sh'))
+test('source lists', find_program('tools/check-source-lists.sh'))

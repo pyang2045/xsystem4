@@ -76,64 +76,6 @@ static void parts_reverse_scale(mat4 m, bool lr, bool tb)
 		glm_scale(m, (vec3){ lr ? -1.0f : 1.0f, tb ? -1.0f : 1.0f, 1.0f });
 }
 
-/*
- * The transform around a parts' anchor:
- *
- *   parent's matrix * T(placed pos) * Rz(angle) * Rx * Ry * S(own scale) * own reverse
- *
- * (Rx and Ry: the parts' own X and Y rotations, parts_rotate_xy.)
- *
- * The original builds each level as S(reverse) * T(-origin) * S(scale) * R *
- * T(pos) (0x4e6d80, row vectors; 0x5c3ae0 builds S * Ry * Rx * Rz and
- * writes the translation last) on top of the parent's accumulated matrix,
- * so a parts' flip mirrors its box around its anchor before the scale,
- * rotation and translation, and everything above it (the ancestors' flips,
- * scales and rotations) moves the result with the parent: a gauge's fill
- * bar and number under a GaugeBase rotated 315 degrees lie along it, and a
- * MapNodeView name under its rotated MainText rectangle is rotated with it.
- * The parent's matrix is parts_params.matrix (parts_update_global_pos).
- * Without rotation or scale above the parts this is the transform used
- * before. angle is in radians; with rotate_scale false the parts' own
- * rotation and scale are left out (the FLAT root; RI2's TEXT path).
- *
- * That is v14. Before it the transform is the one those engines had:
- *
- *   T(global pos) * ancestors' reverse * Rz(angle) * S(global scale) * own reverse
- *
- * where the global position follows the ancestors' scales and flips but not
- * their rotation (parts_child_pos) and the scale is the product down the
- * tree. No earlier engine was read or compared for the matrix rule.
- */
-void classic_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
-{
-	glm_mat4_identity(out);
-	glm_translate(out, (vec3) { parts->global.pos.x, parts->global.pos.y, 0 });
-	parts_reverse_scale(out, parts->global.reverse_lr != parts->local.reverse_lr,
-			parts->global.reverse_tb != parts->local.reverse_tb);
-	if (rotate_scale) {
-		// FIXME: need perspective for 3D rotate
-		glm_rotate_z(out, angle, out);
-		glm_scale(out, (vec3){ parts->global.scale.x, parts->global.scale.y, 1.0 });
-	}
-	parts_reverse_scale(out, parts->local.reverse_lr, parts->local.reverse_tb);
-}
-
-void v14_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
-{
-	parts_parent_transform(parts, out);
-	Point pos = parts_placed_pos(parts);
-	glm_translate(out, (vec3) { pos.x, pos.y, 0 });
-	if (rotate_scale) {
-		if (angle != 0.0f)
-			glm_rotate_z(out, angle, out);
-		// The X and Y rotations follow the Z one (parts_rotate_xy); the
-		// depth they give is projected when drawn (parts_render_texture).
-		parts_rotate_xy(out, &parts->local);
-		glm_scale(out, (vec3){ parts->local.scale.x, parts->local.scale.y, 1.0 });
-	}
-	parts_reverse_scale(out, parts->local.reverse_lr, parts->local.reverse_tb);
-}
-
 void parts_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
 {
 	profile.parts.transforms->anchor_transform(parts, angle, rotate_scale, out);
@@ -162,55 +104,6 @@ void parts_box_transform(struct parts *parts, struct parts_common *common, mat4 
 {
 	parts_anchor_transform(parts, glm_rad(parts->local.rotation.z), true, out);
 	glm_translate(out, (vec3){ common->origin_offset.x, common->origin_offset.y, 0 });
-}
-
-/* v14 ClipArea is an integer, screen-aligned rectangle. Native 0x535a27
- * projects the origin, then adds local-scale offsets; 0x579ec0 intersects
- * the inherited rectangle. It does not rotate the rectangle's four corners.
- * Return 0 for no clip, -1 for an empty clip, 1 with screen-to-unit-clip. */
-int classic_clip_area_transform(struct parts *parts, mat4 out)
-{
-	return 0;
-}
-
-int v14_clip_area_transform(struct parts *parts, mat4 out)
-{
-	bool enabled = false;
-	double left = 0, top = 0, right = 0, bottom = 0;
-	for (struct parts *p = parts; p; p = p->parent) {
-		if (!p->clip_enabled)
-			continue;
-		mat4 box;
-		parts_anchor_transform(p, glm_rad(p->local.rotation.z), true, box);
-		float x = box[3][0] + p->clip_area.x * p->local.scale.x;
-		float y = box[3][1] + p->clip_area.y * p->local.scale.y;
-		float w = p->clip_area.w * p->local.scale.x;
-		float h = p->clip_area.h * p->local.scale.y;
-		// Avoid undefined float-to-int conversions and singular matrices.
-		if (!isfinite(x) || !isfinite(y) || !isfinite(w) || !isfinite(h)
-				|| x < INT_MIN || (double)x > INT_MAX
-				|| y < INT_MIN || (double)y > INT_MAX
-				|| w < 1 || (double)w > INT_MAX || h < 1 || (double)h > INT_MAX)
-			return -1;
-		double l = (int)x, t = (int)y, r = l + (int)w, b = t + (int)h;
-		if (!enabled) {
-			left = l; top = t; right = r; bottom = b;
-			enabled = true;
-		} else {
-			left = fmax(left, l); top = fmax(top, t);
-			right = fmin(right, r); bottom = fmin(bottom, b);
-		}
-		if (right <= left || bottom <= top)
-			return -1;
-	}
-	if (!enabled)
-		return 0;
-	glm_mat4_identity(out);
-	out[0][0] = 1.0 / (right - left);
-	out[1][1] = 1.0 / (bottom - top);
-	out[3][0] = -left / (right - left);
-	out[3][1] = -top / (bottom - top);
-	return 1;
 }
 
 int parts_clip_area_transform(struct parts *parts, mat4 out)
@@ -1133,3 +1026,7 @@ void parts_render_init(void)
 	parts_shader.persp_transform = glGetUniformLocation(parts_shader.shader.program, "persp_transform");
 	parts_shader.use_persp = glGetUniformLocation(parts_shader.shader.program, "use_persp");
 }
+
+// The functions of each generation.
+#include "classic/render.h"
+#include "v14/render.h"

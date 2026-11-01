@@ -199,7 +199,7 @@ struct parts *parts_get(int parts_no)
 		// activity and gets a blank parts, as before; say so
 		// (CMessageWindow after an erased ADV layer did this silently).
 		static unsigned stale_warnings;
-		if (stale_warnings < 8 && pe_v14_activity_number_released(parts_no)) {
+		if (stale_warnings < 8 && pe_activity_number_released(parts_no)) {
 			stale_warnings++;
 			WARNING("stale activity parts %d re-created on controller %d",
 					parts_no, parts->controller_no);
@@ -708,27 +708,6 @@ void parts_project_point(vec4 p, float *sx, float *sy)
 	*sy = q[1];
 }
 
-// The anchor: the transform applied to the origin, rounded to the pixel.
-static Point parts_transform_anchor(mat4 m)
-{
-	return (Point) { (int)lroundf(m[3][0]), (int)lroundf(m[3][1]) };
-}
-
-/*
- * Before v14: a child's position relative to its parent's anchor (the
- * parent's global position). The parent's reverse flags mirror it around
- * that anchor and the parent's accumulated scale scales it, each level
- * rounded to the pixel. Rotation does not move the children.
- */
-static Point parts_child_pos(const struct parts_params *parent, Point local)
-{
-	float x = parent->scale.x * local.x, y = parent->scale.y * local.y;
-	return (Point) {
-		parent->pos.x + (int)lroundf(parent->reverse_lr ? -x : x),
-		parent->pos.y + (int)lroundf(parent->reverse_tb ? -y : y)
-	};
-}
-
 // The parent's accumulated transform (root_pos for a top-level parts); v14.
 void parts_parent_transform(struct parts *parts, mat4 out)
 {
@@ -740,42 +719,9 @@ void parts_parent_transform(struct parts *parts, mat4 out)
 	}
 }
 
-// Where the parts' anchor is on screen, from the parent's current transform.
-static Point classic_anchor_pos(struct parts *parts)
-{
-	Point anchor = parts_placed_pos(parts);
-	if (parts->parent)
-		anchor = parts_child_pos(&parts->parent->global, anchor);
-	return anchor;
-}
-
-static Point v14_anchor_pos(struct parts *parts)
-{
-	mat4 m;
-	parts_level_transform(parts->parent ? &parts->parent->global : NULL,
-			&parts->local, parts_placed_pos(parts), m);
-	return parts_transform_anchor(m);
-}
-
 static Point parts_anchor_pos(struct parts *parts)
 {
 	return profile.parts.transforms->anchor_pos(parts);
-}
-
-static void classic_place_global(struct parts *parts, const struct parts_params *parent)
-{
-	Point pos = parts_placed_pos(parts);
-	if (parent) {
-		parts->global.pos = parts_child_pos(parent, pos);
-	} else {
-		parts->global.pos = (Point) { root_pos.x + pos.x, root_pos.y + pos.y };
-	}
-}
-
-static void v14_place_global(struct parts *parts, const struct parts_params *parent)
-{
-	parts_level_transform(parent, &parts->local, parts_placed_pos(parts), parts->global.matrix);
-	parts->global.pos = parts_transform_anchor(parts->global.matrix);
 }
 
 // parent == NULL: a top-level parts, relative to root_pos.
@@ -789,22 +735,6 @@ static void parts_update_global_pos(struct parts *parts, const struct parts_para
 	}
 }
 
-// After a change of this parts' own transform: itself and its subtree.
-// Before v14 the parts' own scale and flips do not move its anchor, only
-// its children's.
-static void classic_update_transform(struct parts *parts)
-{
-	struct parts *child;
-	PARTS_FOREACH_CHILD(child, parts) {
-		parts_update_global_pos(child, &parts->global);
-	}
-}
-
-static void v14_update_transform(struct parts *parts)
-{
-	parts_update_global_pos(parts, parts->parent ? &parts->parent->global : NULL);
-}
-
 static void parts_update_transform(struct parts *parts)
 {
 	profile.parts.transforms->update_transform(parts);
@@ -812,23 +742,6 @@ static void parts_update_transform(struct parts *parts)
 
 static void parts_accumulate_add_color(const struct parts_params *parent, SDL_Color local,
 		bool sub_color_mode, struct parts_params *out);
-
-/*
- * The transform and the add colour sum of a parts without a parent, from
- * its local parameters only; neither is saved. After PE_Load (the parent is
- * attached by the update PE_Load ends with, which then recombines the
- * children) and in that update for a top-level parts. Before v14 nothing is
- * derived: the global parameters are saved and loaded as they are.
- */
-static void classic_load_transform(struct parts *parts)
-{
-}
-
-static void v14_load_transform(struct parts *parts)
-{
-	parts_level_transform(NULL, &parts->local, parts_placed_pos(parts), parts->global.matrix);
-	parts_accumulate_add_color(NULL, parts->local.add_color, parts->sub_color_mode, &parts->global);
-}
 
 void parts_load_transform(struct parts *parts)
 {
@@ -900,28 +813,6 @@ static void parts_screen_upper_left_float(struct parts *parts, struct parts_comm
 	parts_box_transform(parts, common, m);
 	*x = m[0][0] * bx + m[1][0] * by + m[3][0];
 	*y = m[0][1] * bx + m[1][1] * by + m[3][1];
-}
-
-static Point classic_screen_upper_left(struct parts *parts, struct parts_common *common)
-{
-	// As it was: the corner's offset from the anchor, mirrored by the
-	// flips and not scaled.
-	Point anchor = parts_anchor_pos(parts);
-	int rx = common->hitbox.x - parts->local.pos.x, ry = common->hitbox.y - parts->local.pos.y;
-	return (Point) {
-		anchor.x + (parts->global.reverse_lr ? -rx : rx),
-		anchor.y + (parts->global.reverse_tb ? -ry : ry)
-	};
-}
-
-static Point v14_screen_upper_left(struct parts *parts, struct parts_common *common)
-{
-	// The corner in the box (0 unless a surface area moves it), through the
-	// box transform: the flips mirror it around the anchor, and the scales
-	// and rotations above the parts move it as they move the drawing.
-	float x, y;
-	parts_screen_upper_left_float(parts, common, &x, &y);
-	return (Point) { (int)lroundf(x), (int)lroundf(y) };
 }
 
 Point parts_screen_upper_left(struct parts *parts, struct parts_common *common)
@@ -1191,16 +1082,6 @@ static void parts_update_global_rotate_x(struct parts *parts, float parent_rot_x
 	PARTS_FOREACH_CHILD(child, parts) {
 		parts_update_global_rotate_x(child, parts->global.rotation.x);
 	}
-}
-
-// Before v14 a rotation does not move the children.
-static void classic_after_rotation(possibly_unused struct parts *parts)
-{
-}
-
-static void v14_after_rotation(struct parts *parts)
-{
-	parts_update_transform(parts);
 }
 
 void parts_set_rotation_x(struct parts *parts, float rot)
@@ -1950,19 +1831,6 @@ static bool parts_has_dirty_parent(struct parts *parts)
 	return false;
 }
 
-static void classic_combine_pos(struct parts_params *parent, possibly_unused struct parts_params *child,
-		Point pos, struct parts_params *out)
-{
-	out->pos = parts_child_pos(parent, pos);
-}
-
-static void v14_combine_pos(struct parts_params *parent, struct parts_params *child,
-		Point pos, struct parts_params *out)
-{
-	parts_level_transform(parent, child, pos, out->matrix);
-	out->pos = parts_transform_anchor(out->matrix);
-}
-
 // pos: where the child is placed in the parent (parts_placed_pos).
 static void parts_combine_params(struct parts_params *parent, struct parts_params *child,
 		Point pos, bool sub_color_mode, struct parts_params *out)
@@ -2410,32 +2278,6 @@ void parts_v14_gauge_fill_rect(struct parts_gauge *g, bool vertical, Rectangle *
 	*out = r;
 }
 
-static void v14_set_gauge_cg(struct parts *parts, struct parts_gauge *g, struct cg *cg)
-{
-	gfx_delete_texture(&g->cg);
-	gfx_delete_texture(&g->common.texture);
-	gfx_init_texture_with_cg(&g->common.texture, cg);
-	// v14 draws a cropped quad from the original image; no per-frame
-	// render-to-texture copy. cg keeps source dimensions, not an alias.
-	g->cg.w = cg->metrics.w; g->cg.h = cg->metrics.h;
-	parts_set_dims(parts, &g->common, g->cg.w, g->cg.h);
-	parts_dirty(parts);
-	return;
-}
-
-static void classic_set_gauge_cg(struct parts *parts, struct parts_gauge *g, struct cg *cg)
-{
-	gfx_init_texture_with_cg(&g->cg, cg);
-	gfx_init_texture_with_cg(&g->common.texture, cg);
-
-	gfx_init_texture_rgba(&g->common.texture, g->cg.w, g->cg.h, (SDL_Color){0,0,0,255});
-	gfx_copy_with_alpha_map(&g->common.texture, 0, 0, &g->cg, 0, 0, g->cg.w, g->cg.h);
-
-	parts_set_dims(parts, &g->common, g->cg.w, g->cg.h);
-
-	parts_dirty(parts);
-}
-
 static void _parts_set_gauge_cg(struct parts *parts, struct parts_gauge *g, struct cg *cg)
 {
 	return profile.parts.widgets->set_gauge_cg(parts, g, cg);
@@ -2511,78 +2353,14 @@ bool PE_SetVGaugeCG_by_index(int parts_no, int cg_no, int state)
 	return parts_gauge_set_cg_by_index(parts, g, cg_no);
 }
 
-static void v14_hgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
-{
-	g->numerator = rate; g->denominator = 1; g->rate = rate;
-	parts_dirty(parts);
-	return;
-}
-
-static void classic_hgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
-{
-	if (!g->common.texture.handle) {
-		WARNING("HGauge texture uninitialized");
-		return;
-	}
-	int pixels = rate * g->cg.w;
-	gfx_copy_with_alpha_map(&g->common.texture, 0, 0, &g->cg, 0, 0, pixels, g->cg.h);
-	gfx_fill_amap(&g->common.texture, pixels, 0, g->cg.w - pixels, g->cg.h, 0);
-	parts_dirty(parts);
-	g->rate = rate;
-}
-
 void parts_hgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
 {
 	profile.parts.widgets->hgauge_set_rate(parts, g, rate);
 }
 
-static void v14_vgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
-{
-	g->numerator = rate; g->denominator = 1; g->rate = rate;
-	parts_dirty(parts);
-	return;
-}
-
-static void classic_vgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
-{
-	if (!g->common.texture.handle) {
-		WARNING("VGauge texture uninitialized");
-		return;
-	}
-	int pixels = rate * g->cg.h;
-	gfx_copy_with_alpha_map(&g->common.texture, 0, pixels, &g->cg, 0, pixels, g->cg.w, g->cg.h - pixels);
-	gfx_fill_amap(&g->common.texture, 0, 0, g->cg.w, pixels, 0);
-	parts_dirty(parts);
-	g->rate = rate;
-}
-
 void parts_vgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
 {
 	profile.parts.widgets->vgauge_set_rate(parts, g, rate);
-}
-
-static bool v14_set_hgauge_rate(int parts_no, float numerator, float denominator, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_hgauge(parts, state);
-	g->numerator = numerator; g->denominator = denominator;
-	g->rate = denominator > 0 ? numerator / denominator : 1;
-	parts_dirty(parts);
-	return true;
-}
-
-static bool classic_set_hgauge_rate(int parts_no, float numerator, float denominator, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_hgauge(parts, state);
-parts_hgauge_set_rate(parts, g, numerator/denominator);
-	return true;
 }
 
 bool PE_SetHGaugeRate(int parts_no, float numerator, float denominator, int state)
@@ -2595,30 +2373,6 @@ bool PE_SetHGaugeRate_int(int parts_no, int numerator, int denominator, int stat
 	return PE_SetHGaugeRate(parts_no, numerator, denominator, state);
 }
 
-static bool v14_set_vgauge_rate(int parts_no, float numerator, float denominator, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_vgauge(parts, state);
-	g->numerator = numerator; g->denominator = denominator;
-	g->rate = denominator > 0 ? numerator / denominator : 1;
-	parts_dirty(parts);
-	return true;
-}
-
-static bool classic_set_vgauge_rate(int parts_no, float numerator, float denominator, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_vgauge(parts, state);
-parts_vgauge_set_rate(parts, g, (float)numerator/(float)denominator);
-	return true;
-}
-
 bool PE_SetVGaugeRate(int parts_no, float numerator, float denominator, int state)
 {
 	return profile.parts.widgets->set_vgauge_rate(parts_no, numerator, denominator, state);
@@ -2629,63 +2383,9 @@ bool PE_SetVGaugeRate_int(int parts_no, int numerator, int denominator, int stat
 	return PE_SetVGaugeRate(parts_no, numerator, denominator, state);
 }
 
-static bool v14_set_hgauge_area(int parts_no, int x, int y, int w, int h, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_hgauge(parts, state);
-	g->common.surface_area = (Rectangle) {x, y, w, h};
-	parts_common_recalculate_hitbox(parts, &g->common);
-	parts_dirty(parts);
-	// The gauge's size is now the area's.
-	if (!state)
-		parts_layout_size_changed(parts);
-	return true;
-}
-
-static bool classic_set_hgauge_area(int parts_no, int x, int y, int w, int h, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_hgauge(parts, state);
-	parts_set_surface_area(parts, &g->common, x, y, w, h);
-	return true;
-}
-
 bool PE_SetHGaugeSurfaceArea(int parts_no, int x, int y, int w, int h, int state)
 {
 	return profile.parts.widgets->set_hgauge_area(parts_no, x, y, w, h, state);
-}
-
-static bool v14_set_vgauge_area(int parts_no, int x, int y, int w, int h, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_vgauge(parts, state);
-	g->common.surface_area = (Rectangle) {x, y, w, h};
-	parts_common_recalculate_hitbox(parts, &g->common);
-	parts_dirty(parts);
-	// The gauge's size is now the area's.
-	if (!state)
-		parts_layout_size_changed(parts);
-	return true;
-}
-
-static bool classic_set_vgauge_area(int parts_no, int x, int y, int w, int h, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_gauge *g = parts_get_vgauge(parts, state);
-	parts_set_surface_area(parts, &g->common, x, y, w, h);
-	return true;
 }
 
 bool PE_SetVGaugeSurfaceArea(int parts_no, int x, int y, int w, int h, int state)
@@ -2699,35 +2399,6 @@ bool PE_SetVGaugeSurfaceArea(int parts_no, int x, int y, int w, int h, int state
  * functions at 0x599270..0x5999a0 look the component up and call
  * 0x567180..0x5679b0.
  */
-
-static bool v14_set_numeral_cg(int parts_no, struct string *cg_name, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-	// 0x5b49f0: nothing for the same name on a CG numeral; otherwise
-	// the numeral becomes 表示タイプ 0.
-	struct parts *parts = parts_get(parts_no);
-	struct parts_numeral *n = parts_get_numeral(parts, state);
-	if (n->show_type == PARTS_NUMERAL_SHOW_CG && !n->unknown_type
-			&& !strcmp(n->cg_name ? n->cg_name->text : "", cg_name->text))
-		return true;
-	if (n->cg_name)
-		free_string(n->cg_name);
-	n->cg_name = string_dup(cg_name);
-	n->show_type = PARTS_NUMERAL_SHOW_CG;
-	n->unknown_type = false;
-	parts_numeral_resolve_cg(n);
-	return parts_numeral_update(parts, n);
-}
-
-static bool classic_set_numeral_cg(int parts_no, struct string *cg_name, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-	struct parts_numeral *n = parts_get_numeral(parts_get(parts_no), state);
-	n->font_no = parts_load_numeral_font_separate_string(cg_name);
-	return true;
-}
 
 bool PE_SetNumeralCG(int parts_no, struct string *cg_name, int state)
 {
@@ -2758,51 +2429,6 @@ bool PE_SetNumeralLinkedCGNumberWidthWidthList_by_index(int parts_no, int cg_no,
 	int w[12] = { w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w_minus, w_comma };
 	struct parts_numeral *n = parts_get_numeral(parts_get(parts_no), state);
 	n->font_no = parts_load_numeral_font_combined(cg, cg_no, w);
-	return true;
-}
-
-static bool v14_set_numeral_linked_cg(int parts_no, struct string *cg_name,
-		int w0, int w1, int w2, int w3, int w4, int w5, int w6, int w7, int w8,
-		int w9, int w_minus, int w_comma, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	int w[12] = { w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w_minus, w_comma };
-	// 0x5b4ac0: nothing for the same name and widths on a linked CG
-	// numeral; otherwise the numeral becomes 表示タイプ 1. True
-	// whether the CG exists or not (0x5992f0).
-	struct parts *parts = parts_get(parts_no);
-	struct parts_numeral *n = parts_get_numeral(parts, state);
-	if (n->show_type == PARTS_NUMERAL_SHOW_LINKED_CG
-			&& !strcmp(n->cg_name ? n->cg_name->text : "", cg_name->text)
-			&& !memcmp(n->cg_widths, w, sizeof(w)))
-		return true;
-	if (n->cg_name)
-		free_string(n->cg_name);
-	n->cg_name = string_dup(cg_name);
-	memcpy(n->cg_widths, w, sizeof(w));
-	n->show_type = PARTS_NUMERAL_SHOW_LINKED_CG;
-	n->unknown_type = false;
-	parts_numeral_resolve_cg(n);
-	return parts_numeral_update(parts, n);
-}
-
-static bool classic_set_numeral_linked_cg(int parts_no, struct string *cg_name,
-		int w0, int w1, int w2, int w3, int w4, int w5, int w6, int w7, int w8,
-		int w9, int w_minus, int w_comma, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	int w[12] = { w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w_minus, w_comma };
-	int no;
-	struct cg *cg = asset_cg_load_by_name(cg_name->text, &no);
-	if (!cg)
-		return false;
-
-	struct parts_numeral *n = parts_get_numeral(parts_get(parts_no), state);
-	n->font_no = parts_load_numeral_font_combined(cg, no, w);
 	return true;
 }
 
@@ -2932,68 +2558,9 @@ bool PE_SetNumeralSpace(int parts_no, int space, int state)
 	return true;
 }
 
-static bool v14_set_numeral_length(int parts_no, int length, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	// 0x567690: a length below 0 is 0; the comparison is with the
-	// length as given.
-	struct parts_numeral *num = parts_get_numeral(parts, state);
-	if (num->length == length)
-		return true;
-	num->length = max(length, 0);
-	return parts_numeral_update(parts, num);
-}
-
-static bool classic_set_numeral_length(int parts_no, int length, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_numeral *num = parts_get_numeral(parts, state);
-	if (num->length == length)
-		return true;
-
-	num->length = max(1, length);
-	num->have_num = true;
-	parts_numeral_update(parts, num);
-	return true;
-}
-
 bool PE_SetNumeralLength(int parts_no, int length, int state)
 {
 	return profile.parts.widgets->set_numeral_length(parts_no, length, state);
-}
-
-static bool v14_set_numeral_area(int parts_no, int x, int y, int w, int h, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	// 0x567760 keeps the rectangle as it is given; the numeral is
-	// not rebuilt.
-	struct parts_numeral *n = parts_get_numeral(parts, state);
-	n->common.surface_area = (Rectangle) { x, y, w, h };
-	parts_common_recalculate_hitbox(parts, &n->common);
-	parts_dirty(parts);
-	if (!state)
-		parts_layout_size_changed(parts);
-	return true;
-}
-
-static bool classic_set_numeral_area(int parts_no, int x, int y, int w, int h, int state)
-{
-	if (!parts_state_valid(--state))
-		return false;
-
-	struct parts *parts = parts_get(parts_no);
-	struct parts_numeral *n = parts_get_numeral(parts, state);
-	parts_set_surface_area(parts, &n->common, x, y, w, h);
-	return true;
 }
 
 bool PE_SetNumeralSurfaceArea(int parts_no, int x, int y, int w, int h, int state)
@@ -3255,15 +2822,6 @@ int PE_GetPartsOriginPosMode(int parts_no)
 	return parts_get(parts_no)->origin_mode;
 }
 
-static bool parts_is_ancestor(struct parts *ancestor, struct parts *parts)
-{
-	for (struct parts *p = parts; p; p = p->parent) {
-		if (p == ancestor)
-			return true;
-	}
-	return false;
-}
-
 /* v14: a parts belongs to the controller whose root its tree hangs on. The
  * original keeps no other record (0x53afb0 only moves the parts from one
  * child list to another; RemoveController collects a controller's parts from
@@ -3280,78 +2838,6 @@ static void parts_set_controller(struct parts *parts, int controller_no)
 	PARTS_FOREACH_CHILD(child, parts) {
 		parts_set_controller(child, controller_no);
 	}
-}
-
-/* v14: the native setter (0x58f060 -> 0x58f310 -> 0x550d90) links the child
- * immediately and 0 puts it back under its controller's root (0x53ab60); an
- * unknown parent is ignored.
- * AIN walks the tree with NumofChild/GetChild in the same call, e.g.
- * activity::detail::CallUserComponentEventWithChild right after ReadFile. */
-static void parts_set_parent_now(struct parts *parts, int parent_parts_no)
-{
-	// A controller's root stays where it is (0x53b018 for a parent,
-	// 0x53ab93 for 0).
-	if (parts_is_controller_root(parts))
-		return;
-	struct parts *parent = NULL;
-	if (parent_parts_no != 0) {
-		parent = parts_try_get(parent_parts_no);
-		if (!parent || parts_is_ancestor(parts, parent))
-			return;
-	} else {
-		// 0: under the root at the top of the parts' parent chain
-		// (0x53ab60 -> 0x534f00). A tree without one (the system
-		// overlay's, which has no root here) leaves the parts without a
-		// parent.
-		struct parts *top = parts;
-		while (top->parent)
-			top = top->parent;
-		parent = parts_is_controller_root(top) ? top
-			: parts_controller_root(parts->controller_no);
-	}
-	parts->pending_parent = -1;
-	if (parts->parent == parent)
-		return;
-	if (parts->parent) {
-		struct parts *old = parts->parent;
-		// Before leaving: the boxes above the old parent lose its size.
-		parts_layout_size_changed(parts);
-		TAILQ_REMOVE(&old->children, parts, child_list_entry);
-		if (old->states[0].type == PARTS_LAYOUT_BOX)
-			parts_component_dirty(old);
-		parts_user_component_dirty(old);
-	}
-	parts->parent = parent;
-	if (parent) {
-		if (profile.parts.controller_ids && parent->controller_no != parts->controller_no) {
-			static unsigned traced;
-			if (dev_getenv("XSYS4_STAGE2_TRACE") && traced++ < 60)
-				WARNING("S2 layer-root reparent: parts %d (controller %d) under %d (controller %d)",
-					parts->no, parts->controller_no, parent->no, parent->controller_no);
-			parts_set_controller(parts, parent->controller_no);
-		}
-		TAILQ_INSERT_TAIL(&parent->children, parts, child_list_entry);
-		if (parent->states[0].type == PARTS_LAYOUT_BOX)
-			parts_component_dirty(parent);
-		parts_user_component_dirty(parent);
-		// E.g. a user component's content root (the component's size).
-		parts_layout_size_changed(parts);
-	}
-	parts_component_dirty(parts);
-}
-
-static void v14_set_parent(int parts_no, int parent_parts_no)
-{
-	struct parts *parts = parts_get(parts_no);
-	parts_set_parent_now(parts, parent_parts_no);
-	return;
-}
-
-static void classic_set_parent(int parts_no, int parent_parts_no)
-{
-	struct parts *parts = parts_get(parts_no);
-	parts->pending_parent = parent_parts_no;
-	parts_component_dirty(parts);
 }
 
 void PE_SetParentPartsNumber(int parts_no, int parent_parts_no)
@@ -3518,166 +3004,9 @@ int PE_GetInputState(int parts_no)
 	return parts_get(parts_no)->state + 1;
 }
 
-static void v14_set_component_type(int parts_no, int type, int state)
-{
-	// v14 (Dohna Dohna): component types are a game-level widget taxonomy
-	// used by bytecode vtable dispatch via
-	// GetComponentType, not a 1:1 mapping onto engine parts states. Store
-	// the raw value; the actual parts state is built by the pactex loader
-	// and the Create* calls.
-	struct parts *parts = parts_get(parts_no);
-	// Native 0x535e20: the widget already has the type -> nothing
-	// (0x536540). A low-level widget (outer type 18) takes a state type
-	// (19 and up) into that state (0x5653d0) and stays low-level, so
-	// e.g. GetCGDetection's wrapper keeps a detection CG undrawn.
-	// Any other type replaces the widget (raw value, state types
-	// cleared).
-	if (PE_GetComponentType(parts_no, state) == type)
-		return;
-	if (type > 18 && parts->component_type == 18 && state >= 1 && state <= PARTS_NR_STATES) {
-		switch (type) {
-		case 19: case 27: parts_get_cg(parts, state - 1); break;
-		case 21: parts_get_text(parts, state - 1); break;
-		case 22: parts_get_hgauge(parts, state - 1); break;
-		case 23: parts_get_vgauge(parts, state - 1); break;
-		case 24: parts_get_numeral(parts, state - 1); break;
-		case 25:
-			if (parts->states[state - 1].type != PARTS_RECT_DETECTION)
-				parts_state_reset(&parts->states[state - 1], PARTS_RECT_DETECTION);
-			break;
-		case 26: parts_get_construction_process(parts, state - 1); break;
-		default: break;
-		}
-		parts->component_state_type[state - 1] = type;
-		parts_dirty(parts);
-		return;
-	}
-	const int old_type = parts->component_type;
-	parts->component_type = type;
-	// A check box, a radio box or a 橫滾動條 that was another widget
-	// has its constructor's values (checkbox.c).
-	parts_widget_type_changed(parts, old_type);
-	// Preserve explicit raw setters over the loader's inferred state types.
-	memset(parts->component_state_type, 0, sizeof(parts->component_state_type));
-	// A box a script makes (AFL_Parts_CreateLayoutBox ->
-	// CLayoutBoxParts@0 -> SetComponentType 8) is the box widget with
-	// its constructor's values (vertical, 配置 1; layoutbox.c): it lays
-	// out the children AddChild gives it, as a pactex box lays out
-	// its own. CBackLogUnitList@Init makes the backlog's lines one.
-	if (type == 8)
-		parts_get_layout_box(parts);
-	parts_user_component_dirty(parts);
-	return;
-}
-
-static void classic_set_component_type(int parts_no, int type, int state)
-{
-	// v14 (Dohna Dohna): component types are a game-level widget taxonomy
-	// used by bytecode vtable dispatch via
-	// GetComponentType, not a 1:1 mapping onto engine parts states. Store
-	// the raw value; the actual parts state is built by the pactex loader
-	// and the Create* calls.
-	if (!parts_state_valid(--state))
-		return;
-	struct parts *parts = parts_get(parts_no);
-	// The widgets of the older games with the v14 parts library (ain v7
-	// 妻みぐい３: CButtonParts and the like): 0 to 9 as v14.
-	if (type >= 0 && type <= 9 && type != 8) {
-		parts->component_type = type;
-		parts->has_widget_type = true;
-		parts_dirty(parts);
-		return;
-	}
-	parts->has_widget_type = false;
-	enum parts_type pt = PARTS_UNINITIALIZED;
-	switch (type) {
-	case 8:  pt = PARTS_LAYOUT_BOX; break;
-	case 11: pt = PARTS_CG; break;
-	case 12: pt = PARTS_ANIMATION; break;
-	case 13: pt = PARTS_TEXT; break;
-	case 14: pt = PARTS_HGAUGE; break;
-	case 15: pt = PARTS_VGAUGE; break;
-	case 16: pt = PARTS_NUMERAL; break;
-	case 17: pt = PARTS_RECT_DETECTION; break;
-	case 18: pt = PARTS_CONSTRUCTION_PROCESS; break;
-	case 20: pt = PARTS_FLAT; break;
-	case 21: pt = PARTS_3DLAYER; break;
-	case 22: pt = PARTS_MOVIE; break;
-	default:
-		VM_ERROR("unknown component type %d", type);
-	}
-	if (parts->states[state].type != pt)
-		parts_state_reset(&parts->states[state], pt);
-}
-
 void PE_SetComponentType(int parts_no, int type, int state)
 {
 	profile.parts.widgets->set_component_type(parts_no, type, state);
-}
-
-static int v14_get_component_type(int parts_no, int state)
-{
-	// v14: recognized low-level pactex states have their own native type.
-	// Other widgets retain the raw value stored by PE_SetComponentType.
-	// -1 is a valid "no parts" sentinel used by bytecode vtable dispatch.
-	if (parts_no < 0)
-		return -1;
-	struct parts *parts = parts_try_get(parts_no);
-	if (parts) {
-		int native = state >= 1 && state <= PARTS_NR_STATES
-			? parts->component_state_type[state - 1] : 0;
-		if (native) {
-			// A recognized state follows a later CG/text transition.
-			switch (parts->states[state - 1].type) {
-			case PARTS_TEXT: return 21;
-			case PARTS_CG: return native == 21 || native == 22 || native == 23 ? 19 : native;
-			case PARTS_NUMERAL: return 24;
-			case PARTS_HGAUGE: return 22;
-			case PARTS_VGAUGE: return 23;
-			default: return native;
-			}
-		}
-		return parts->component_type;
-	}
-	// Bytecode may probe numbers allocated by GetFreeNumber before
-	// the parts entry exists; auto-create so Wrap/IsValid work.
-	if (parts_no >= 1000000000)
-		return parts_get(parts_no)->component_type;
-	return -1;
-}
-
-static int classic_get_component_type(int parts_no, int state)
-{
-	// v14: recognized low-level pactex states have their own native type.
-	// Other widgets retain the raw value stored by PE_SetComponentType.
-	// -1 is a valid "no parts" sentinel used by bytecode vtable dispatch.
-	if (!parts_state_valid(--state))
-		return -1;
-	struct parts *parts = parts_try_get(parts_no);
-	if (!parts)
-		return -1;
-	if (parts->has_widget_type)
-		return parts->component_type;
-
-	switch (parts->states[state].type) {
-	case PARTS_LAYOUT_BOX: return 8;
-	case PARTS_UNINITIALIZED:  // defaluts to CG
-	case PARTS_CG:
-		return 11;
-	case PARTS_ANIMATION: return 12;
-	case PARTS_TEXT: return 13;
-	case PARTS_HGAUGE: return 14;
-	case PARTS_VGAUGE: return 15;
-	case PARTS_NUMERAL: return 16;
-	case PARTS_RECT_DETECTION: return 17;
-	case PARTS_CONSTRUCTION_PROCESS: return 18;
-	case PARTS_FLAT: return 20;
-	case PARTS_3DLAYER: return 21;
-	case PARTS_MOVIE: return 22;
-	case PARTS_FLASH:
-		break;
-	}
-	VM_ERROR("unsupported component type %d", parts->states[state].type);
 }
 
 int PE_GetComponentType(int parts_no, int state)
@@ -3857,7 +3186,7 @@ void parts_v14_restart(void)
 	pe_last_time = (struct timespec){0};
 	parts_motion_reset();
 	pe_v14_message_reset();
-	pe_v14_activity_reset();
+	pe_activity_reset();
 }
 
 bool PE_IsExist(int parts_no)
@@ -3920,52 +3249,9 @@ static int ctrl_active_index(void)
 	return index >= 0 ? index : ctrl_stack.nr_controllers - 1;
 }
 
-// The smallest ID that is not in use. The original takes the ID from the
-// allocator of free parts numbers, which also hands out the lowest free one
-// (0x418650). v14: a parts number from PARTS_CONTROLLER_ID_BASE up, skipping
-// a number some parts already has (the script may Wrap a layer ID it kept
-// after erasing the layer, which creates a parts of that number); older
-// engines: the position, so that pushes and pops keep ID == position.
-static int v14_alloc_controller_id(void)
-{
-	int id = PARTS_CONTROLLER_ID_BASE;
-	while (parts_controller_index(id) >= 0 || (parts_table && parts_exists(id)))
-		id++;
-	return id;
-}
-
-static int classic_alloc_controller_id(void)
-{
-	int id = 0;
-	while (parts_controller_index(id) >= 0)
-		id++;
-	return id;
-}
-
-static int v14_controller_default_id(int position)
-{
-	return PARTS_CONTROLLER_ID_BASE + position;
-}
-
-static int classic_controller_default_id(int position)
-{
-	return position;
-}
-
 int parts_controller_default_id(int position)
 {
 	return profile.parts.controllers->default_id(position);
-}
-
-static bool v14_is_controller_root(struct parts *parts)
-{
-	return parts->no >= PARTS_CONTROLLER_ID_BASE && parts->no == parts->controller_no;
-}
-
-// Before v14 a controller has no root parts.
-static bool classic_is_controller_root(possibly_unused struct parts *parts)
-{
-	return false;
 }
 
 bool parts_is_controller_root(struct parts *parts)
@@ -3973,43 +3259,9 @@ bool parts_is_controller_root(struct parts *parts)
 	return profile.parts.controllers->is_root(parts);
 }
 
-// v14: the root parts of a controller, numbered with the controller's ID.
-// It has no state, so it is neither drawn nor hit, and saves leave it out.
-// Made outside parts_get, so that it hangs under nothing (0x53d24d: the
-// table's listener is off while 0x53d220 makes the roots).
-static struct parts *ctrl_root_create(int id)
-{
-	struct parts *root = parts_alloc();
-	root->no = id;
-	root->controller_no = id;
-	root->want_save = false;
-	// Neutral for its children: a top-level parts keeps the global z it
-	// had without a parent (parts_combine_params adds the parent's).
-	root->local.z = root->global.z = 0;
-	struct ht_slot *slot = ht_put_int(parts_table, id, NULL);
-	slot->value = root;
-	parts_list_insert(root);
-	return root;
-}
-
-static struct parts *classic_controller_root(possibly_unused int id)
-{
-	return NULL;
-}
-
 struct parts *parts_controller_root(int id)
 {
 	return profile.parts.controllers->root(id);
-}
-
-static struct parts *v14_controller_root(int id)
-{
-	if (id < PARTS_CONTROLLER_ID_BASE)
-		return NULL;
-	struct parts *root = parts_try_get(id);
-	if (!root && parts_controller_index(id) >= 0)
-		root = ctrl_root_create(id);
-	return root;
 }
 
 // Links a parts that hangs under nothing, or under some controller's root,
@@ -4032,22 +3284,9 @@ static void ctrl_root_attach(struct parts *parts)
 	}
 }
 
-static void classic_relink_roots(void)
-{
-}
-
 void parts_controller_relink_roots(void)
 {
 	profile.parts.controllers->relink_roots();
-}
-
-static void v14_relink_roots(void)
-{
-	struct parts *parts;
-	PARTS_LIST_FOREACH(parts) {
-		if (!parts_is_controller_root(parts))
-			ctrl_root_attach(parts);
-	}
 }
 
 static void ctrl_insert(int index, int id)
@@ -4140,21 +3379,6 @@ int PE_AddController(int index)
 	return id;
 }
 
-// v14: the ID is the number of the controller's root parts (0x53d220).
-static void v14_controller_added(int id)
-{
-	if (parts_table)
-		ctrl_root_create(id);
-}
-
-static void classic_controller_added(possibly_unused int id)
-{
-}
-
-static void classic_parts_released(possibly_unused int parts_no)
-{
-}
-
 // Releases the parts of the controller `p` belongs to if that is `id`. The
 // list returns each erased parts' delegate index (SetEventID), not its
 // number: the original collects parts +0x88 (0x53d500 -> 0x5386c0), the field
@@ -4179,64 +3403,6 @@ static void ctrl_release_parts(struct page **erase_number_list, int id)
 	}
 }
 
-// Removes a controller from the stack, releases all parts belonging to it,
-// and returns their delegate indices in `erase_number_list`.
-//
-// v14 (0x53d5f0 -> 0x53d500): `index` is the controller's ID; with any other
-// value, -1 included, the active controller is removed. The last controller
-// is never removed. The other controllers keep their IDs. When the active
-// controller is the one removed, the one below it becomes active.
-//
-// Older engines: `index` is the position and -1 means the active controller.
-// In practice the game only ever passes -1, and the active controller is
-// always the top of the stack at that point, so this degenerates to a simple
-// pop.
-static void v14_remove_controller(struct page **erase_number_list, int index)
-{
-	int pos = parts_controller_index(index);
-	if (ctrl_stack.nr_controllers <= 1)
-		return;
-	if (pos < 0)
-		pos = ctrl_active_index();
-	int id = ctrl_stack.ids[pos];
-	ctrl_release_parts(erase_number_list, id);
-	ctrl_remove_at(pos);
-	if (ctrl_stack.active == id)
-		ctrl_stack.active = ctrl_stack.ids[max(pos - 1, 0)];
-	ctrl_resort_from(pos);
-	return;
-}
-
-static void classic_remove_controller(struct page **erase_number_list, int index)
-{
-	if (index == -1)
-		index = ctrl_stack.active;
-	if (index < 0 || index >= ctrl_stack.nr_controllers)
-		VM_ERROR("invalid controller index %d (nr_controllers=%d)",
-		         index, ctrl_stack.nr_controllers);
-
-	// Collect and release parts belonging to this controller; renumber
-	// parts owned by controllers above it.
-	ctrl_release_parts(erase_number_list, index);
-	struct parts *p;
-	PARTS_LIST_FOREACH(p) {
-		if (p->controller_no > index
-				&& p->controller_no < PARTS_CONTROLLER_SYSTEM_OVERLAY)
-			p->controller_no--;
-	}
-
-	// ID == position: the IDs left are 0..nr_controllers-1 again.
-	ctrl_stack.nr_controllers--;
-	if (ctrl_stack.nr_controllers == 0) {
-		PE_AddController(-1);
-	} else if (ctrl_stack.active == index) {
-		ctrl_stack.active = ctrl_stack.nr_controllers - 1;
-	} else if (ctrl_stack.active > index
-			&& ctrl_stack.active != PARTS_CONTROLLER_SYSTEM_OVERLAY) {
-		ctrl_stack.active--;
-	}
-}
-
 void PE_RemoveController(struct page **erase_number_list, int index)
 {
 	profile.parts.controllers->remove_controller(erase_number_list, index);
@@ -4258,46 +3424,9 @@ void parts_controller_move(int id, int index)
 	ctrl_resort_from(min(pos, index));
 }
 
-static void v14_set_active_controller(int controller_no)
-{
-	// An ID that is not there leaves no controller designated
-	// (0x53d870 returns null and the caller stores it, 0x57ba60).
-	if (controller_no != PARTS_CONTROLLER_SYSTEM_OVERLAY
-			&& parts_controller_index(controller_no) < 0)
-		controller_no = -1;
-	ctrl_stack.active = controller_no;
-	return;
-}
-
-static void classic_set_active_controller(int controller_no)
-{
-	if (controller_no == PARTS_CONTROLLER_SYSTEM_OVERLAY ||
-			(controller_no >= 0 && controller_no < ctrl_stack.nr_controllers))
-		ctrl_stack.active = controller_no;
-	else
-		VM_ERROR("Invalid controller number: %d", controller_no);
-}
-
 void PE_set_active_controller(int controller_no)
 {
 	profile.parts.controllers->set_active_controller(controller_no);
-}
-
-static int v14_get_active_controller(void)
-{
-	if (ctrl_stack.active < 0) {
-		// None designated: the top controller acts, and an empty stack
-		// gets its default controller first (0x58a6f0 -> 0x53e640).
-		if (!ctrl_stack.nr_controllers)
-			return PE_AddController(-1);
-		return ctrl_stack.ids[ctrl_stack.nr_controllers - 1];
-	}
-	return ctrl_stack.active;
-}
-
-static int classic_get_active_controller(void)
-{
-	return ctrl_stack.active;
 }
 
 int PE_get_active_controller(void)
@@ -4438,139 +3567,7 @@ bool PE_ReleaseParts3DLayerPluginID(int parts_no, int state)
 	return true;
 }
 
-const struct parts_widget_ops parts_widget_v14 = {
-	.set_gauge_cg = v14_set_gauge_cg,
-	.hgauge_set_rate = v14_hgauge_set_rate,
-	.vgauge_set_rate = v14_vgauge_set_rate,
-	.set_hgauge_rate = v14_set_hgauge_rate,
-	.set_vgauge_rate = v14_set_vgauge_rate,
-	.set_hgauge_area = v14_set_hgauge_area,
-	.set_vgauge_area = v14_set_vgauge_area,
-	.set_numeral_cg = v14_set_numeral_cg,
-	.set_numeral_linked_cg = v14_set_numeral_linked_cg,
-	.set_numeral_length = v14_set_numeral_length,
-	.set_numeral_area = v14_set_numeral_area,
-	.set_component_type = v14_set_component_type,
-	.get_component_type = v14_get_component_type,
-	.set_parent = v14_set_parent,
-};
-
-const struct parts_widget_ops parts_widget_classic = {
-	.set_gauge_cg = classic_set_gauge_cg,
-	.hgauge_set_rate = classic_hgauge_set_rate,
-	.vgauge_set_rate = classic_vgauge_set_rate,
-	.set_hgauge_rate = classic_set_hgauge_rate,
-	.set_vgauge_rate = classic_set_vgauge_rate,
-	.set_hgauge_area = classic_set_hgauge_area,
-	.set_vgauge_area = classic_set_vgauge_area,
-	.set_numeral_cg = classic_set_numeral_cg,
-	.set_numeral_linked_cg = classic_set_numeral_linked_cg,
-	.set_numeral_length = classic_set_numeral_length,
-	.set_numeral_area = classic_set_numeral_area,
-	.set_component_type = classic_set_component_type,
-	.get_component_type = classic_get_component_type,
-	.set_parent = classic_set_parent,
-};
-
-const struct parts_transform_ops parts_transform_v14 = {
-	.anchor_pos = v14_anchor_pos,
-	.place_global = v14_place_global,
-	.update_transform = v14_update_transform,
-	.load_transform = v14_load_transform,
-	.after_rotation = v14_after_rotation,
-	.screen_upper_left = v14_screen_upper_left,
-	.combine_pos = v14_combine_pos,
-	.screen_to_box = v14_screen_to_box,
-	.layout_size_changed = v14_layout_size_changed,
-	.do_layout = v14_do_layout,
-	.anchor_transform = v14_anchor_transform,
-	.clip_area_transform = v14_clip_area_transform,
-};
-
-const struct parts_transform_ops parts_transform_classic = {
-	.anchor_pos = classic_anchor_pos,
-	.place_global = classic_place_global,
-	.update_transform = classic_update_transform,
-	.load_transform = classic_load_transform,
-	.after_rotation = classic_after_rotation,
-	.screen_upper_left = classic_screen_upper_left,
-	.combine_pos = classic_combine_pos,
-	.screen_to_box = classic_screen_to_box,
-	.layout_size_changed = classic_layout_size_changed,
-	.do_layout = classic_do_layout,
-	.anchor_transform = classic_anchor_transform,
-	.clip_area_transform = classic_clip_area_transform,
-};
-
-const struct parts_transform_ops parts_transform_v7 = {
-	.anchor_pos = classic_anchor_pos,
-	.place_global = classic_place_global,
-	.update_transform = classic_update_transform,
-	.load_transform = classic_load_transform,
-	.after_rotation = classic_after_rotation,
-	.screen_upper_left = classic_screen_upper_left,
-	.combine_pos = classic_combine_pos,
-	.screen_to_box = classic_screen_to_box,
-	.layout_size_changed = classic_layout_size_changed,
-	.do_layout = classic_do_layout,
-	.anchor_transform = classic_anchor_transform,
-	.clip_area_transform = classic_clip_area_transform,
-};
-
-const struct parts_controller_ops parts_controller_v14 = {
-	.alloc_id = v14_alloc_controller_id,
-	.default_id = v14_controller_default_id,
-	.is_root = v14_is_controller_root,
-	.root = v14_controller_root,
-	.relink_roots = v14_relink_roots,
-	.controller_added = v14_controller_added,
-	.parts_released = pe_v14_activity_parts_released,
-	.remove_controller = v14_remove_controller,
-	.set_active_controller = v14_set_active_controller,
-	.get_active_controller = v14_get_active_controller,
-};
-
-const struct parts_controller_ops parts_controller_classic = {
-	.alloc_id = classic_alloc_controller_id,
-	.default_id = classic_controller_default_id,
-	.is_root = classic_is_controller_root,
-	.root = classic_controller_root,
-	.relink_roots = classic_relink_roots,
-	.controller_added = classic_controller_added,
-	.parts_released = classic_parts_released,
-	.remove_controller = classic_remove_controller,
-	.set_active_controller = classic_set_active_controller,
-	.get_active_controller = classic_get_active_controller,
-};
-
-// ain v7 with activities: as classic so far. A change for these games replaces
-// an entry here with a v7_ function, and classic_ stays as it is.
-const struct parts_widget_ops parts_widget_v7 = {
-	.set_gauge_cg = classic_set_gauge_cg,
-	.hgauge_set_rate = classic_hgauge_set_rate,
-	.vgauge_set_rate = classic_vgauge_set_rate,
-	.set_hgauge_rate = classic_set_hgauge_rate,
-	.set_vgauge_rate = classic_set_vgauge_rate,
-	.set_hgauge_area = classic_set_hgauge_area,
-	.set_vgauge_area = classic_set_vgauge_area,
-	.set_numeral_cg = classic_set_numeral_cg,
-	.set_numeral_linked_cg = classic_set_numeral_linked_cg,
-	.set_numeral_length = classic_set_numeral_length,
-	.set_numeral_area = classic_set_numeral_area,
-	.set_component_type = classic_set_component_type,
-	.get_component_type = classic_get_component_type,
-	.set_parent = classic_set_parent,
-};
-
-const struct parts_controller_ops parts_controller_v7 = {
-	.alloc_id = classic_alloc_controller_id,
-	.default_id = classic_controller_default_id,
-	.is_root = classic_is_controller_root,
-	.root = classic_controller_root,
-	.relink_roots = classic_relink_roots,
-	.controller_added = classic_controller_added,
-	.parts_released = classic_parts_released,
-	.remove_controller = classic_remove_controller,
-	.set_active_controller = classic_set_active_controller,
-	.get_active_controller = classic_get_active_controller,
-};
+// The functions of each generation.
+#include "classic/parts.h"
+#include "v14/parts.h"
+#include "v7/parts.h"

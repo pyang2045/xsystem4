@@ -23,7 +23,7 @@
  * component types and parent-child relationships.
  *
  * Registered from PartsEngine's _PostLink when the AIN declares the
- * Activity API (v14 games); see pe_v14_activity_prelink().
+ * Activity API (v14 games); see pe_activity_prelink().
  */
 
 #include <assert.h>
@@ -153,7 +153,7 @@ static bool activity_trace(void)
 	return on;
 }
 
-void pe_v14_activity_parts_released(int parts_no)
+void pe_activity_parts_released(int parts_no)
 {
 	if (parts_no < ACTIVITY_PARTS_BASE || parts_no >= next_activity_parts_no)
 		return;
@@ -168,7 +168,7 @@ void pe_v14_activity_parts_released(int parts_no)
 
 // A restart (system.Reset). The original builds a new parts manager
 // (0x4b30f0, 0x4b4bf0): no activity name is taken and the numbers start over.
-void pe_v14_activity_reset(void)
+void pe_activity_reset(void)
 {
 	for (int i = 0; i < nr_activities; i++)
 		activity_intents_free(&activities[i]);
@@ -207,7 +207,7 @@ static bool activity_read_str(struct iarray_reader *r, char *buf, size_t size)
 	return !r->error;
 }
 
-void pe_v14_activity_save(struct iarray_writer *w)
+void pe_activity_save(struct iarray_writer *w)
 {
 	iarray_write(w, SAVE_ACTIVITIES);
 	iarray_write(w, next_activity_parts_no);
@@ -235,12 +235,12 @@ void pe_v14_activity_save(struct iarray_writer *w)
 
 // Without the section (an older save) the table is left as it is. A section
 // that does not read as one is warned about and leaves the table empty.
-void pe_v14_activity_load(struct iarray_reader *r)
+void pe_activity_load(struct iarray_reader *r)
 {
 	if (r->error || r->pos >= r->size || r->data[r->pos].i != SAVE_ACTIVITIES)
 		return;
 	iarray_read(r);
-	pe_v14_activity_reset();
+	pe_activity_reset();
 	int next_no = iarray_read(r);
 	int nr = iarray_read(r);
 	if (r->error || next_no < ACTIVITY_PARTS_BASE || nr < 0 || nr > MAX_ACTIVITIES)
@@ -293,10 +293,10 @@ void pe_v14_activity_load(struct iarray_reader *r)
 	return;
 invalid:
 	WARNING("invalid activity section");
-	pe_v14_activity_reset();
+	pe_activity_reset();
 }
 
-bool pe_v14_activity_number_released(int parts_no)
+bool pe_activity_number_released(int parts_no)
 {
 	int i = parts_no - ACTIVITY_PARTS_BASE;
 	return i >= 0 && i < controller_released_size && controller_released[i];
@@ -4161,7 +4161,7 @@ static bool activity_intent_declared(void)
 		&& f->arguments[3].type.data == AIN_STRING;
 }
 
-void pe_v14_activity_prelink(void)
+void pe_activity_prelink(void)
 {
 	struct static_library *lib = &lib_PartsEngine;
 	int lib_no = ain_get_library(ain, "PartsEngine");
