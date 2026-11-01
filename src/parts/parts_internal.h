@@ -740,8 +740,11 @@ struct parts {
 	bool pixel_hittest;
 	bool lock_input_state;
 	bool want_save;
-	// SetWantSaveBackScene: SaveBackScene keeps this parts and its subtree.
-	bool want_back_scene;
+	// SetWantSaveBackScene(false): SaveBackScene leaves out this parts and
+	// its subtree. Everything else that shows is kept.
+	bool no_back_scene;
+	// A copy made by LoadBackScene: the index of the layer it was saved on.
+	int back_scene_layer;
 	bool draggable;
 	// The sound archive's numbers of the cursor and the click sound, which
 	// the input plays (-1: none). v14: those of sound_names[2] and [3]
@@ -891,6 +894,11 @@ struct parts_controller_stack {
 	int *ids;  // ids[position] is the ID of the controller there
 	int cap;
 };
+// The sprite z range of a layer among LoadBackScene's copies.
+#define PARTS_BACK_SCENE_LAYER_Z 1000000
+void parts_set_show(struct parts *parts, bool show);
+void parts_set_multiply_color(struct parts *parts, SDL_Color color);
+
 extern struct parts_controller_stack ctrl_stack;
 extern bool parts_multi_controller;
 int parts_controller_index(int id);
@@ -1102,6 +1110,7 @@ enum parts_message_type {
 	PARTS_MSG_DROP_LEAVE     = 13,
 	PARTS_MSG_KEY_TRIGGER    = 14,
 	PARTS_MSG_KEY_DOWN       = 15,
+	PARTS_MSG_KEY_PRESS      = 16,	// ain v7: once, then repeating while held
 	PARTS_MSG_KEY_UP         = 17,
 	PARTS_MSG_SCROLL         = 20,	// ain v7: the bar's position and its largest
 	PARTS_MSG_CHANGED_FLAG   = 22,	// ain v7: a check box's value

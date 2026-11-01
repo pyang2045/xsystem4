@@ -130,6 +130,10 @@ static int parts_get_sprite_z2(struct parts *parts)
 {
 	if (!parts_multi_controller)
 		return 0;
+	// LoadBackScene's copies share a controller: the layers they were saved
+	// on still order them.
+	if (parts->no < -1)
+		return parts->back_scene_layer * PARTS_BACK_SCENE_LAYER_Z + parts->global.z;
 	return parts->global.z;
 }
 

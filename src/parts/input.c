@@ -44,6 +44,10 @@ static bool prev_clicking = false;
 static int clicked_parts = 0;
 // the current (partially) clicked parts number
 static int click_down_parts = 0;
+// ain v7: KeyPress repeating while the button or key is held.
+#define KEY_REPEAT_DELAY_MS 500
+#define KEY_REPEAT_INTERVAL_MS 100
+static int click_repeat_ms;
 // v14: the parts under the cursor when the left button went down within the
 // scope, the one its release clicks: the original's left slot (+0x1ec),
 // which holds it from the press until the update of the release; see
@@ -525,11 +529,22 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 
 		// KEY_TRIGGER message fires on press transition
 		parts_msg_push(parts, PARTS_MSG_KEY_TRIGGER, "i", VK_LBUTTON);
+		if (parts_v7_activities) {
+			parts_msg_push(parts, PARTS_MSG_KEY_PRESS, "i", VK_LBUTTON);
+			click_repeat_ms = KEY_REPEAT_DELAY_MS;
+		}
 	}
 
 	// KEY_DOWN message fires every frame while held (not first frame)
 	if (prev_clicking && cur_clicking && click_down_parts == parts->no) {
 		parts_msg_push(parts, PARTS_MSG_KEY_DOWN, "i", VK_LBUTTON);
+		if (parts_v7_activities) {
+			click_repeat_ms -= passed_time;
+			if (click_repeat_ms <= 0) {
+				parts_msg_push(parts, PARTS_MSG_KEY_PRESS, "i", VK_LBUTTON);
+				click_repeat_ms = KEY_REPEAT_INTERVAL_MS;
+			}
+		}
 	}
 
 	if (cur_clicking && click_down_parts == parts->no) {
@@ -1106,6 +1121,37 @@ static void v14_update_input(int passed_time)
 	v14_prev_have_pos = have_pos;
 }
 
+/*
+ * ain v7: the Whole key events (the mouse buttons go to the parts under the
+ * cursor). KeyPress repeats while the key is held, at the usual rates: the
+ * original's are not known.
+ */
+static void parts_whole_keys_update(int passed_time)
+{
+	static bool down[256];
+	static int repeat_ms[256];
+	for (int vk = 0; vk < 256; vk++) {
+		if (vk == VK_LBUTTON || vk == VK_RBUTTON || vk == VK_MBUTTON)
+			continue;
+		bool is_down = key_is_down(vk);
+		if (is_down && !down[vk]) {
+			parts_msg_push(NULL, PARTS_MSG_KEY_TRIGGER, "i", vk);
+			parts_msg_push(NULL, PARTS_MSG_KEY_PRESS, "i", vk);
+			repeat_ms[vk] = KEY_REPEAT_DELAY_MS;
+		} else if (is_down) {
+			parts_msg_push(NULL, PARTS_MSG_KEY_DOWN, "i", vk);
+			repeat_ms[vk] -= passed_time;
+			if (repeat_ms[vk] <= 0) {
+				parts_msg_push(NULL, PARTS_MSG_KEY_PRESS, "i", vk);
+				repeat_ms[vk] = KEY_REPEAT_INTERVAL_MS;
+			}
+		} else if (down[vk]) {
+			parts_msg_push(NULL, PARTS_MSG_KEY_UP, "i", vk);
+		}
+		down[vk] = is_down;
+	}
+}
+
 void PE_UpdateInputState(int passed_time)
 {
 	if (ain->version >= 14) {
@@ -1128,6 +1174,7 @@ void PE_UpdateInputState(int passed_time)
 	}
 
 	if (parts_v7_activities) {
+		parts_whole_keys_update(passed_time);
 		// The Whole wheel event, once a notch: the wheel stays set until a
 		// script clears it, as the message wait polls it too.
 		static bool wheel_sent;

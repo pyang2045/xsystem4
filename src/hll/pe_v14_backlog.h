@@ -66,6 +66,14 @@ static int PE_v14_GetVScrollbarViewSize(int number)
 	return parts ? parts_scrollbar_view(parts) : 0;
 }
 
+/* int GetVScrollbarMoveSizeByButton(int Number): the 上一頁/下一頁 step of the
+ * back scene's bar (ain v7). */
+static int PE_v14_GetVScrollbarMoveSizeByButton(int number)
+{
+	struct parts *parts = pe_v14_vscrollbar(number);
+	return parts ? parts->scrollbar.button_move : 0;
+}
+
 /* int GetVScrollbarScrollPos(int Number): case 279 -> 0x591b90 (+0x118). */
 static int PE_v14_GetVScrollbarScrollPos(int number)
 {
@@ -159,6 +167,7 @@ static void pe_v14_register_backlog(void)
 	static_library_register(lib, "GetVScrollbarTotalSize", PE_v14_GetVScrollbarTotalSize);
 	static_library_register(lib, "GetVScrollbarViewSize", PE_v14_GetVScrollbarViewSize);
 	static_library_register(lib, "GetVScrollbarScrollPos", PE_v14_GetVScrollbarScrollPos);
+	static_library_register(lib, "GetVScrollbarMoveSizeByButton", PE_v14_GetVScrollbarMoveSizeByButton);
 	static_library_register(lib, "GetVScrollbarScrollRate", PE_v14_GetVScrollbarScrollRate);
 	static_library_register(lib, "GetPartsTextFontProperty", PE_v14_GetPartsTextFontProperty);
 	static_library_register(lib, "Parts_GetTextCharSpace", PE_v14_Parts_GetTextCharSpace);

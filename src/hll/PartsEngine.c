@@ -2372,6 +2372,10 @@ static void pe_v7_register(int libno)
 		static_library_register(lib, "SaveBackScene", PE_SaveBackScene);
 		static_library_register(lib, "LoadBackScene", PE_LoadBackScene);
 		static_library_register(lib, "ClearBackScene", PE_ClearBackScene);
+		static_library_register(lib, "SetFontColorForBackScene", PE_SetFontColorForBackScene);
+		static_library_register(lib, "SetMulColorForBackScene", PE_SetMulColorForBackScene);
+		static_library_register(lib, "SetAlphaForBackScene", PE_SetAlphaForBackScene);
+		static_library_register(lib, "SetShowForBackScene", PE_SetShowForBackScene);
 	}
 	fun = get_fun(libno, "Parts_SetSoundName");
 	if (fun && fun->nr_arguments == 3 && fun->arguments[0].type.data == AIN_INT

@@ -969,9 +969,23 @@ bool parts_link_shown(struct parts *parts)
 	return parts_get(parts->linked_to)->is_hovered;
 }
 
+/*
+ * ain v7: the script shows and hides a layer through the parts numbered with
+ * its ID (CBackSceneView@HideAllFrontScene). A parts on the layer has no link
+ * to that one, as it has to the root of its controller in v14, so it is looked
+ * up here. LoadBackScene's copies are on the bottom layer only to be ordered.
+ */
+static bool parts_layer_hidden(struct parts *parts)
+{
+	if (!parts_v7_activities || parts->no < -1)
+		return false;
+	struct parts *layer = parts_try_get(parts->controller_no);
+	return layer && !layer->local.show;
+}
+
 void parts_render(struct parts *parts)
 {
-	if (!parts->global.show)
+	if (!parts->global.show || parts_layer_hidden(parts))
 		return;
 	if (parts->message_window && !parts_message_window_show)
 		return;

@@ -943,7 +943,7 @@ static void save_parts(struct iarray_writer *w, struct parts *parts, int version
 	}
 	if (parts_v7_activities) {
 		iarray_write(w, parts->has_widget_type);
-		iarray_write(w, parts->want_back_scene);
+		iarray_write(w, parts->no_back_scene);
 	}
 	// TODO: once the Rance 9 save format stabilizes, bump save version
 	// and save unconditionally
@@ -971,9 +971,23 @@ static void save_parts(struct iarray_writer *w, struct parts *parts, int version
 	iarray_write_at(w, motion_count_pos, motion_count);
 }
 
-static void load_parts(struct iarray_reader *r, int version)
+// While LoadBackScene loads a snapshot: the live parts keep their numbers.
+static bool loading_back_scene;
+
+static int back_scene_no(int no)
+{
+	return -2 - no;
+}
+
+static int load_parts_no(struct iarray_reader *r)
 {
 	int no = iarray_read(r);
+	return loading_back_scene && no >= 0 ? back_scene_no(no) : no;
+}
+
+static struct parts *load_parts(struct iarray_reader *r, int version)
+{
+	int no = load_parts_no(r);
 	struct parts *parts = parts_get(no);
 	parts->state = iarray_read(r);
 	for (int i = 0; i < PARTS_NR_STATES; i++) {
@@ -982,7 +996,7 @@ static void load_parts(struct iarray_reader *r, int version)
 
 	load_parts_params(r, &parts->local);
 	load_parts_params(r, &parts->global);
-	parts->pending_parent = iarray_read(r);
+	parts->pending_parent = load_parts_no(r);
 	parts->delegate_index = iarray_read(r);
 	parts->sprite_deform = iarray_read(r);
 	// v14: the states' own deforms come with the CG deform section, if
@@ -993,13 +1007,13 @@ static void load_parts(struct iarray_reader *r, int version)
 	parts->on_cursor_sound = iarray_read(r);
 	parts->on_click_sound = iarray_read(r);
 	parts->origin_mode = iarray_read(r);
-	parts->linked_to = iarray_read(r);
-	parts->linked_from = iarray_read(r);
+	parts->linked_to = load_parts_no(r);
+	parts->linked_from = load_parts_no(r);
 	parts->draw_filter = iarray_read(r);
 	if (version > 0)
 		parts->message_window = iarray_read(r);
 	if (version > 2)
-		parts->alpha_clipper_parts_no = iarray_read(r);
+		parts->alpha_clipper_parts_no = load_parts_no(r);
 	if (version >= 4) {
 		parts->clip_enabled = !!iarray_read(r);
 		iarray_read_rectangle(r, &parts->clip_area);
@@ -1024,7 +1038,7 @@ static void load_parts(struct iarray_reader *r, int version)
 	}
 	if (parts_v7_activities) {
 		parts->has_widget_type = iarray_read(r);
-		parts->want_back_scene = iarray_read(r);
+		parts->no_back_scene = iarray_read(r);
 	}
 	// The transform is not saved (v14); a child's is combined once its
 	// parent is attached, by the update PE_Load ends with.
@@ -1054,6 +1068,7 @@ static void load_parts(struct iarray_reader *r, int version)
 	parts_list_resort(parts);
 	parts_component_dirty(parts);
 	parts_recalculate_hitbox(parts);
+	return parts;
 }
 
 static void save_numeral_fonts(struct iarray_writer *w)
@@ -1560,35 +1575,38 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 }
 
 /*
- * The back scene (ain v7 妻みぐい３): at each message the script saves the
- * parts it marked with SetWantSaveBackScene (the layers of the scene, not
- * the system's) with SaveBackScene into the ADV scene keeper, and the
- * backlog's scene view (backscene::detail::CBackSceneView) hides the front
- * layers and shows a saved one with LoadBackScene until ClearBackScene.
- * The snapshot holds those parts and their subtrees in the parts record
- * layout. Showing a snapshot is not done yet: LoadBackScene leaves the
- * screen as it is.
+ * The back scene (ain v7 妻みぐい３): at each message the script keeps the
+ * scene with SaveBackScene in its ADV scene keeper, and the scene view
+ * (backscene::detail::CBackSceneView) hides every layer and shows a kept scene
+ * with LoadBackScene until ClearBackScene. The script only ever turns
+ * SetWantSaveBackScene off (the system buttons, the mode CG, debug displays),
+ * so a snapshot holds whatever shows without those. Its parts are loaded as
+ * copies under numbers of their own, on the bottom layer below the view's: the
+ * hidden live parts stay as they are for the script to go back to, and the
+ * ForBackScene calls, given the live numbers, change only the copies.
  */
 void PE_SetWantSaveBackScene(int parts_no, bool enable)
 {
 	struct parts *parts = parts_try_get(parts_no);
 	if (parts)
-		parts->want_back_scene = enable;
+		parts->no_back_scene = !enable;
 }
 
 bool PE_IsWantSaveBackScene(int parts_no)
 {
 	struct parts *parts = parts_try_get(parts_no);
-	return parts && parts->want_back_scene;
+	return parts && !parts->no_back_scene;
 }
 
 static bool parts_in_back_scene(struct parts *parts)
 {
+	if (parts->no < -1 || !parts->global.show)
+		return false;
 	for (; parts; parts = parts->parent) {
-		if (parts->want_back_scene)
-			return true;
+		if (parts->no_back_scene)
+			return false;
 	}
-	return false;
+	return true;
 }
 
 bool PE_SaveBackScene(struct page **buffer)
@@ -1619,14 +1637,72 @@ bool PE_SaveBackScene(struct page **buffer)
 	return true;
 }
 
-bool PE_LoadBackScene(struct page **buffer)
-{
-	struct iarray_reader r;
-	return buffer && *buffer && iarray_init_reader(&r, *buffer, "XBS");
-}
+static int *back_scene_parts;
+static int nr_back_scene_parts;
 
 void PE_ClearBackScene(void)
 {
+	for (int i = 0; i < nr_back_scene_parts; i++)
+		parts_release(back_scene_parts[i]);
+	free(back_scene_parts);
+	back_scene_parts = NULL;
+	nr_back_scene_parts = 0;
+}
+
+bool PE_LoadBackScene(struct page **buffer)
+{
+	PE_ClearBackScene();
+	struct iarray_reader r;
+	if (!buffer || !*buffer || !iarray_init_reader(&r, *buffer, "XBS"))
+		return false;
+	int version = iarray_read(&r);
+	int count = iarray_read(&r);
+	if (version != CURRENT_SAVE_VERSION || count < 0) {
+		WARNING("unrecognized back scene data");
+		return false;
+	}
+	back_scene_parts = xcalloc(count, sizeof(int));
+	loading_back_scene = true;
+	for (int i = 0; i < count && !r.error; i++) {
+		struct parts *parts = load_parts(&r, version);
+		back_scene_parts[nr_back_scene_parts++] = parts->no;
+		parts->back_scene_layer = parts->controller_no;
+		if (ctrl_stack.nr_controllers > 0)
+			parts->controller_no = ctrl_stack.ids[0];
+		parts->clickable = false;
+		parts->want_save = false;
+		parts_clear_motion(parts);
+		parts_list_resort(parts);
+	}
+	loading_back_scene = false;
+	PE_UpdateComponent(0);
+	return true;
+}
+
+void PE_SetFontColorForBackScene(int parts_no, int r, int g, int b, int state)
+{
+	PE_SetPartsFontColor(back_scene_no(parts_no), r, g, b, state);
+}
+
+void PE_SetMulColorForBackScene(int parts_no, int r, int g, int b)
+{
+	struct parts *parts = parts_try_get(back_scene_no(parts_no));
+	if (parts)
+		parts_set_multiply_color(parts, (SDL_Color){r, g, b, 255});
+}
+
+void PE_SetAlphaForBackScene(int parts_no, int alpha)
+{
+	struct parts *parts = parts_try_get(back_scene_no(parts_no));
+	if (parts)
+		parts_set_alpha(parts, alpha);
+}
+
+void PE_SetShowForBackScene(int parts_no, bool show)
+{
+	struct parts *parts = parts_try_get(back_scene_no(parts_no));
+	if (parts)
+		parts_set_show(parts, show);
 }
 
 bool PE_SaveWithoutHideParts(struct page **buffer)
