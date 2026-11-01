@@ -95,8 +95,8 @@ struct activity {
 	/* The end keys (see end_key_insert): unique, in ascending order. */
 	int end_keys[MAX_ACTIVITY_END_KEYS];
 	int nr_end_keys;
-	/* Not in the save section: a restored image's activities are read
-	 * from their pactex again. */
+	/* In a section of their own (pe_activity_save_intents). A save without it
+	 * has none: nothing reads the pactex again on a load. */
 	struct activity_intent *intents;
 	int nr_intents;
 };
@@ -187,6 +187,7 @@ void pe_activity_reset(void)
  * parts. Strings are a length and then one byte a word.
  */
 #define SAVE_ACTIVITIES 0x54434150 /* "PACT" */
+#define SAVE_ACTIVITY_INTENTS 0x544e4950 /* "PINT" */
 
 static void activity_write_str(struct iarray_writer *w, const char *s)
 {
@@ -3292,6 +3293,66 @@ static void activity_intent_add_dest(struct activity_intent *in, const char *des
 {
 	in->dests = xrealloc_array(in->dests, in->nr_dests, in->nr_dests + 1, sizeof(*in->dests));
 	in->dests[in->nr_dests++] = xstrdup(dest);
+}
+
+/*
+ * A replay runs each scene between a save and a load of the whole image
+ * (replaymode Browse, game::MemoryModeEvent_Begin/_End), and the load frees the
+ * intents. Without them the list's 返回 still gets its click, but
+ * CASPartsActivity@MouseLClickEvent finds no intent and nothing happens.
+ */
+void pe_activity_save_intents(struct iarray_writer *w)
+{
+	iarray_write(w, SAVE_ACTIVITY_INTENTS);
+	iarray_write(w, nr_activities);
+	for (int i = 0; i < nr_activities; i++) {
+		struct activity *act = &activities[i];
+		iarray_write(w, act->nr_intents);
+		for (int j = 0; j < act->nr_intents; j++) {
+			struct activity_intent *in = &act->intents[j];
+			activity_write_str(w, in->parts_name);
+			iarray_write(w, in->type);
+			iarray_write(w, in->nr_dests);
+			for (int k = 0; k < in->nr_dests; k++)
+				activity_write_str(w, in->dests[k]);
+		}
+	}
+}
+
+void pe_activity_load_intents(struct iarray_reader *r)
+{
+	if (r->error || r->pos >= r->size || r->data[r->pos].i != SAVE_ACTIVITY_INTENTS)
+		return;
+	iarray_read(r);
+	int nr = iarray_read(r);
+	if (r->error || nr != nr_activities)
+		goto invalid;
+	for (int i = 0; i < nr; i++) {
+		int nr_intents = iarray_read(r);
+		if (r->error || nr_intents < 0 || (unsigned)nr_intents > r->size - r->pos)
+			goto invalid;
+		for (int j = 0; j < nr_intents; j++) {
+			char parts_name[256];
+			if (!activity_read_str(r, parts_name, sizeof(parts_name)))
+				goto invalid;
+			int type = iarray_read(r);
+			struct activity_intent *in = activity_intent_set(&activities[i], parts_name, type);
+			int nr_dests = iarray_read(r);
+			if (r->error || nr_dests < 0 || (unsigned)nr_dests > r->size - r->pos)
+				goto invalid;
+			for (int k = 0; k < nr_dests; k++) {
+				char dest[1024];
+				if (!activity_read_str(r, dest, sizeof(dest)))
+					goto invalid;
+				activity_intent_add_dest(in, dest);
+			}
+		}
+	}
+	return;
+invalid:
+	WARNING("invalid activity intent section");
+	for (int i = 0; i < nr_activities; i++)
+		activity_intents_free(&activities[i]);
 }
 
 /* 遷移先 and 遷移方法 of a parts node (see struct activity_intent). A string

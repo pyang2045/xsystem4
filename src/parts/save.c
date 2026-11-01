@@ -1562,6 +1562,8 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		save_wheelable(&w, save_hidden);
 		save_sound_names(&w, save_hidden);
 		pe_activity_save(&w);
+		if (version >= 15)
+			pe_activity_save_intents(&w);
 		save_unique_ids(&w, save_hidden);
 		save_user_components(&w, save_hidden);
 		save_buttons(&w, save_hidden);
@@ -1810,6 +1812,8 @@ bool PE_Load(struct page **buffer)
 		}
 		load_sound_names(&r);
 		pe_activity_load(&r);
+		if (version >= 15)
+			pe_activity_load_intents(&r);
 		load_unique_ids(&r);
 		load_user_components(&r);
 		load_buttons(&r);

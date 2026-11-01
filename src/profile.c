@@ -102,7 +102,7 @@ static const struct {
 			.transforms = &parts_transform_v7,
 			.input = &parts_input_v7,
 			.bindings = &parts_bindings_v7,
-			.save_version = 14,
+			.save_version = 15,
 			.activity_widgets = true,
 			.activity_save = true,
 			.activity_pointer = true,
@@ -114,6 +114,7 @@ static const struct {
 			.movies_in_update = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
+		.lang = { .no_method_empty_delegate = true },
 	},
 	{
 		.name = "gui_parts_v6",

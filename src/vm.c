@@ -4949,7 +4949,14 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 				delete_page(dg_i);
 			else
 				dg_i = heap_alloc_slot(VM_PAGE);
-			heap_set_page(dg_i, delegate_new_from_method(obj, fun));
+			// DG_STR_TO_METHOD gives -1 for a name with no function: an
+			// entry would count, and the script tests DG_NUMOF to see if
+			// it has a function (妻みぐい３: SetSystemButton's empty 条件関数,
+			// which left MENU disabled). 0x60c190 returns with it empty.
+			if (fun < 1 && profile.lang.no_method_empty_delegate)
+				heap_set_page(dg_i, alloc_page(DELEGATE_PAGE, 0, 0));
+			else
+				heap_set_page(dg_i, delegate_new_from_method(obj, fun));
 		}
 		break;
 	}
@@ -5125,6 +5132,11 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 			int slot = heap_alloc_slot(VM_PAGE);
 			heap_set_page(slot, NULL);
 			stack_push(slot);
+			break;
+		}
+		if (fun < 1 && profile.lang.no_method_empty_delegate) {
+			// 0x60f080, as DG_SET.
+			stack_push(heap_alloc_page(alloc_page(DELEGATE_PAGE, 0, 0)));
 			break;
 		}
 		// v14: only a lambda keeps the creating frame's local page as

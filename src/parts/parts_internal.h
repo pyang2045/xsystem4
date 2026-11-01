@@ -928,6 +928,8 @@ struct iarray_writer;
 struct iarray_reader;
 void pe_activity_save(struct iarray_writer *w);
 void pe_activity_load(struct iarray_reader *r);
+void pe_activity_save_intents(struct iarray_writer *w);
+void pe_activity_load_intents(struct iarray_reader *r);
 void parts_v14_restart(void);
 void pe_v14_message_reset(void);
 bool pe_activity_number_released(int parts_no);

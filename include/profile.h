@@ -116,6 +116,8 @@ struct lang_features {
 	bool typed_arrays;
 	// The script's strings are SJIS whatever the legacy GB18030 score says.
 	bool strings_are_sjis;
+	// A delegate set to a method with no function (number below 1) is empty.
+	bool no_method_empty_delegate;
 };
 
 // One game's oddities, keyed by name in src/hacks.c.
