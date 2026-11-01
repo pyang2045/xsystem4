@@ -191,6 +191,7 @@ struct parts *parts_get(int parts_no)
 	// A new parts goes to the active controller (v14: to the top one while
 	// none is designated, 0x53d1d0).
 	parts->controller_no = PE_get_active_controller();
+	parts->gui_controller = parts_gui_controller();
 	slot->value = parts;
 	parts_list_insert(parts);
 	if (profile.parts.controller_ids) {
@@ -1816,6 +1817,7 @@ bool PE_Init(void)
 void PE_Reset(void)
 {
 	parts_reset_input();
+	parts_gui_controllers_reset();
 	PE_ReleaseAllParts();
 	PE_ReleaseMessage();
 	ctrl_stack_init();
@@ -3198,6 +3200,12 @@ void PE_SetSpeedupRateByMessageSkip(int parts_no, int rate)
 {
 	if (rate != 1)
 		UNIMPLEMENTED("(%d, %d)");
+}
+
+// 0x546070 -> 0x5336f0 reads the rate of the parts' component; here it stays 1.
+int PE_GetPartsSpeedupRateByMessageSkip(possibly_unused int parts_no)
+{
+	return 1;
 }
 
 /* 0x5909f0, 0x590a80: the component comes from the get-or-create lookup

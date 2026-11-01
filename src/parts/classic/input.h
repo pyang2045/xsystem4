@@ -188,6 +188,68 @@ static void parts_whole_keys_update(int passed_time)
 	}
 }
 
+/*
+ * Oyako Rankan's GUI controllers, the stack at +0xac of its PartsEngine:
+ * PushGUIController (0x546d80 -> 0x5346f0) adds one, a new parts goes to the
+ * top one, and the input goes to the top one alone (UpdateGUIController,
+ * 0x543be0 -> 0x51cc30), so an open combo box or dialog is modal.
+ * PopGUIController (0x51eb70) drops the top one and makes a new one when none
+ * is left. Each has its focus, a parts number (+0x38; 0x546d40, 0x546d60).
+ * Other engines stay on controller 0.
+ *
+ * Here a parts just keeps the number of its level, and the levels below the
+ * top take no input; a parts left on a dropped level goes on with the level
+ * under it (the scripts delete theirs). Not done: the focus
+ * events of 0x51d370 (nothing in the script listens), and setting the focus
+ * at a press. The stack is not saved: nothing saves with a combo box open.
+ */
+#define MAX_GUI_CONTROLLERS 16
+static int gui_controller_top;
+static int gui_controller_focus[MAX_GUI_CONTROLLERS];
+
+int parts_gui_controller(void)
+{
+	return gui_controller_top;
+}
+
+void parts_gui_controllers_reset(void)
+{
+	gui_controller_top = 0;
+	gui_controller_focus[0] = 0;
+}
+
+void PE_PushGUIController(void)
+{
+	if (gui_controller_top + 1 >= MAX_GUI_CONTROLLERS) {
+		WARNING("Too many GUI controllers");
+		return;
+	}
+	gui_controller_focus[++gui_controller_top] = 0;
+}
+
+void PE_PopGUIController(void)
+{
+	if (gui_controller_top > 0)
+		gui_controller_top--;
+	else
+		gui_controller_focus[0] = 0;
+}
+
+int PE_GetFocusPartsNumber(void)
+{
+	return gui_controller_focus[gui_controller_top];
+}
+
+void PE_SetFocusPartsNumber(int parts_no)
+{
+	gui_controller_focus[gui_controller_top] = parts_no;
+}
+
+void PE_UpdateGUIController(int passed_time)
+{
+	PE_UpdateInputState(passed_time);
+}
+
 static void classic_update_input_state(int passed_time)
 {
 	Point cur_pos;
@@ -204,6 +266,8 @@ static void classic_update_input_state(int passed_time)
 		parts_msg_push(NULL, PARTS_MSG_MOUSE_CLICK, "iii", cur_pos.x, cur_pos.y, VK_LBUTTON);
 	// Iterate front-to-back (highest z first) for proper cursor consumption
 	PARTS_LIST_FOREACH_REVERSE(parts) {
+		if (parts->gui_controller < gui_controller_top)
+			continue;
 		parts_update_mouse(parts, cur_pos, cur_clicking, passed_time,
 				&hover_consumed, &click_consumed);
 	}
@@ -224,7 +288,8 @@ static void classic_update_input_state(int passed_time)
 		// The bars take their own clicks and drags (scrollbar.c).
 		struct parts *bar = NULL;
 		PARTS_LIST_FOREACH_REVERSE(parts) {
-			if (parts->global.show && parts_scrollbar_has_look(parts)
+			if (parts->gui_controller >= gui_controller_top
+					&& parts->global.show && parts_scrollbar_has_look(parts)
 					&& parts_scrollbar_hittest(parts, cur_pos) != PARTS_SCROLLBAR_MISS) {
 				bar = parts;
 				break;
@@ -255,7 +320,7 @@ static void classic_update_input_state(int passed_time)
 		if (cursor_moved && is_dragging) {
 			struct parts *new_drop = NULL;
 			PARTS_LIST_FOREACH_REVERSE(parts) {
-				if (parts == drag_parts)
+				if (parts == drag_parts || parts->gui_controller < gui_controller_top)
 					continue;
 				if (parts_hittest(parts, PARTS_STATE_DEFAULT, cur_pos)) {
 					new_drop = parts;

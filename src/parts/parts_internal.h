@@ -807,6 +807,7 @@ struct parts {
 	Point layout_offset;
 	struct parts_motion_list motion;
 	int controller_no;
+	int gui_controller; // classic/input.h
 	int component_type;   // v14 component widget type (EPartsType)
 	// Programs before v14 (ain v7 妻みぐい３): component_type is a widget
 	// type (0 to 9, the same numbers as v14) the pactex loader or
@@ -974,6 +975,8 @@ void parts_release(int parts_no);
 void parts_release_all(void);
 void parts_set_surface_area(struct parts *parts, struct parts_common *common, int x, int y, int w, int h);
 extern bool parts_message_window_show;
+int parts_gui_controller(void);
+void parts_gui_controllers_reset(void);
 
 // message_window.c: the sidecar owns text/strings; the parts owns the background.
 void parts_message_window_free(struct parts_message_window *message);

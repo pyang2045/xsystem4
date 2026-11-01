@@ -441,12 +441,45 @@ static bool SystemService_GetWindowSetting(int type, int *value)
 // SetHideKeyOrJoypadInputMouseCursor, SetHideStepMessageMouseCursor): a type
 // that is refused unchecks its box at once. The original of that game takes
 // exactly these three types, keeps a flag for each (all start as 0), returns
-// 0 or 1 and refuses any other type. Two differences from it: the values are
-// only kept, the cursor is never hidden; and they are not saved (the original
-// has a settings file of its own for them), so all three are 0 again after a
-// restart. Engines before v14 keep the one type they had.
+// 0 or 1 and refuses any other type. The values are only kept, the cursor is
+// never hidden. They last across restarts in MouseCursor.sav in the save folder
+// (a port's file: the original has a settings file of its own for them; the
+// scripts do not set them again at the start). Engines before v14 keep the one
+// type they had.
 #define NR_MOUSE_CURSOR_CONFIG 3
+#define MOUSE_CURSOR_SAV "MouseCursor.sav"
 static int mouse_cursor_config[NR_MOUSE_CURSOR_CONFIG] = {0};
+
+static void mouse_cursor_config_load(void)
+{
+	static bool loaded;
+	if (loaded || !config.save_dir)
+		return;
+	loaded = true;
+	char *path = savedir_path(MOUSE_CURSOR_SAV);
+	size_t len = 0;
+	uint8_t *data = file_read(path, &len);
+	free(path);
+	if (!data)
+		return;
+	for (size_t i = 0; i < NR_MOUSE_CURSOR_CONFIG && i < len; i++)
+		mouse_cursor_config[i] = data[i];
+	free(data);
+}
+
+static void mouse_cursor_config_save(void)
+{
+	if (!config.save_dir)
+		return;
+	uint8_t data[NR_MOUSE_CURSOR_CONFIG];
+	for (int i = 0; i < NR_MOUSE_CURSOR_CONFIG; i++)
+		data[i] = !!mouse_cursor_config[i];
+	mkdir_p(config.save_dir);
+	char *path = savedir_path(MOUSE_CURSOR_SAV);
+	if (!file_write(path, data, sizeof(data)))
+		WARNING("Failed to save '%s'", display_utf0(path));
+	free(path);
+}
 
 static int nr_mouse_cursor_config(void)
 {
@@ -459,7 +492,11 @@ static bool SystemService_SetMouseCursorConfig(int type, int value)
 		WARNING("Invalid mouse cursor config type: %d", type);
 		return false;
 	}
-	mouse_cursor_config[type] = value;
+	mouse_cursor_config_load();
+	if (mouse_cursor_config[type] != value) {
+		mouse_cursor_config[type] = value;
+		mouse_cursor_config_save();
+	}
 	return true;
 }
 
@@ -470,6 +507,7 @@ static bool SystemService_GetMouseCursorConfig(int type, int *value)
 		WARNING("Invalid mouse cursor config type: %d", type);
 		return false;
 	}
+	mouse_cursor_config_load();
 	if (value) *value = !!mouse_cursor_config[type];
 	return true;
 }

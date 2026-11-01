@@ -2303,6 +2303,16 @@ static void classic_postlink(int libno)
 	struct ain_hll_function *fun = get_fun(libno, "AddMotionCG");
 	if (fun && fun->nr_arguments > 1 && fun->arguments[1].type.data == AIN_STRING)
 		static_library_register(&lib_PartsEngine, "AddMotionCG", PE_AddMotionCG_format);
+	// The library also has these names for engines that do not bind them.
+	if (get_fun(libno, "PushGUIController")) {
+		static_library_register(&lib_PartsEngine, "UpdateGUIController", PE_UpdateGUIController);
+		static_library_register(&lib_PartsEngine, "PushGUIController", PE_PushGUIController);
+		static_library_register(&lib_PartsEngine, "PopGUIController", PE_PopGUIController);
+		static_library_register(&lib_PartsEngine, "GetFocusPartsNumber", PE_GetFocusPartsNumber);
+		static_library_register(&lib_PartsEngine, "SetFocusPartsNumber", PE_SetFocusPartsNumber);
+		static_library_register(&lib_PartsEngine, "GetPartsSpeedupRateByMessageSkip",
+				PE_GetPartsSpeedupRateByMessageSkip);
+	}
 }
 
 const struct parts_bindings parts_bindings_classic = {
