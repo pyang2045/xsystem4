@@ -17,6 +17,8 @@ choose by declaration.
 **A whole function differs and other engine code calls it too: an ops table.** Write one function per
 generation (`v14_begin_input`, `v7_begin_input`, `classic_begin_input`) and list them in the tables of
 `src/parts/parts_internal.h`. The `PE_` function only calls `profile.parts.input->begin_input()`.
+Each generation has its own table even where its entries are another's functions, so a change for one
+generation replaces an entry in its table and leaves the shared function alone.
 
 **A few lines differ inside shared logic: a named behaviour.** Add a field to `include/profile.h`,
 turn it on in the rows of `src/profile.c` that have it, and test `profile.parts.<name>`.

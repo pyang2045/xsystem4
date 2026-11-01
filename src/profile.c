@@ -13,8 +13,8 @@
 
 struct game_profile profile;
 
-extern const struct parts_widget_ops parts_widget_v14, parts_widget_classic;
-extern const struct parts_controller_ops parts_controller_v14, parts_controller_classic;
+extern const struct parts_widget_ops parts_widget_v14, parts_widget_v7, parts_widget_classic;
+extern const struct parts_controller_ops parts_controller_v14, parts_controller_v7, parts_controller_classic;
 extern const struct parts_input_ops parts_input_v14, parts_input_v7, parts_input_classic;
 
 static const struct parts_features parts_v14 = {
@@ -36,8 +36,8 @@ static const struct parts_features parts_v14 = {
 };
 
 static const struct parts_features parts_activities_v7 = {
-	.widgets = &parts_widget_classic,
-	.controllers = &parts_controller_classic,
+	.widgets = &parts_widget_v7,
+	.controllers = &parts_controller_v7,
 	.input = &parts_input_v7,
 	.activity_widgets = true,
 	.activity_save = true,
