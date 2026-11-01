@@ -106,7 +106,7 @@ static const struct {
 			.save_activity_fields = true,
 			.movies_in_update = true,
 		},
-		.hll = { .sound_groups = true },
+		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
 	},
 	// Keep last: it takes every game the rows above don't.
 	{

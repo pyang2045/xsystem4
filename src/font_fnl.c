@@ -56,9 +56,31 @@ struct font_fnl {
 	struct fnl_font_size *sizes;
 };
 
+/*
+ * The original draws a size from the face of exactly 4 times its height
+ * (0x63c6d0 -> 0x63b1d0; the scale is set at 0x63b720). The faces hold
+ * different glyphs: in 妻みぐい３ only 104, 120, 168 and 192 have the hearts at
+ * 0x8189 and 0x818A, so size 48 must come from 192 and not 96 or 144, which
+ * have the male and female signs.
+ */
+static struct fnl_font_size *fnl_font_size_by_scale(struct font_fnl *font, float size)
+{
+	if (!profile.hll.fnl_face_by_scale)
+		return NULL;
+	for (unsigned i = 0; i < font->nr_sizes; i++) {
+		if (font->sizes[i].denominator == 4 && font->sizes[i].super.size == size)
+			return &font->sizes[i];
+	}
+	return NULL;
+}
+
 static struct font_size *fnl_font_get_size(struct font *_font, float size)
 {
 	struct font_fnl *font = (struct font_fnl*)_font;
+
+	struct fnl_font_size *by_scale = fnl_font_size_by_scale(font, size);
+	if (by_scale)
+		return &by_scale->super;
 
 	float min_diff = 9999;
 	struct fnl_font_size *closest = &font->sizes[0];
@@ -75,6 +97,10 @@ static struct font_size *fnl_font_get_size(struct font *_font, float size)
 static struct font_size *fnl_font_get_size_round_down(struct font *_font, float size)
 {
 	struct font_fnl *font = (struct font_fnl*)_font;
+
+	struct fnl_font_size *by_scale = fnl_font_size_by_scale(font, size);
+	if (by_scale)
+		return &by_scale->super;
 
 	float min_diff = 9999;
 	struct fnl_font_size *closest = &font->sizes[0];

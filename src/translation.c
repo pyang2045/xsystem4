@@ -162,6 +162,13 @@ uint32_t translation_unicode_to_fnl_code(uint32_t c)
 	int len;
 	if (c < 0x80)
 		return c;
+	/* No CP932 code. The .fnl draws hearts at the codes of the male and female
+	 * signs in the faces of the sizes that need them, as the game's own ♂ and ♀
+	 * do (see fnl_font_size_by_scale). */
+	if (c == 0x2764 || c == 0x2665) // ❤ ♥
+		return 0x8189;
+	if (c == 0x2661) // ♡
+		return 0x818A;
 	if (is_ideograph(c) || !unicode_to_sjis(c, b, &len))
 		return TEXT_CODE_UNICODE | c;
 	return len == 1 ? b[0] : (b[0] << 8) | b[1];
