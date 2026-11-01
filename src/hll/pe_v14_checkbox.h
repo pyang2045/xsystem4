@@ -163,7 +163,7 @@ static int PE_v14_GetHSliderBarScrollPos(int number)
  * the binding it has (a stub), rather than a C function of another shape. */
 static void pe_v14_register_checkbox(int libno)
 {
-	if (ain->version < 14 && !parts_v7_activities)
+	if (!profile.parts.activity_widgets)
 		return;
 	static const struct {
 		const char *name;
@@ -185,7 +185,7 @@ static void pe_v14_register_checkbox(int libno)
 		{ "SetHSliderBarScrollPos", PE_v14_SetHSliderBarScrollPos, AIN_VOID, 2, { AIN_INT, AIN_INT } },
 		{ "GetHSliderBarScrollPos", PE_v14_GetHSliderBarScrollPos, AIN_INT, 1, { AIN_INT } },
 	};
-	if (parts_v7_activities && get_fun(libno, "SetCheckBoxColor"))
+	if (profile.parts.v7_bindings && get_fun(libno, "SetCheckBoxColor"))
 		static_library_register(&lib_PartsEngine, "SetCheckBoxColor", PE_v7_SetCheckBoxColor);
 	for (size_t i = 0; i < sizeof(bindings) / sizeof(bindings[0]); i++) {
 		struct ain_hll_function *fun = get_fun(libno, bindings[i].name);

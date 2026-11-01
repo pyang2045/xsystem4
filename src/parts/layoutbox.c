@@ -26,6 +26,7 @@
 #include "parts.h"
 #include "parts_internal.h"
 #include "vm.h"
+#include "profile.h"
 
 void PE_SetComponentMargin(int parts_no, int top, int bottom, int left, int right)
 {
@@ -40,7 +41,7 @@ void PE_SetComponentMargin(int parts_no, int top, int bottom, int left, int righ
 		parts_layout_size_changed(parts);
 	// ain v7 with activities: the box lays its children out again. C_TITLE
 	// slides its buttons in by animating their margins down to 0.
-	if (changed && parts_v7_activities && parts->parent
+	if (changed && profile.parts.margin_relayout && parts->parent
 			&& parts->parent->states[0].type == PARTS_LAYOUT_BOX)
 		parts_component_dirty(parts->parent);
 }
@@ -588,7 +589,7 @@ static void lb_v14_box_size(struct parts *box, int *w, int *h)
  */
 void parts_layout_size_changed(struct parts *parts)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_transforms)
 		return;
 	for (struct parts *p = parts, *a = parts->parent; a; p = a, a = a->parent) {
 		if (lb_v14_lays_out(a)) {
@@ -745,7 +746,7 @@ static void parts_do_layout_v14(struct parts *parts)
 
 void parts_do_layout(struct parts *parts)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.native_transforms) {
 		parts_do_layout_v14(parts);
 		return;
 	}

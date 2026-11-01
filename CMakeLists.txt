@@ -56,6 +56,7 @@ target_sources(xsystem4 PRIVATE
   src/font_fnl.c
   src/format.c
   src/hacks.c
+  src/profile.c
   src/heap.c
   src/icon.c
   src/id_pool.c

@@ -33,6 +33,7 @@
 #include "vm.h"
 
 #include "parts_internal.h"
+#include "profile.h"
 
 static struct {
 	struct shader shader;
@@ -105,7 +106,7 @@ static void parts_reverse_scale(mat4 m, bool lr, bool tb)
  */
 void parts_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		glm_mat4_identity(out);
 		glm_translate(out, (vec3) { parts->global.pos.x, parts->global.pos.y, 0 });
 		parts_reverse_scale(out, parts->global.reverse_lr != parts->local.reverse_lr,
@@ -163,7 +164,7 @@ void parts_box_transform(struct parts *parts, struct parts_common *common, mat4 
  * Return 0 for no clip, -1 for an empty clip, 1 with screen-to-unit-clip. */
 int parts_clip_area_transform(struct parts *parts, mat4 out)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_transforms)
 		return 0;
 	bool enabled = false;
 	double left = 0, top = 0, right = 0, bottom = 0;
@@ -210,7 +211,7 @@ int parts_clip_area_transform(struct parts *parts, mat4 out)
  * a valid untextured mask still replaces the inherited one. */
 int parts_effective_alpha_clipper(struct parts *parts)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_compositing)
 		return parts->alpha_clipper_parts_no;
 	for (struct parts *p = parts; p; p = p->parent) {
 		struct parts *mask = p->alpha_clipper_parts_no
@@ -231,7 +232,7 @@ static void parts_render_texture(struct parts *parts, struct texture *texture, m
 	// through the original's camera (parts_perspective), and its back is
 	// not drawn (parts_box_faces_away); without depth the projection would
 	// change nothing and is left out.
-	bool use_persp = ain->version >= 14 && !parts_matrix_is_flat(mw_transform);
+	bool use_persp = profile.parts.native_transforms && !parts_matrix_is_flat(mw_transform);
 	if (use_persp && parts_box_faces_away(mw_transform))
 		return;
 	mat4 wv_transform = WV_TRANSFORM(config.view_width, config.view_height);
@@ -260,13 +261,13 @@ static void parts_render_texture(struct parts *parts, struct texture *texture, m
 	// add colour to the sprite as two separate colours (0x46a460, 0x46a57c
 	// and 0x46a5af), and PlayerFrameView's silhouette is multiply black
 	// plus add (255, 0, 186): the add colour comes after the multiply.
-	glUniform1i(parts_shader.add_after_multiply, ain->version >= 14);
+	glUniform1i(parts_shader.add_after_multiply, profile.parts.native_compositing);
 	glUniform1i(parts_shader.draw_filter, draw_filter);
 	glUniform1i(parts_shader.use_clip_area, clip_area);
 	if (clip_area)
 		glUniformMatrix4fv(parts_shader.inv_clip_area_transform, 1, GL_FALSE, clip_area_inverse[0]);
 
-	if (ain->version >= 14)
+	if (profile.parts.native_compositing)
 		alpha_clipper = parts_effective_alpha_clipper(parts);
 	struct parts *clipper = alpha_clipper ? parts_try_get(alpha_clipper) : NULL;
 	// A clipper without a texture has no alpha to sample (e.g. a
@@ -287,7 +288,7 @@ static void parts_render_texture(struct parts *parts, struct texture *texture, m
 		// original flips the CG's surface itself, parts_cg_deform).
 		mat4 clip_mw;
 		parts_box_transform(clipper, c_common, clip_mw);
-		switch (ain->version >= 14 ? parts_cg_deform(clipper, clipper->state) : 0) {
+		switch (profile.parts.native_compositing ? parts_cg_deform(clipper, clipper->state) : 0) {
 		case 1:
 			glm_translate(clip_mw, (vec3){ c_common->w, 0.0f, 0.0f });
 			glm_scale(clip_mw, (vec3){ -c_common->w, c_common->h, 1.0f });
@@ -431,7 +432,7 @@ static int parts_effective_draw_filter(struct parts *parts)
 {
 	// Seen only on v14 (both DohnaDohna releases); older engines keep
 	// drawing each parts with its own filter.
-	if (ain->version < 14)
+	if (!profile.parts.native_compositing)
 		return parts->draw_filter;
 	for (struct parts *p = parts; p; p = p->parent) {
 		if (p->draw_filter != PARTS_DRAW_FILTER_NORMAL)
@@ -962,7 +963,7 @@ bool parts_link_shown(struct parts *parts)
 {
 	if (parts->linked_to < 0)
 		return true;
-	if (ain->version >= 14) {
+	if (profile.parts.native_compositing) {
 		struct parts *link_parts = parts->linked_to > 0 ? parts_try_get(parts->linked_to) : NULL;
 		return !link_parts || link_parts->is_hovered;
 	}
@@ -977,7 +978,7 @@ bool parts_link_shown(struct parts *parts)
  */
 static bool parts_layer_hidden(struct parts *parts)
 {
-	if (!parts_v7_activities || parts->no < -1)
+	if (!profile.parts.layers_by_position || parts->no < -1)
 		return false;
 	struct parts *layer = parts_try_get(parts->controller_no);
 	return layer && !layer->local.show;
@@ -1012,7 +1013,7 @@ void parts_render(struct parts *parts)
 		break;
 	case PARTS_HGAUGE:
 	case PARTS_VGAUGE:
-		if (ain->version >= 14)
+		if (profile.parts.native_compositing)
 			parts_render_v14_gauge(parts, &state->gauge, state->type == PARTS_VGAUGE);
 		else if (state->common.texture.handle)
 			parts_render_cg(parts, &state->common, parts_cg_deform(parts, parts->state));

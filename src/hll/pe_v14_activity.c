@@ -46,6 +46,7 @@
 #include "hll.h"
 #include "iarray.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 extern struct string *sjis_to_gbk_string(const char *src, size_t len);
 extern struct static_library lib_PartsEngine;
@@ -503,7 +504,7 @@ static void pactex_apply_pass_cursor(struct ex_tree *node, int parts_no)
  * integer 1 (default 0). Spellings: PK_WHEELABLE. */
 static void pactex_apply_wheelable(struct ex_tree *node, int parts_no)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.wheelable_parts) {
 		int v = pactex_key_int(node, &PK_WHEELABLE, 0);
 		parts_get(parts_no)->wheelable = v == 1;
 	}
@@ -1110,7 +1111,7 @@ static int pactex_low_level_type(struct ex_tree *state)
 static bool pactex_cg_deform(struct ex_tree *state, int *deform)
 {
 	*deform = 0;
-	if (ain->version < 14 || pactex_low_level_type(state) != PACTEX_EPT_CG)
+	if (!profile.parts.native_compositing || pactex_low_level_type(state) != PACTEX_EPT_CG)
 		return false;
 	return pactex_key_find_int(state, &PK_DEFORM, deform);
 }
@@ -1383,7 +1384,7 @@ static bool pactex_construction_step(struct ex_tree *node, struct pactex_cp_step
 	// The states that start with a CG or with pixels only, the commands only
 	// they have, the CG cuts, the polygon and rectangle fills, the row
 	// gradation, the texts and the discs but 102's are built for v14 alone.
-	if (ain->version < 14 && (s->command == PACTEX_CP_CREATE_CG || s->command == PACTEX_CP_BLEND_FILL
+	if (!profile.parts.native_construction && (s->command == PACTEX_CP_CREATE_CG || s->command == PACTEX_CP_BLEND_FILL
 			|| s->command == PACTEX_CP_CREATE_PIXEL_ONLY || s->command == PACTEX_CP_CUT_CG_COPY
 			|| s->command == PACTEX_CP_CUT_CG_SCALE_BLEND || s->command == PACTEX_CP_FILL_RECT_PIXEL_AMAP
 			|| s->command == PACTEX_CP_GRAY_SCALE || s->command == PACTEX_CP_BLUR_H
@@ -2958,7 +2959,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 	// A 横スライダーバー (母爛漫's message windows' transparency slider) is
 	// read as a 橫滾動條: its pactex has the same keys but 全体スライダー量
 	// and スライダーレート.
-	const bool widgets = ain->version >= 14 || parts_v7_activities;
+	const bool widgets = profile.parts.activity_widgets;
 	const bool slider = widgets && widget_type == PARTS_COMPONENT_HSLIDERBAR;
 	if (widget_type == PARTS_COMPONENT_VSCROLLBAR || slider
 			|| (widgets && widget_type == PARTS_COMPONENT_HSCROLLBAR)) {
@@ -3070,7 +3071,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 		 * before v14 have no panels and read none. */
 		int grad[4] = { 0, 0, 0, 0 };
 		struct ex_list *gl = pactex_key_list(type_info, &PK_ALPHA_GRADATION);
-		for (unsigned i = 0; ain->version >= 14 && gl && i < 4 && i < gl->nr_items; i++) {
+		for (unsigned i = 0; profile.parts.v14_bindings && gl && i < 4 && i < gl->nr_items; i++) {
 			if (gl->items[i].value.type == EX_INT)
 				grad[i] = gl->items[i].value.i;
 		}
@@ -3087,7 +3088,7 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 		 * the widget shows <base>／普通 (SJIS ／通常), ／オン, ／ダウン, and
 		 * <base>／無効 while disabled (see parts_button_set_cg_name). */
 		const char *cg_base = pactex_key_string(type_info, &PK_CG_NAME);
-		if (ain->version >= 14)
+		if (profile.parts.v14_bindings)
 			pactex_apply_button_text(type_info, parts_no);
 		if (cg_base) {
 			parts_button_set_cg_name(parts_get(parts_no), cg_base);

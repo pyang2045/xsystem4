@@ -15,7 +15,7 @@
  * another shape keeps the binding it has. */
 static void pe_v14_register_sound_names(int libno)
 {
-	if (ain->version < 14)
+	if (!profile.parts.v14_bindings)
 		return;
 	static const struct {
 		const char *name;

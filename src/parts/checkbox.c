@@ -29,6 +29,7 @@
 #include "xsystem4.h"
 #include "parts.h"
 #include "parts_internal.h"
+#include "profile.h"
 
 /*
  * The v14 檢查ボックス (component type 1, constructor 0x52d000) and ラジオ按鈕
@@ -398,7 +399,7 @@ void parts_checkbox_rebuild(struct parts *parts)
  * drawn again. */
 void parts_checkbox_update(void)
 {
-	if (ain->version < 14 && !parts_v7_activities)
+	if (!profile.parts.activity_widgets)
 		return;
 	if (!checkbox_any_dirty)
 		return;
@@ -505,7 +506,7 @@ void parts_checkbox_set_checked(struct parts *parts, bool checked)
 	}
 	if (old != cb->checked && parts->delegate_index >= 0) {
 		const int vars[1] = { checked };
-		if (parts_v7_activities)
+		if (profile.parts.widget_parts_messages)
 			parts_msg_push(parts, PARTS_MSG_CHANGED_FLAG, "b", vars[0]);
 		else
 			parts_enqueue_message_vars(23, parts->no, parts->delegate_index,

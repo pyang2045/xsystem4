@@ -21,7 +21,7 @@ static float PE_v14_GetPartsUpperLeftPosY(int number, int state)
 
 static bool pe_upper_left_shape(const struct ain_hll_function *f, const char *shape)
 {
-	if (ain->version < 14 || !f || f->nr_arguments != (int)strlen(shape) - 1
+	if (!profile.parts.v14_bindings || !f || f->nr_arguments != (int)strlen(shape) - 1
 	    || (f->nr_arguments && !f->arguments)
 	    || !pe_v14_numeral_arg_shape(&f->return_type, shape[0]))
 		return false;

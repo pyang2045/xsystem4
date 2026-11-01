@@ -23,6 +23,7 @@
 #include "vm.h"
 #include "parts_internal.h"
 #include "../hll/iarray.h"
+#include "profile.h"
 
 /*
  * A v14 save ("XPE"; engines before v14 keep their version 3 layout):
@@ -155,22 +156,11 @@ static int save_controller_no(int id)
 	return index < 0 ? id : index;
 }
 
-/*
- * The save holds what the activities made: v14, and ain v7 with the activity
- * declarations (妻みぐい３, PartsEngine_PostLink). Other games keep their v3
- * layout.
- */
-bool parts_v7_activities;
-
-static bool parts_activity_save(void)
-{
-	return ain->version >= 14 || parts_v7_activities;
-}
 
 static void save_controller_ids(struct iarray_writer *w)
 {
 	// v14: always, the mark of a save whose IDs are root numbers.
-	if (!parts_activity_save())
+	if (!profile.parts.activity_save)
 		return;
 	iarray_write(w, SAVE_CONTROLLER_IDS);
 	iarray_write(w, ctrl_stack.nr_controllers);
@@ -183,7 +173,7 @@ static void save_controller_ids(struct iarray_writer *w)
 // the IDs (to be freed) and the active controller, NULL without a section.
 static int *load_controller_ids(struct iarray_reader *r, int version, int nr, int *active_out)
 {
-	if (!parts_activity_save() || version < 7 || nr < 0 || nr > PARTS_CONTROLLER_STACK_MAX)
+	if (!profile.parts.activity_save || version < 7 || nr < 0 || nr > PARTS_CONTROLLER_STACK_MAX)
 		return NULL;
 	unsigned len = nr + 3;
 	if (r->size < len || r->size - len < r->pos)
@@ -363,7 +353,7 @@ static void load_parts_numeral(struct iarray_reader *r, struct parts *parts,
 	// not saved (XPE 8 and 9). One with a CG font is drawn again with it; one
 	// without (a font numeral, or a CG numeral with no CG) keeps the size
 	// that was read and is not built until the script gives its type.
-	if (ain->version >= 14 && num->font_no < 0) {
+	if (profile.parts.typed_components && num->font_no < 0) {
 		num->unknown_type = true;
 		return;
 	}
@@ -400,7 +390,7 @@ static void load_parts_gauge(struct iarray_reader *r, struct parts *parts,
 	}
 	if (gauge->cg_no >= 0)
 		parts_gauge_set_cg_by_index(parts, gauge, gauge->cg_no);
-	if (ain->version < 14) {
+	if (!profile.parts.typed_components) {
 		if (vert) parts_vgauge_set_rate(parts, gauge, gauge->rate);
 		else parts_hgauge_set_rate(parts, gauge, gauge->rate);
 	}
@@ -948,7 +938,7 @@ static void save_parts(struct iarray_writer *w, struct parts *parts, int version
 		iarray_write(w, parts->pactex_canvas_w);
 		iarray_write(w, parts->pactex_canvas_h);
 	}
-	if (parts_v7_activities) {
+	if (profile.parts.save_activity_fields) {
 		iarray_write(w, parts->has_widget_type);
 		iarray_write(w, parts->no_back_scene);
 	}
@@ -1029,7 +1019,7 @@ static struct parts *load_parts(struct iarray_reader *r, int version)
 		parts->component_type = iarray_read(r);
 		for (int i = 0; i < PARTS_NR_STATES; i++)
 			parts->component_state_type[i] = iarray_read(r);
-	} else if (ain->version >= 14) {
+	} else if (profile.parts.typed_components) {
 		// Old records have no widget metadata. Recover gauge types before
 		// AIN CompParts queries them (a getter must not be needed first).
 		for (int i = 0; i < PARTS_NR_STATES; i++) {
@@ -1043,7 +1033,7 @@ static struct parts *load_parts(struct iarray_reader *r, int version)
 		parts->pactex_canvas_w = iarray_read(r);
 		parts->pactex_canvas_h = iarray_read(r);
 	}
-	if (parts_v7_activities) {
+	if (profile.parts.save_activity_fields) {
 		parts->has_widget_type = iarray_read(r);
 		parts->no_back_scene = iarray_read(r);
 	}
@@ -1051,7 +1041,7 @@ static struct parts *load_parts(struct iarray_reader *r, int version)
 	// parent is attached, by the update PE_Load ends with.
 	parts_load_transform(parts);
 	// A v14 panel written before its colour kept the alpha.
-	if (ain->version >= 14 && parts->component_type == 14)
+	if (profile.parts.typed_components && parts->component_type == 14)
 		parts_panel_load_blended(parts);
 	// TODO: once the Rance 9 save format stabilizes, bump save version
 	// and load based on version check
@@ -1484,7 +1474,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 	struct iarray_writer w;
 	iarray_init_writer(&w, "XPE");
 	// Older engines retain their byte-for-byte v3 layout.
-	int version = parts_activity_save() ? CURRENT_SAVE_VERSION : 3;
+	int version = profile.parts.activity_save ? CURRENT_SAVE_VERSION : 3;
 	iarray_write(&w, version);
 	if (CURRENT_SAVE_VERSION > 1)
 		save_numeral_fonts(&w);
@@ -1493,7 +1483,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 	// and save unconditionally
 	if (parts_multi_controller) {
 		// v14: the top controller acts while none is designated.
-		int active = parts_activity_save() && ctrl_stack.active < 0
+		int active = profile.parts.activity_save && ctrl_stack.active < 0
 			? ctrl_stack.nr_controllers - 1
 			: save_controller_no(ctrl_stack.active);
 		iarray_write(&w, active);
@@ -1556,7 +1546,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		iarray_write_at(&w, sub_pos, sub);
 	}
 
-	if (parts_activity_save()) {
+	if (profile.parts.activity_save) {
 		save_cg_deforms(&w, save_hidden);
 		save_wheelable(&w, save_hidden);
 		save_sound_names(&w, save_hidden);
@@ -1564,7 +1554,7 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		save_unique_ids(&w, save_hidden);
 		save_user_components(&w, save_hidden);
 		save_buttons(&w, save_hidden);
-		if (parts_v7_activities) {
+		if (profile.parts.save_activity_fields) {
 			iarray_write(&w, SAVE_INPUT_DEPTH);
 			iarray_write(&w, parts_get_input_depth());
 		}
@@ -1761,7 +1751,7 @@ bool PE_Load(struct page **buffer)
 		parts_controller_set_stack(nr, ids);
 		if (ids)
 			active = active_id;
-		if (parts_activity_save())
+		if (profile.parts.activity_save)
 			ctrl_stack.active = -1;	// made the loaded one below
 		else
 			ctrl_stack.active = active;
@@ -1801,7 +1791,7 @@ bool PE_Load(struct page **buffer)
 				parts_set_sub_color_mode(parts, true);
 		}
 	}
-	if (parts_activity_save()) {
+	if (profile.parts.activity_save) {
 		load_cg_deforms(&r);
 		if (!load_wheelable(&r)) {
 			free(ids);
@@ -1812,18 +1802,18 @@ bool PE_Load(struct page **buffer)
 		load_unique_ids(&r);
 		load_user_components(&r);
 		load_buttons(&r);
-		if (parts_v7_activities && !r.error && r.pos < r.size
+		if (profile.parts.save_activity_fields && !r.error && r.pos < r.size
 				&& r.data[r.pos].i == SAVE_INPUT_DEPTH) {
 			iarray_read(&r);
 			parts_set_input_depth(iarray_read(&r));
 		}
 	}
 	// (the controller ID section follows the lists; it was read first)
-	if (parts_multi_controller && parts_activity_save()) {
+	if (parts_multi_controller && profile.parts.activity_save) {
 		load_controller_finish(active, ids != NULL);
 		static bool warned;
 		// ain v7: a layer's ID is its position, there is nothing to get wrong.
-		if (!ids && !warned && ain->version >= 14) {
+		if (!ids && !warned && profile.parts.controller_ids) {
 			warned = true;
 			WARNING("PartsEngine save without controller IDs (written before a layer's ID "
 				"became its root parts number): layer IDs the script kept from it are not valid");
@@ -1836,7 +1826,7 @@ bool PE_Load(struct page **buffer)
 	// child would be drawn, hit and measured at its own position, as if it
 	// had no parent, until the next frame's update. Before v14 the saved
 	// global position is what is drawn, as it always was.
-	if (parts_activity_save())
+	if (profile.parts.activity_save)
 		PE_UpdateComponent(0);
 
 	parts_engine_clean();

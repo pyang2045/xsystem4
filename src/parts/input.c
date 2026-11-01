@@ -30,6 +30,7 @@
 #include "system4/string.h"
 #include "vm.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 // true between calls to BeginClick and EndClick
 bool parts_began_click = false;
@@ -83,7 +84,7 @@ static struct parts *drop_target = NULL;
 bool parts_screen_to_box(struct parts *parts, struct parts_common *c, float sx, float sy,
 		float *bx, float *by)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		float x = sx - parts->global.pos.x;
 		float y = sy - parts->global.pos.y;
 		if (parts->global.reverse_lr != parts->local.reverse_lr)
@@ -217,14 +218,14 @@ static bool parts_hittest(struct parts *parts, int state, Point pos)
 	// v14: a layout box is never under the cursor (its widget's hit test,
 	// vtable +0x4c = 0x49c5b0, returns false); its state now has the box's
 	// size (layoutbox.c).
-	if ((ain->version >= 14 || parts_v7_activities) && parts->states[0].type == PARTS_LAYOUT_BOX)
+	if (profile.parts.activity_widgets && parts->states[0].type == PARTS_LAYOUT_BOX)
 		return false;
 	// v14: a parts with an alpha clipper (+0x2fc) is under the cursor only
 	// where its clipper is, the clipper tested by its pixels (CGUIPartsView's
 	// hit test 0x568df0 calls the clipper's with +0x1ad, the pixel decision,
 	// set). So Haharanman's title film filter, a full-screen CG clipped to
 	// the film frame, does not cover the menu buttons.
-	if ((ain->version >= 14 || parts_v7_activities) && parts->alpha_clipper_parts_no
+	if (profile.parts.activity_widgets && parts->alpha_clipper_parts_no
 			&& parts->alpha_clipper_parts_no != parts->no) {
 		static int depth;	// a clipper clipped by its own clippee
 		struct parts *clipper = parts_try_get(parts->alpha_clipper_parts_no);
@@ -242,7 +243,7 @@ static bool parts_hittest(struct parts *parts, int state, Point pos)
 	struct parts_common *c = &parts->states[state].common;
 	bool use_pixels = parts->pixel_hittest && c->texture.handle && c->texture.w > 0
 		&& c->texture.h > 0 && c->w > 0 && c->h > 0;
-	if (ain->version >= 14) {
+	if (profile.parts.native_transforms) {
 		mat4 m;
 		parts_box_transform(parts, c, m);
 		if (!parts_matrix_is_flat(m) && !parts_projected_box_hit(parts, c, m, pos))
@@ -312,7 +313,7 @@ void parts_input_release(struct parts *parts)
 	else if (parts == drop_target)
 		drop_target = NULL;
 	// Programs before v14 keep a press on a released parts as it was.
-	if (ain->version < 14)
+	if (!profile.parts.input_sessions)
 		return;
 	if (parts->no == click_down_parts)
 		click_down_parts = 0;
@@ -463,7 +464,7 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 	// (C_SAVE's クリック抑制フィルタ, full-screen, hides itself to let the
 	// list be clicked); other games keep the old test.
 	bool is_hovered = parts_hittest(parts, PARTS_STATE_DEFAULT, cur_pos) && !*hover_consumed
-		&& (!parts_v7_activities || parts->global.show);
+		&& (!profile.parts.activity_pointer || parts->global.show);
 
 	bool was_hovered = parts->is_hovered;
 	parts->is_hovered = is_hovered;
@@ -507,7 +508,7 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 	// ain v7 with activities: a parts that takes no click keeps its normal
 	// state under the cursor. 背景 of C_TITLE is a flat with an empty ＣＧ名
 	// as its オンカーソル状態: in that state it drew nothing and did not play.
-	bool keep_state = parts_v7_activities && !parts->clickable;
+	bool keep_state = profile.parts.activity_pointer && !parts->clickable;
 	enum parts_state_type hovered = keep_state ? PARTS_STATE_DEFAULT : PARTS_STATE_HOVERED;
 
 	bool click_eligible = parts->clickable || !parts->pass_cursor;
@@ -529,7 +530,7 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 
 		// KEY_TRIGGER message fires on press transition
 		parts_msg_push(parts, PARTS_MSG_KEY_TRIGGER, "i", VK_LBUTTON);
-		if (parts_v7_activities) {
+		if (profile.parts.activity_pointer) {
 			parts_msg_push(parts, PARTS_MSG_KEY_PRESS, "i", VK_LBUTTON);
 			click_repeat_ms = KEY_REPEAT_DELAY_MS;
 		}
@@ -538,7 +539,7 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 	// KEY_DOWN message fires every frame while held (not first frame)
 	if (prev_clicking && cur_clicking && click_down_parts == parts->no) {
 		parts_msg_push(parts, PARTS_MSG_KEY_DOWN, "i", VK_LBUTTON);
-		if (parts_v7_activities) {
+		if (profile.parts.activity_pointer) {
 			click_repeat_ms -= passed_time;
 			if (click_repeat_ms <= 0) {
 				parts_msg_push(parts, PARTS_MSG_KEY_PRESS, "i", VK_LBUTTON);
@@ -565,7 +566,7 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 		parts_msg_push(parts, PARTS_MSG_MOUSE_CLICK,
 				"iii", cur_pos.x, cur_pos.y, VK_LBUTTON);
 		parts_msg_push(parts, PARTS_MSG_KEY_UP, "i", VK_LBUTTON);
-		if (parts_v7_activities && parts->component_type == PARTS_COMPONENT_CHECKBOX
+		if (profile.parts.widget_parts_messages && parts->component_type == PARTS_COMPONENT_CHECKBOX
 				&& parts->checkbox)
 			parts_checkbox_set_checked(parts, !parts->checkbox->checked);
 	}
@@ -1154,7 +1155,7 @@ static void parts_whole_keys_update(int passed_time)
 
 void PE_UpdateInputState(int passed_time)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.input_sessions) {
 		v14_update_input(passed_time);
 		// The scheduled input (src/input.c) learns that the input was read.
 		input_auto_read();
@@ -1173,7 +1174,7 @@ void PE_UpdateInputState(int passed_time)
 				&hover_consumed, &click_consumed);
 	}
 
-	if (parts_v7_activities) {
+	if (profile.parts.whole_key_events) {
 		parts_whole_keys_update(passed_time);
 		// The Whole wheel event, once a notch: the wheel stays set until a
 		// script clears it, as the message wait polls it too.
@@ -1332,7 +1333,7 @@ void parts_set_show_link(struct parts *parts, int link_parts_no)
  * the number is kept as it is. */
 void PE_SetOnCursorShowLinkPartsNumber(int parts_no, int link_parts_no)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.input_sessions) {
 		if (parts_no > 0)
 			parts_set_show_link(parts_get(parts_no), link_parts_no);
 		return;
@@ -1530,12 +1531,12 @@ static void v14_reset_input_session(bool begin)
 
 void parts_reset_input(void)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.input_sessions) {
 		v14_input_depth = 0;
 		v14_reset_input_session(false);
 		v14_active_parts = 0;
 		v14_prev_have_pos = false;
-	} else if (parts_v7_activities) {
+	} else if (profile.parts.nested_input_scopes) {
 		parts_set_input_depth(0);
 	}
 }
@@ -1554,21 +1555,21 @@ void parts_set_input_depth(int depth)
 
 void PE_BeginInput(void)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.input_sessions) {
 		// Native 0x58a720: reset/restart the session, then increment depth.
 		v14_reset_input_session(true);
 		v14_input_depth++;
 		return;
 	}
 	// ain v7 with activities: the scopes nest, as on v14 (below).
-	if (parts_v7_activities)
+	if (profile.parts.nested_input_scopes)
 		v14_input_depth++;
 	parts_began_click = true;
 }
 
 void PE_EndInput(void)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.input_sessions) {
 		// Native 0x58a750: end the child, resume a remaining outer scope,
 		// and clamp an unmatched EndInput at zero.
 		if (v14_input_depth)
@@ -1578,9 +1579,9 @@ void PE_EndInput(void)
 	}
 	// ain v7 with activities: the end of a child (the CG viewer, a scene of
 	// 回想) leaves the list that opened it taking input.
-	if (parts_v7_activities && v14_input_depth)
+	if (profile.parts.nested_input_scopes && v14_input_depth)
 		v14_input_depth--;
-	parts_began_click = parts_v7_activities && v14_input_depth > 0;
+	parts_began_click = profile.parts.nested_input_scopes && v14_input_depth > 0;
 	clicked_parts = 0;
 	drag_state_reset();
 }

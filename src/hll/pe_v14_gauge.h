@@ -137,7 +137,7 @@ static bool pe_v14_gauge_arg_shape(const struct ain_type *type, enum ain_data_ty
  * function with an incompatible CIF. */
 static void pe_v14_register_gauges(int libno)
 {
-	if (ain->version < 14)
+	if (!profile.parts.v14_bindings)
 		return;
 	static const struct {
 		const char *name;

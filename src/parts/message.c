@@ -25,6 +25,7 @@
 #include "vm.h"
 #include "parts.h"
 #include "parts_internal.h"
+#include "profile.h"
 
 #define PARTS_MSG_MAX_VARS 4
 
@@ -48,7 +49,7 @@ void parts_msg_push(struct parts* parts, int type, const char *fmt, ...)
 		return;
 	// v14 (Dohna Dohna) uses the v14 ring-buffer message system
 	// (hll/pe_v14_message.c); nothing consumes this queue there.
-	if (ain->version >= 14)
+	if (profile.parts.native_message_window)
 		return;
 
 	struct parts_message *msg = xmalloc(sizeof(*msg));
@@ -108,7 +109,7 @@ int PE_GetMessageType(void)
 	// phantom message forever and the frame never reaches the update
 	// events that drive Motion.
 	if (!msg)
-		return ain->version >= 14 ? -1 : 0;
+		return profile.parts.native_message_window ? -1 : 0;
 	return msg->type;
 }
 

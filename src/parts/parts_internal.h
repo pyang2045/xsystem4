@@ -1233,6 +1233,5 @@ static inline bool parts_state_valid(int state)
 int parts_cg_deform(struct parts *parts, int state);
 
 // ain v7 with the activity declarations (妻みぐい３): see save.c.
-extern bool parts_v7_activities;
 
 #endif /* SYSTEM4_PARTS_INTERNAL_H */

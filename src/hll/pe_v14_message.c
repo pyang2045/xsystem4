@@ -44,6 +44,7 @@
 #include "../parts/parts_internal.h"
 #include "hll.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 extern struct static_library lib_PartsEngine;
 
@@ -487,7 +488,7 @@ static void *save_thumbnail_binding(void)
 {
 	int lib = ain_get_library(ain, "PartsEngine");
 	int fno = lib >= 0 ? ain_get_library_function(ain, lib, "SaveThumbnail") : -1;
-	if (fno < 0 || ain->version < 14)
+	if (fno < 0 || !profile.parts.v14_bindings)
 		return PE_v14_SaveThumbnail;
 	const struct ain_hll_function *f = &ain->libraries[lib].functions[fno];
 	if (f->return_type.data != AIN_BOOL || f->nr_arguments != 2 || !f->arguments
@@ -537,7 +538,7 @@ static void *message_fade_select_function(const struct ain_hll_function *f, void
 		{ "SetEnableSpeedUp", AIN_VOID, 2, { AIN_INT, AIN_BOOL }, PE_SetEnableSpeedUp },
 		{ "IsEnableSpeedUp", AIN_BOOL, 1, { AIN_INT }, PE_IsEnableSpeedUp },
 	};
-	if (ain->version < 14 || !f->name || (f->nr_arguments && !f->arguments))
+	if (!profile.parts.v14_bindings || !f->name || (f->nr_arguments && !f->arguments))
 		return fallback;
 	for (unsigned i = 0; i < sizeof(shapes) / sizeof(shapes[0]); i++) {
 		if (strcmp(f->name, shapes[i].name))

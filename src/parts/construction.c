@@ -29,6 +29,7 @@
 #include "asset_manager.h"
 #include "parts.h"
 #include "parts_internal.h"
+#include "profile.h"
 
 static struct parts_construction_process *get_cproc(int parts_no, int state)
 {
@@ -725,7 +726,7 @@ static struct cg *cp_cg_cached(int no)
 static bool build_cg(struct parts *parts, struct parts_construction_process *cproc, struct parts_cp_cg *op)
 {
 	struct cg *cg = cp_cg_cached(op->no);
-	if (ain->version >= 14 && (!cg || cg->metrics.w <= 0 || cg->metrics.h <= 0)) {
+	if (profile.parts.native_construction && (!cg || cg->metrics.w <= 0 || cg->metrics.h <= 0)) {
 		WARNING("construction: CG %d cannot be loaded", op->no);
 		gfx_delete_texture(&cproc->common.texture);
 		parts_set_dims(parts, &cproc->common, 0, 0);
@@ -1100,7 +1101,7 @@ static void cp_text_put_rect(uint8_t *pixels, int tw, int th, int64_t dx, int64_
  * v14 text state does (parts_text_v14_grid). */
 static bool cp_text_on_grid(void)
 {
-	return ain->version >= 14 && gfx_text_cn_gdi();
+	return profile.parts.native_message_window && gfx_text_cn_gdi();
 }
 
 // The widest run of cells drawn at once (a texture's width).

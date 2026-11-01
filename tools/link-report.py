@@ -19,5 +19,5 @@ base = next(a for a, n in symbols.items() if n == "init_libraries")
 out = []
 for line in open(report):
     name, args, offset = line.split()
-    out.append(f"{name} {args} " + ("-" if offset == "-" else symbols.get(base + int(offset), "?" + offset)))
+    out.append(f"{name} {args} " + ("-" if offset == "-" else symbols.get(base + int(offset), "external")))
 print("\n".join(sorted(out)))

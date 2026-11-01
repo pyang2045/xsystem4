@@ -188,7 +188,7 @@ static bool pe_v14_numeral_arg_shape(const struct ain_type *type, char shape)
  * getting a C function with an incompatible CIF. */
 static void pe_v14_register_numerals(int libno)
 {
-	if (ain->version < 14)
+	if (!profile.parts.v14_bindings)
 		return;
 	static const struct {
 		const char *name;

@@ -18,6 +18,7 @@
 #include "parts.h"
 #include "parts_internal.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 /* The key wait mark (キー待ちマーク), the NEXT sign of a message window.
  * The original keeps it as the third private child of the window object
@@ -300,7 +301,7 @@ static struct string *message_window_plain_text(struct parts_message_window *mw,
 		if (*p != '\n') {
 			struct message_glyph_time *g = &mw->glyph_times[mw->nr_glyph_times++];
 			g->start = start;
-			g->fade = ain->version >= 14 && interval > 0;
+			g->fade = profile.parts.native_message_window && interval > 0;
 			if (g->fade)
 				mw->fade_end = max(mw->fade_end, start + 200);
 			start += interval;
@@ -320,7 +321,7 @@ static struct string *message_window_plain_text(struct parts_message_window *mw,
 static float message_speed_rate(void)
 {
 	static bool busy;
-	if (busy || ain->version < 14)
+	if (busy || !profile.parts.native_message_window)
 		return 1;
 	int fno = ain_get_function(ain, "message::detail::GetMessageSpeedRate");
 	if (fno < 0 || ain->functions[fno].nr_args
@@ -349,7 +350,7 @@ static float message_speed_rate(void)
 static bool message_read_color(SDL_Color *color)
 {
 	static bool busy;
-	if (busy || ain->version < 14)
+	if (busy || !profile.parts.native_message_window)
 		return false;
 	int fno = ain_get_function(ain, "message::detail::GetReadMessageTextColor");
 	if (fno < 0)
@@ -411,7 +412,7 @@ static void message_window_layout(struct parts *parts, float rate, const SDL_Col
 	mw->text.line_space = line_space;
 	double speed = (double)mw->text_speed * rate;
 	int interval = 0;
-	if (ain->version >= 14)
+	if (profile.parts.native_message_window)
 		interval = speed >= INT_MAX ? INT_MAX : speed <= INT_MIN ? INT_MIN : (int)speed;
 	struct string *plain = message_window_plain_text(mw, interval);
 	mw->plain_bytes = plain->size;
@@ -460,7 +461,7 @@ static void message_window_dirty(struct parts *parts)
 static void message_window_rebuild(struct parts *parts)
 {
 	parts->message->text_changed = true;
-	parts->message->build_pending = ain->version >= 14;
+	parts->message->build_pending = profile.parts.native_message_window;
 	message_window_dirty(parts);
 }
 
@@ -483,7 +484,7 @@ void PE_SetMessageWindowText(int parts_no, struct string *text,
 			&& !memcmp(mw->raw_text->text, text ? text->text : "", mw->raw_text->size))
 		return;
 	mw->msg_num = msg_num;
-	if (ain->version >= 14) {
+	if (profile.parts.native_message_window) {
 		if (msg_num > 0)
 			mw->is_read = msgskip_get_flag(msg_num);
 		if (func_name && func_name->size)

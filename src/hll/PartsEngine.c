@@ -30,6 +30,7 @@
 #include "../parts/parts_internal.h"
 #include "movie.h"
 #include "apeg.h"
+#include "profile.h"
 #include "hll.h"
 #include "input.h"
 #include <SDL.h>
@@ -48,7 +49,7 @@ static bool pe_v14_in_update;
 static void PartsEngine_ModuleFini(void)
 {
 	PE_Reset();
-	if (ain->version >= 14) {
+	if (profile.parts.controller_ids) {
 		// A restart can leave from inside an update (system.Reset).
 		pe_v14_in_update = false;
 		parts_v14_restart();
@@ -57,8 +58,8 @@ static void PartsEngine_ModuleFini(void)
 
 static void PartsEngine_Update(int passed_time, bool is_skip, bool message_window_show)
 {
-	// ain v7: the ending movie.
-	if (ain->version == 7)
+	// The ending movie of ain v7.
+	if (profile.parts.movies_in_update)
 		PE_update_parts_movies();
 	PE_Update(passed_time, message_window_show);
 }
@@ -2078,13 +2079,13 @@ static bool PartsEngine_Parts_SetPartsCGThread(int number, struct string *cgname
  * the component's own flag is changed, not its effective eligibility. */
 static void PE_v14_SetWheelable(int parts_no, bool enable)
 {
-	if (ain->version >= 14 && parts_no > 0)
+	if (profile.parts.wheelable_parts && parts_no > 0)
 		parts_get(parts_no)->wheelable = enable;
 }
 
 static void pe_v14_register_wheel(int libno)
 {
-	if (ain->version < 14)
+	if (!profile.parts.wheelable_parts)
 		return;
 	struct ain_hll_function *fun = get_fun(libno, "Parts_SetWheelable");
 	if (!fun || fun->nr_arguments != 2 || !fun->arguments
@@ -2171,6 +2172,7 @@ static void pe_v14_register_batch(int libno)
 	pe_v14_register_checkbox(libno);
 	pe_v14_register_sound_names(libno);
 #include "pe_v14_prelink.h"
+#include "profile.h"
 }
 
 static void PartsEngine_PreLink(void)
@@ -2356,12 +2358,9 @@ static bool PE_v7_AddPartsConstructionProcess(struct page **ints_page, struct pa
 #undef I
 }
 
-extern bool parts_v7_activities;
-
 static void pe_v7_register(int libno)
 {
 	struct static_library *lib = &lib_PartsEngine;
-	parts_v7_activities = true;
 	static_library_register(lib, "Parts_GetParentPartsNumber", PE_v14_GetParentPartsNumber);
 	static_library_register(lib, "GetComponentAbsoluteMaxPosZ", PE_v7_GetComponentAbsoluteMaxPosZ);
 	static_library_register(lib, "GetActiveParts", PE_v7_GetActiveParts);
@@ -2412,7 +2411,7 @@ static void PartsEngine_PostLink(void)
 	if (libno < 0)
 		return;
 	pe_v14_register_wheel(libno);
-	if (ain->version < 14 && get_fun(libno, "CreateActivity") && !get_fun(libno, "GetMessageUniqueID"))
+	if (profile.parts.v7_bindings)
 		pe_v7_register(libno);
 	if (get_fun(libno, "AddController")) {
 		extern void pe_controller_register(void);

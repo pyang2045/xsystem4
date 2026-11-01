@@ -25,6 +25,7 @@
 #include "vm.h"
 #include "xsystem4.h"
 #include "parts_internal.h"
+#include "profile.h"
 
 static int extract_multibyte_char(const char *src, char *dst)
 {
@@ -124,7 +125,7 @@ struct string *parts_text_get(struct parts_text *t)
  */
 static bool parts_text_v14_grid(struct parts *parts, struct parts_text *t)
 {
-	if (ain->version < 14 || !gfx_text_cn_gdi())
+	if (!profile.parts.native_message_window || !gfx_text_cn_gdi())
 		return false;
 	for (int i = 0; i < PARTS_NR_STATES; i++) {
 		if (t == &parts->states[i].text)

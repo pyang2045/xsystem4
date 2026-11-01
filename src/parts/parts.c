@@ -34,6 +34,7 @@
 #include "parts.h"
 #include "parts_internal.h"
 #include "reign.h"
+#include "profile.h"
 
 struct parts_list parts_list = TAILQ_HEAD_INITIALIZER(parts_list);
 static struct parts_list dirty_list = TAILQ_HEAD_INITIALIZER(dirty_list);
@@ -70,7 +71,7 @@ static void parts_init(struct parts *parts)
 	parts->local = PARTS_PARAMS_INITIALIZER;
 	parts->global = PARTS_PARAMS_INITIALIZER;
 	// The anchor frame of a parts that is never placed (root_pos; v14).
-	if (ain->version >= 14)
+	if (profile.parts.native_transforms)
 		parts_update_global_pos(parts, NULL);
 	parts->delegate_index = -1;
 	parts->want_save = true;
@@ -112,7 +113,7 @@ static void dirty_list_remove(struct parts *parts)
  */
 static void parts_user_component_dirty(struct parts *parts)
 {
-	if (ain->version >= 14 && parts->component_type == 17)
+	if (profile.parts.typed_components && parts->component_type == 17)
 		parts_component_dirty(parts);
 }
 
@@ -192,7 +193,7 @@ struct parts *parts_get(int parts_no)
 	parts->controller_no = PE_get_active_controller();
 	slot->value = parts;
 	parts_list_insert(parts);
-	if (ain->version >= 14) {
+	if (profile.parts.controller_ids) {
 		// A number of an activity component whose parts went with its
 		// controller is written to again: the script still holds the
 		// activity and gets a blank parts, as before; say so
@@ -311,7 +312,7 @@ void parts_state_reset(struct parts_state *state, enum parts_type type)
 		// v14 (0x5b3e80): 表示タイプ 0 with no ＣＧ名, the number 0, 桁數 0,
 		// ゼロパディング on, and the default font (0x69f1d0: type 0, size
 		// 16, white, no 太さ, no 縁取り).
-		state->num.length = ain->version >= 14 ? 0 : 1;
+		state->num.length = profile.parts.typed_components ? 0 : 1;
 		state->num.font_no = -1;
 		state->num.zero_pad = true;
 		state->num.font = default_text_style;
@@ -323,7 +324,7 @@ void parts_state_reset(struct parts_state *state, enum parts_type type)
 	case PARTS_VGAUGE:
 		state->gauge.cg_no = -1;
 		state->gauge.rate = 0.0f;
-		if (ain->version >= 14) {
+		if (profile.parts.typed_components) {
 			state->gauge.numerator = state->gauge.denominator = 100.0f;
 			state->gauge.rate = 1.0f;
 		}
@@ -383,7 +384,7 @@ struct parts_numeral *parts_get_numeral(struct parts *parts, int state)
 		parts_state_reset(&parts->states[state], PARTS_NUMERAL);
 	}
 	// v14 0x5b77f0 (type 24): the state of a low-level widget is a 數字部件.
-	if (ain->version >= 14 && parts->component_type == 18)
+	if (profile.parts.typed_components && parts->component_type == 18)
 		parts->component_state_type[state] = 24;
 	return &parts->states[state].num;
 }
@@ -393,7 +394,7 @@ struct parts_gauge *parts_get_hgauge(struct parts *parts, int state)
 	if (parts->states[state].type != PARTS_HGAUGE) {
 		parts_state_reset(&parts->states[state], PARTS_HGAUGE);
 	}
-	if (ain->version >= 14 && parts->component_type == 18)
+	if (profile.parts.typed_components && parts->component_type == 18)
 		parts->component_state_type[state] = 22;
 	return &parts->states[state].gauge;
 }
@@ -403,7 +404,7 @@ struct parts_gauge *parts_get_vgauge(struct parts *parts, int state)
 	if (parts->states[state].type != PARTS_VGAUGE) {
 		parts_state_reset(&parts->states[state], PARTS_VGAUGE);
 	}
-	if (ain->version >= 14 && parts->component_type == 18)
+	if (profile.parts.typed_components && parts->component_type == 18)
 		parts->component_state_type[state] = 23;
 	return &parts->states[state].gauge;
 }
@@ -480,7 +481,7 @@ static Point calculate_offset(int mode, int w, int h)
  */
 static void parts_common_recalculate_hitbox(struct parts *parts, struct parts_common *common)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.native_transforms) {
 		for (int i = 0; i < PARTS_NR_STATES; i++) {
 			struct parts_state *s = &parts->states[i];
 			if (&s->common != common || (s->type != PARTS_HGAUGE && s->type != PARTS_VGAUGE))
@@ -742,7 +743,7 @@ void parts_parent_transform(struct parts *parts, mat4 out)
 // Where the parts' anchor is on screen, from the parent's current transform.
 static Point parts_anchor_pos(struct parts *parts)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		Point anchor = parts_placed_pos(parts);
 		if (parts->parent)
 			anchor = parts_child_pos(&parts->parent->global, anchor);
@@ -757,7 +758,7 @@ static Point parts_anchor_pos(struct parts *parts)
 // parent == NULL: a top-level parts, relative to root_pos.
 static void parts_update_global_pos(struct parts *parts, const struct parts_params *parent)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		Point pos = parts_placed_pos(parts);
 		if (parent) {
 			parts->global.pos = parts_child_pos(parent, pos);
@@ -780,7 +781,7 @@ static void parts_update_global_pos(struct parts *parts, const struct parts_para
 // its children's.
 static void parts_update_transform(struct parts *parts)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		struct parts *child;
 		PARTS_FOREACH_CHILD(child, parts) {
 			parts_update_global_pos(child, &parts->global);
@@ -802,7 +803,7 @@ static void parts_accumulate_add_color(const struct parts_params *parent, SDL_Co
  */
 void parts_load_transform(struct parts *parts)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_transforms)
 		return;
 	parts_level_transform(NULL, &parts->local, parts_placed_pos(parts), parts->global.matrix);
 	parts_accumulate_add_color(NULL, parts->local.add_color, parts->sub_color_mode, &parts->global);
@@ -829,7 +830,7 @@ void parts_set_global_pos(Point pos)
 	PARTS_LIST_FOREACH(parts) {
 		// v14: the children follow through their parent. (Before v14
 		// every parts is placed from the new position, as it was.)
-		if (ain->version < 14 || !parts->parent)
+		if (!profile.parts.native_transforms || !parts->parent)
 			parts_update_global_pos(parts, NULL);
 	}
 	parts_engine_dirty();
@@ -877,7 +878,7 @@ static void parts_screen_upper_left_float(struct parts *parts, struct parts_comm
 
 Point parts_screen_upper_left(struct parts *parts, struct parts_common *common)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		// As it was: the corner's offset from the anchor, mirrored by the
 		// flips and not scaled.
 		Point anchor = parts_anchor_pos(parts);
@@ -1018,7 +1019,7 @@ void parts_set_reverse(struct parts *parts, bool lr, bool tb)
 static void parts_accumulate_add_color(const struct parts_params *parent, SDL_Color local,
 		bool sub_color_mode, struct parts_params *out)
 {
-	if (ain->version < 14) {
+	if (!profile.parts.native_compositing) {
 		SDL_Color p = parent ? parent->add_color : (SDL_Color){0,0,0,0};
 		out->add_color = (SDL_Color) {
 			p.r * (local.r / 255.0f),
@@ -1099,7 +1100,7 @@ void parts_set_origin_mode(struct parts *parts, int origin_mode)
 	// sets its children's back to its alignment; a free box moves its
 	// children by its own; a user component writes its own to its first
 	// child.
-	if (changed && ain->version >= 14) {
+	if (changed && profile.parts.native_transforms) {
 		if (parts->states[0].type == PARTS_LAYOUT_BOX)
 			parts_component_dirty(parts);
 		parts_layout_size_changed(parts);
@@ -1165,7 +1166,7 @@ void parts_set_rotation_x(struct parts *parts, float rot)
 	parts_update_global_rotate_x(parts, parts->parent ? parts->parent->global.rotation.x : 0.0f);
 	// v14: the rotation is part of the matrix (parts_rotate_xy) and the
 	// children turn with it, as with the Z rotation.
-	if (ain->version >= 14)
+	if (profile.parts.native_transforms)
 		parts_update_transform(parts);
 	parts_dirty(parts);
 }
@@ -1184,7 +1185,7 @@ void parts_set_rotation_y(struct parts *parts, float rot)
 {
 	parts->local.rotation.y = rot;
 	parts_update_global_rotate_y(parts, parts->parent ? parts->parent->global.rotation.y : 0.0f);
-	if (ain->version >= 14)
+	if (profile.parts.native_transforms)
 		parts_update_transform(parts);
 	parts_dirty(parts);
 }
@@ -1205,7 +1206,7 @@ void parts_set_rotation_z(struct parts *parts, float rot)
 	parts_update_global_rotate_z(parts, parts->parent ? parts->parent->global.rotation.z : 0.0f);
 	// The children turn around this parts' anchor with it (v14; before it
 	// a rotation does not move them).
-	if (ain->version >= 14)
+	if (profile.parts.native_transforms)
 		parts_update_transform(parts);
 	parts_dirty(parts);
 }
@@ -1611,7 +1612,7 @@ static bool parts_numeral_update_v14(struct parts *parts, struct parts_numeral *
 
 bool parts_numeral_update(struct parts *parts, struct parts_numeral *num)
 {
-	if (ain->version >= 14)
+	if (profile.parts.typed_components)
 		return parts_numeral_update_v14(parts, num);
 	// XXX: don't generate texture if number hasn't been set yet
 	if (!num->have_num || num->font_no < 0)
@@ -1698,7 +1699,7 @@ static bool parts_state_is_empty(struct parts_state *state)
 {
 	if (state->type == PARTS_UNINITIALIZED)
 		return true;
-	return ain->version >= 14 && state->type == PARTS_CG
+	return profile.parts.native_compositing && state->type == PARTS_CG
 		&& !state->common.texture.handle && !state->cg.name;
 }
 
@@ -1803,7 +1804,7 @@ void parts_release(int parts_no)
 	// and a root must not be made in passing. (The original also leaves the
 	// children alone when the released parts is a root and when the tree has
 	// no root at the top; here they then have no parent.)
-	const bool replace_children = ain->version >= 14 && !releasing_all
+	const bool replace_children = profile.parts.controller_ids && !releasing_all
 		&& !parts_is_controller_root(parts);
 	while (!TAILQ_EMPTY(&parts->children)) {
 		struct parts *child = TAILQ_FIRST(&parts->children);
@@ -1914,7 +1915,7 @@ static void parts_combine_params(struct parts_params *parent, struct parts_param
 		Point pos, bool sub_color_mode, struct parts_params *out)
 {
 	out->z = parent->z + child->z;
-	if (ain->version < 14) {
+	if (!profile.parts.native_transforms) {
 		out->pos = parts_child_pos(parent, pos);
 	} else {
 		parts_level_transform(parent, child, pos, out->matrix);
@@ -2019,7 +2020,7 @@ void PE_UpdateScaled(int passed_time, int scaled_passed_time, bool message_windo
 	// CASTimerManager, which yields 0 under xsystem4; without a real
 	// delta, motions and loop animations never advance. Fall back to
 	// wall-clock time when the game reports no progress.
-	if (ain->version >= 14 && passed_time == 0) {
+	if (profile.parts.update_clock_fallback && passed_time == 0) {
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		if (pe_last_time.tv_sec > 0) {
@@ -2081,7 +2082,7 @@ int PE_GetDelegateIndex(int parts_no)
  */
 int parts_cg_deform(struct parts *parts, int state)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_compositing)
 		return parts->sprite_deform;
 	if (!parts_state_valid(state) || parts->states[state].type != PARTS_CG)
 		return 0;
@@ -2363,7 +2364,7 @@ void parts_v14_gauge_fill_rect(struct parts_gauge *g, bool vertical, Rectangle *
 
 static void _parts_set_gauge_cg(struct parts *parts, struct parts_gauge *g, struct cg *cg)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		gfx_delete_texture(&g->cg);
 		gfx_delete_texture(&g->common.texture);
 		gfx_init_texture_with_cg(&g->common.texture, cg);
@@ -2388,7 +2389,7 @@ static void _parts_set_gauge_cg(struct parts *parts, struct parts_gauge *g, stru
 
 bool parts_gauge_set_cg(struct parts *parts, struct parts_gauge *g, struct string *cg_name)
 {
-	if (ain->version >= 14 && !strcmp(g->cg_name ? g->cg_name->text : "", cg_name->text))
+	if (profile.parts.typed_components && !strcmp(g->cg_name ? g->cg_name->text : "", cg_name->text))
 		return true;
 
 	int cg_no;
@@ -2396,9 +2397,9 @@ bool parts_gauge_set_cg(struct parts *parts, struct parts_gauge *g, struct strin
 	if (!cg)
 		return false;
 	_parts_set_gauge_cg(parts, g, cg);
-	if (ain->version >= 14) cg_free(cg);
+	if (profile.parts.typed_components) cg_free(cg);
 	g->cg_no = cg_no;
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		if (g->cg_name) free_string(g->cg_name);
 		g->cg_name = string_ref(cg_name);
 	}
@@ -2411,7 +2412,7 @@ bool parts_gauge_set_cg_by_index(struct parts *parts, struct parts_gauge *g, int
 	if (!cg)
 		return false;
 	_parts_set_gauge_cg(parts, g, cg);
-	if (ain->version >= 14) cg_free(cg);
+	if (profile.parts.typed_components) cg_free(cg);
 	g->cg_no = cg_no;
 	return true;
 }
@@ -2458,7 +2459,7 @@ bool PE_SetVGaugeCG_by_index(int parts_no, int cg_no, int state)
 
 void parts_hgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		g->numerator = rate; g->denominator = 1; g->rate = rate;
 		parts_dirty(parts);
 		return;
@@ -2477,7 +2478,7 @@ void parts_hgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rat
 
 void parts_vgauge_set_rate(struct parts *parts, struct parts_gauge *g, float rate)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		g->numerator = rate; g->denominator = 1; g->rate = rate;
 		parts_dirty(parts);
 		return;
@@ -2501,7 +2502,7 @@ bool PE_SetHGaugeRate(int parts_no, float numerator, float denominator, int stat
 
 	struct parts *parts = parts_get(parts_no);
 	struct parts_gauge *g = parts_get_hgauge(parts, state);
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		g->numerator = numerator; g->denominator = denominator;
 		g->rate = denominator > 0 ? numerator / denominator : 1;
 		parts_dirty(parts);
@@ -2523,7 +2524,7 @@ bool PE_SetVGaugeRate(int parts_no, float numerator, float denominator, int stat
 
 	struct parts *parts = parts_get(parts_no);
 	struct parts_gauge *g = parts_get_vgauge(parts, state);
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		g->numerator = numerator; g->denominator = denominator;
 		g->rate = denominator > 0 ? numerator / denominator : 1;
 		parts_dirty(parts);
@@ -2545,7 +2546,7 @@ bool PE_SetHGaugeSurfaceArea(int parts_no, int x, int y, int w, int h, int state
 
 	struct parts *parts = parts_get(parts_no);
 	struct parts_gauge *g = parts_get_hgauge(parts, state);
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		g->common.surface_area = (Rectangle) {x, y, w, h};
 		parts_common_recalculate_hitbox(parts, &g->common);
 		parts_dirty(parts);
@@ -2565,7 +2566,7 @@ bool PE_SetVGaugeSurfaceArea(int parts_no, int x, int y, int w, int h, int state
 
 	struct parts *parts = parts_get(parts_no);
 	struct parts_gauge *g = parts_get_vgauge(parts, state);
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		g->common.surface_area = (Rectangle) {x, y, w, h};
 		parts_common_recalculate_hitbox(parts, &g->common);
 		parts_dirty(parts);
@@ -2589,7 +2590,7 @@ bool PE_SetNumeralCG(int parts_no, struct string *cg_name, int state)
 {
 	if (!parts_state_valid(--state))
 		return false;
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		// 0x5b49f0: nothing for the same name on a CG numeral; otherwise
 		// the numeral becomes 表示タイプ 0.
 		struct parts *parts = parts_get(parts_no);
@@ -2645,7 +2646,7 @@ bool PE_SetNumeralLinkedCGNumberWidthWidthList(int parts_no, struct string *cg_n
 		return false;
 
 	int w[12] = { w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w_minus, w_comma };
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		// 0x5b4ac0: nothing for the same name and widths on a linked CG
 		// numeral; otherwise the numeral becomes 表示タイプ 1. True
 		// whether the CG exists or not (0x5992f0).
@@ -2800,7 +2801,7 @@ bool PE_SetNumeralLength(int parts_no, int length, int state)
 		return false;
 
 	struct parts *parts = parts_get(parts_no);
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		// 0x567690: a length below 0 is 0; the comparison is with the
 		// length as given.
 		struct parts_numeral *num = parts_get_numeral(parts, state);
@@ -2825,7 +2826,7 @@ bool PE_SetNumeralSurfaceArea(int parts_no, int x, int y, int w, int h, int stat
 		return false;
 
 	struct parts *parts = parts_get(parts_no);
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		// 0x567760 keeps the rectangle as it is given; the numeral is
 		// not rebuilt.
 		struct parts_numeral *n = parts_get_numeral(parts, state);
@@ -2867,7 +2868,7 @@ void PE_ReleaseAllWithoutSystem(struct page **erase_number_list)
 			if (!parts_is_controller_root(parts))
 				*erase_number_list = array_pushback(*erase_number_list,
 						(union vm_value){.i = parts->no}, AIN_ARRAY_INT, -1);
-			if (ain->version >= 14)
+			if (profile.parts.controller_ids)
 				pe_v14_activity_parts_released(parts->no);
 			parts_release(parts->no);
 		}
@@ -2992,7 +2993,7 @@ void PE_GetPartsSize(int parts_no, int *width, int *height, int state)
  */
 int PE_GetPartsCGDeform(int parts_no, int state)
 {
-	if (ain->version < 14 || parts_no <= 0 || !parts_state_valid(--state))
+	if (!profile.parts.native_compositing || parts_no <= 0 || !parts_state_valid(--state))
 		return 0;
 	struct parts *parts = parts_get(parts_no);
 	if (parts->states[state].type != PARTS_CG) {
@@ -3164,7 +3165,7 @@ static void parts_set_parent_now(struct parts *parts, int parent_parts_no)
 	}
 	parts->parent = parent;
 	if (parent) {
-		if (ain->version >= 14 && parent->controller_no != parts->controller_no) {
+		if (profile.parts.controller_ids && parent->controller_no != parts->controller_no) {
 			static unsigned traced;
 			if (dev_getenv("XSYS4_STAGE2_TRACE") && traced++ < 60)
 				WARNING("S2 layer-root reparent: parts %d (controller %d) under %d (controller %d)",
@@ -3184,7 +3185,7 @@ static void parts_set_parent_now(struct parts *parts, int parent_parts_no)
 void PE_SetParentPartsNumber(int parts_no, int parent_parts_no)
 {
 	struct parts *parts = parts_get(parts_no);
-	if (ain->version >= 14) {
+	if (profile.parts.controller_ids) {
 		parts_set_parent_now(parts, parent_parts_no);
 		return;
 	}
@@ -3242,14 +3243,14 @@ float PE_GetPartsMagY(int parts_no)
 // v14 draws them (parts_rotate_xy); the engines before it store them only.
 void PE_SetPartsRotateX(int parts_no, float rot_x)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_transforms)
 		UNIMPLEMENTED("(%d, %f)", parts_no, rot_x);
 	parts_set_rotation_x(parts_get(parts_no), rot_x);
 }
 
 void PE_SetPartsRotateY(int parts_no, float rot_y)
 {
-	if (ain->version < 14)
+	if (!profile.parts.native_transforms)
 		UNIMPLEMENTED("(%d, %f)", parts_no, rot_y);
 	parts_set_rotation_y(parts_get(parts_no), rot_y);
 }
@@ -3358,7 +3359,7 @@ void PE_SetComponentType(int parts_no, int type, int state)
 	// GetComponentType, not a 1:1 mapping onto engine parts states. Store
 	// the raw value; the actual parts state is built by the pactex loader
 	// and the Create* calls.
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		struct parts *parts = parts_get(parts_no);
 		// Native 0x535e20: the widget already has the type -> nothing
 		// (0x536540). A low-level widget (outer type 18) takes a state type
@@ -3441,7 +3442,7 @@ int PE_GetComponentType(int parts_no, int state)
 	// v14: recognized low-level pactex states have their own native type.
 	// Other widgets retain the raw value stored by PE_SetComponentType.
 	// -1 is a valid "no parts" sentinel used by bytecode vtable dispatch.
-	if (ain->version >= 14) {
+	if (profile.parts.typed_components) {
 		if (parts_no < 0)
 			return -1;
 		struct parts *parts = parts_try_get(parts_no);
@@ -3561,7 +3562,7 @@ void parts_button_set_cg_name(struct parts *parts, const char *base)
 static struct parts *parts_button_widget(int parts_no)
 {
 	struct parts *parts = parts_try_get(parts_no);
-	if (parts && ain->version >= 14 && parts->component_type != 0)
+	if (parts && profile.parts.typed_components && parts->component_type != 0)
 		PE_SetComponentType(parts_no, 0, 1);
 	return parts;
 }
@@ -3739,21 +3740,21 @@ static int ctrl_active_index(void)
 // engines: the position, so that pushes and pops keep ID == position.
 static int ctrl_alloc_id(void)
 {
-	int id = ain->version >= 14 ? PARTS_CONTROLLER_ID_BASE : 0;
+	int id = profile.parts.controller_ids ? PARTS_CONTROLLER_ID_BASE : 0;
 	while (parts_controller_index(id) >= 0
-			|| (ain->version >= 14 && parts_table && parts_exists(id)))
+			|| (profile.parts.controller_ids && parts_table && parts_exists(id)))
 		id++;
 	return id;
 }
 
 int parts_controller_default_id(int position)
 {
-	return ain->version >= 14 ? PARTS_CONTROLLER_ID_BASE + position : position;
+	return profile.parts.controller_ids ? PARTS_CONTROLLER_ID_BASE + position : position;
 }
 
 bool parts_is_controller_root(struct parts *parts)
 {
-	return ain->version >= 14 && parts->no >= PARTS_CONTROLLER_ID_BASE
+	return profile.parts.controller_ids && parts->no >= PARTS_CONTROLLER_ID_BASE
 		&& parts->no == parts->controller_no;
 }
 
@@ -3778,7 +3779,7 @@ static struct parts *ctrl_root_create(int id)
 
 struct parts *parts_controller_root(int id)
 {
-	if (ain->version < 14 || id < PARTS_CONTROLLER_ID_BASE)
+	if (!profile.parts.controller_ids || id < PARTS_CONTROLLER_ID_BASE)
 		return NULL;
 	struct parts *root = parts_try_get(id);
 	if (!root && parts_controller_index(id) >= 0)
@@ -3808,7 +3809,7 @@ static void ctrl_root_attach(struct parts *parts)
 
 void parts_controller_relink_roots(void)
 {
-	if (ain->version < 14)
+	if (!profile.parts.controller_ids)
 		return;
 	struct parts *parts;
 	PARTS_LIST_FOREACH(parts) {
@@ -3903,7 +3904,7 @@ int PE_AddController(int index)
 	ctrl_insert(pos, id);
 	ctrl_stack.active = id;
 	// v14: the ID is the number of the controller's root parts (0x53d220).
-	if (ain->version >= 14 && parts_table)
+	if (profile.parts.controller_ids && parts_table)
 		ctrl_root_create(id);
 	ctrl_resort_from(pos + 1);
 	return id;
@@ -3926,7 +3927,7 @@ static void ctrl_release_parts(struct page **erase_number_list, int id)
 			if (!parts_is_controller_root(p))
 				*erase_number_list = array_pushback(*erase_number_list,
 						(union vm_value){.i = p->delegate_index}, AIN_ARRAY_INT, -1);
-			if (ain->version >= 14)
+			if (profile.parts.controller_ids)
 				pe_v14_activity_parts_released(p->no);
 			parts_release(p->no);
 		}
@@ -3948,7 +3949,7 @@ static void ctrl_release_parts(struct page **erase_number_list, int id)
 // pop.
 void PE_RemoveController(struct page **erase_number_list, int index)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.controller_ids) {
 		int pos = parts_controller_index(index);
 		if (ctrl_stack.nr_controllers <= 1)
 			return;
@@ -4009,7 +4010,7 @@ void parts_controller_move(int id, int index)
 
 void PE_set_active_controller(int controller_no)
 {
-	if (ain->version >= 14) {
+	if (profile.parts.controller_ids) {
 		// An ID that is not there leaves no controller designated
 		// (0x53d870 returns null and the caller stores it, 0x57ba60).
 		if (controller_no != PARTS_CONTROLLER_SYSTEM_OVERLAY
@@ -4027,7 +4028,7 @@ void PE_set_active_controller(int controller_no)
 
 int PE_get_active_controller(void)
 {
-	if (ain->version >= 14 && ctrl_stack.active < 0) {
+	if (profile.parts.controller_ids && ctrl_stack.active < 0) {
 		// None designated: the top controller acts, and an empty stack
 		// gets its default controller first (0x58a6f0 -> 0x53e640).
 		if (!ctrl_stack.nr_controllers)

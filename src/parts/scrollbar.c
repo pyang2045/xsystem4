@@ -29,6 +29,7 @@
 #include "xsystem4.h"
 #include "parts.h"
 #include "parts_internal.h"
+#include "profile.h"
 
 /*
  * What a v14 豎滾動條 scrolls: the amounts and the position, as the original
@@ -199,7 +200,7 @@ static void scrollbar_look_build(struct parts *parts);
  */
 void parts_scrollbar_update(void)
 {
-	if (ain->version < 14 && !parts_v7_activities)
+	if (!profile.parts.activity_widgets)
 		return;
 	struct parts *parts;
 	PARTS_LIST_FOREACH(parts) {
@@ -216,7 +217,7 @@ void parts_scrollbar_update(void)
 			continue;
 		if (parts->delegate_index >= 0) {
 			const int vars[2] = { sb->pos, scrollbar_max(sb) };
-			if (parts_v7_activities)
+			if (profile.parts.widget_parts_messages)
 				parts_msg_push(parts, PARTS_MSG_SCROLL, "ii", vars[0], vars[1]);
 			else
 				parts_enqueue_message_vars(21, parts->no, parts->delegate_index,
@@ -385,7 +386,7 @@ static void scrollbar_look_build(struct parts *parts)
 
 static struct parts_scrollbar_look *scrollbar_look(struct parts *parts)
 {
-	if ((ain->version < 14 && !parts_v7_activities) || !scrollbar_is_bar(parts) || !parts->scrollbar_look)
+	if (!profile.parts.activity_widgets || !scrollbar_is_bar(parts) || !parts->scrollbar_look)
 		return NULL;
 	if (parts->scrollbar_look->dirty)
 		scrollbar_look_build(parts);
@@ -394,7 +395,7 @@ static struct parts_scrollbar_look *scrollbar_look(struct parts *parts)
 
 bool parts_scrollbar_has_look(struct parts *parts)
 {
-	return (ain->version >= 14 || parts_v7_activities) && scrollbar_is_bar(parts) && parts->scrollbar_look;
+	return profile.parts.activity_widgets && scrollbar_is_bar(parts) && parts->scrollbar_look;
 }
 
 /* cvttss2si: a float that is no int (out of range, NaN) gives INT_MIN. */
@@ -610,7 +611,7 @@ static void scrollbar_end_drag(void)
  */
 void parts_scrollbar_input(Point pos, bool down, bool was_down, struct parts *target)
 {
-	if (ain->version < 14 && !parts_v7_activities)
+	if (!profile.parts.activity_widgets)
 		return;
 	enum parts_scrollbar_hit hit = PARTS_SCROLLBAR_MISS;
 	struct parts_scrollbar_look *look = NULL;

@@ -39,6 +39,7 @@
 
 #include "translation.h"
 #include "xsystem4.h"
+#include "profile.h"
 #include "asset_manager.h"
 #include "debugger.h"
 #include "gfx/gfx.h"
@@ -698,6 +699,7 @@ int main(int argc, char *argv[])
 	if (!(ain = ain_open(ainfile, &err))) {
 		ERROR("%s", ain_strerror(err));
 	}
+	profile_init(ain);
 	// New PartsEngine games can omit the display dimensions from AliceStart.ini.
 	// Keep explicit dimensions and the legacy 800x600 default for older APIs.
 	int parts_lib = ain_get_library(ain, "PartsEngine");
