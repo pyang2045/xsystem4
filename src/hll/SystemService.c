@@ -37,6 +37,7 @@
 #include "xsystem4.h"
 #include "hll.h"
 #include "system4/file.h"
+#include "profile.h"
 
 static int SystemService_GetMixerName(int n, struct string **name)
 {
@@ -269,7 +270,7 @@ static const char *const window_settings_v14_keys[NR_WINDOW_SETTINGS_V14] = {
 
 static bool window_settings_is_v14(void)
 {
-	return ain->version >= 14;
+	return profile.hll.window_settings_v14;
 }
 
 /*
@@ -444,7 +445,7 @@ static int mouse_cursor_config[NR_MOUSE_CURSOR_CONFIG] = {0};
 
 static int nr_mouse_cursor_config(void)
 {
-	return ain->version >= 14 ? NR_MOUSE_CURSOR_CONFIG : 1;
+	return profile.hll.mouse_cursor_configs ? NR_MOUSE_CURSOR_CONFIG : 1;
 }
 
 static bool SystemService_SetMouseCursorConfig(int type, int value)

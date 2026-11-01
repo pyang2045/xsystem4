@@ -28,6 +28,7 @@
 #include "xsystem4.h"
 #include "CharSpriteManager.h"
 #include "iarray.h"
+#include "profile.h"
 
 /*
  * NOTE: This is not a library on it's own, but rather part of
@@ -187,7 +188,7 @@ static void charsprite_render(struct charsprite *cs)
 
 	// XXX: this is handled here and not in gfx_render_text because of the
 	//      width calculation below
-	if (ch[0] == '}' && game_rance02_mg) {
+	if (ch[0] == '}' && profile.quirks.rance02_mg) {
 		ch[0] = 0x81;
 		ch[1] = 0x5c;
 		ch[2] = 0;

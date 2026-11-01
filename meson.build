@@ -81,3 +81,5 @@ subdir('src')
 install_subdir('shaders', install_dir : get_option('datadir') / 'xsystem4')
 install_subdir('fonts', install_dir : get_option('datadir') / 'xsystem4')
 install_data('debugger.scm', install_dir : get_option('datadir') / 'xsystem4')
+
+test('version gates', find_program('tools/check-version-gates.sh'))

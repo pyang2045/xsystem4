@@ -31,14 +31,8 @@
 #include "xsystem4.h"
 
 #include "hll/hll.h"
+#include "profile.h"
 
-bool game_daibanchou_en = false;
-bool game_rance02_mg = false;
-bool game_rance6_mg = false;
-bool game_rance7_mg = false;
-bool game_rance8 = false;
-bool game_rance8_mg = false;
-bool game_dungeons_and_dolls = false;
 bool ain_is_gb18030 = false;
 bool ain_is_utf8 = false;
 
@@ -295,7 +289,7 @@ static void apply_rance02_hacks(struct ain *ain)
 	write_instruction0(&out, RETURN);
 	write_instruction1(&out, ENDFUNC, fno);
 
-	game_rance02_mg = true;
+	profile.quirks.rance02_mg = true;
 }
 
 // Rance VI (MangaGamer version)
@@ -305,7 +299,7 @@ static void apply_rance6_hacks(struct ain *ain)
 {
 	if (ain_get_function(ain, "GetTextWidth") < 0)
 		return;
-	game_rance6_mg = true;
+	profile.quirks.rance6_mg = true;
 }
 
 // Daibanchou (English fan translation)
@@ -316,7 +310,7 @@ static void apply_rance6_hacks(struct ain *ain)
 static void apply_daibanchou_hacks(struct ain *ain)
 {
 	if (ain->nr_strings > 2 && !strcmp(ain->strings[2]->text, "Seijou Academy")) {
-		game_daibanchou_en = true;
+		profile.quirks.daibanchou_en = true;
 	}
 }
 
@@ -369,26 +363,47 @@ const char *game_version_text(void)
 	return "sd4gv86sdf834fs68f63qvna4";
 }
 
+static void set_rance8_quirk(possibly_unused struct ain *ain)
+{
+	profile.quirks.rance8 = true;
+}
+
+static void set_rance_quest_quirks(possibly_unused struct ain *ain)
+{
+	profile.quirks.rance8 = true;
+	profile.quirks.rance8_mg = true;
+}
+
+static void set_dungeons_and_dolls_quirk(possibly_unused struct ain *ain)
+{
+	profile.quirks.dungeons_and_dolls = true;
+}
+
+// A game with an oddity gets a row here, not a check in shared code.
+static const struct {
+	const char *name;
+	void (*apply)(struct ain *ain);
+} game_hacks[] = {
+	{ "大番長", apply_daibanchou_hacks },
+	{ "Rance 02", apply_rance02_hacks },
+	{ "Rance6", apply_rance6_hacks },
+	{ "ランス・クエスト", set_rance8_quirk },
+	{ "Rance Quest", set_rance_quest_quirks },
+	{ "ＤＵＮＧＥＯＮＳ＆ＤＯＬＬＳ", set_dungeons_and_dolls_quirk },
+};
+
 void apply_game_specific_hacks(struct ain *ain)
 {
 	char *game_name = game_to_utf8(config.game_name, 0);
-	if (!strcmp(game_name, "大番長")) {
-		apply_daibanchou_hacks(ain);
-	} else if (!strcmp(game_name, "Rance 02")) {
-		apply_rance02_hacks(ain);
-	} else if (!strcmp(game_name, "Rance6")) {
-		apply_rance6_hacks(ain);
-	} else if (!strcmp(game_name, "ランス・クエスト")) {
-		game_rance8 = true;
-	} else if (!strcmp(game_name, "Rance Quest")) {
-		game_rance8 = true;
-		game_rance8_mg = true;
-	} else if (!strcmp(game_name, "ＤＵＮＧＥＯＮＳ＆ＤＯＬＬＳ")) {
-		game_dungeons_and_dolls = true;
+	for (size_t i = 0; i < sizeof(game_hacks) / sizeof(*game_hacks); i++) {
+		if (!strcmp(game_name, game_hacks[i].name)) {
+			game_hacks[i].apply(ain);
+			break;
+		}
 	}
 	free(game_name);
 
 	// XXX: we don't rely on game_name because mods change it
 	if (ain_get_library(ain, "SengokuRanceFont") >= 0)
-		game_rance7_mg = true;
+		profile.quirks.rance7_mg = true;
 }

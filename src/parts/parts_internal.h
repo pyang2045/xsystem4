@@ -18,6 +18,7 @@
 #define SYSTEM4_PARTS_INTERNAL_H
 
 #include <cglm/types.h>
+#include "profile.h"
 #include "gfx/gfx.h"
 #include "gfx/font.h"
 #include "queue.h"
@@ -1233,5 +1234,43 @@ static inline bool parts_state_valid(int state)
 int parts_cg_deform(struct parts *parts, int state);
 
 // ain v7 with the activity declarations (妻みぐい３): see save.c.
+
+/*
+ * What differs as a whole function between generations of the engine. Each
+ * generation has its own function, so a change to one cannot reach another.
+ * src/profile.c chooses them.
+ */
+struct parts_widget_ops {
+	void (*set_gauge_cg)(struct parts *parts, struct parts_gauge *g, struct cg *cg);
+	void (*hgauge_set_rate)(struct parts *parts, struct parts_gauge *g, float rate);
+	void (*vgauge_set_rate)(struct parts *parts, struct parts_gauge *g, float rate);
+	bool (*set_hgauge_rate)(int parts_no, float numerator, float denominator, int state);
+	bool (*set_vgauge_rate)(int parts_no, float numerator, float denominator, int state);
+	bool (*set_hgauge_area)(int parts_no, int x, int y, int w, int h, int state);
+	bool (*set_vgauge_area)(int parts_no, int x, int y, int w, int h, int state);
+	bool (*set_numeral_cg)(int parts_no, struct string *cg_name, int state);
+	bool (*set_numeral_linked_cg)(int parts_no, struct string *cg_name, int w0, int w1, int w2,
+			int w3, int w4, int w5, int w6, int w7, int w8, int w9, int w_minus,
+			int w_comma, int state);
+	bool (*set_numeral_length)(int parts_no, int length, int state);
+	bool (*set_numeral_area)(int parts_no, int x, int y, int w, int h, int state);
+	void (*set_component_type)(int parts_no, int type, int state);
+	int (*get_component_type)(int parts_no, int state);
+	void (*set_parent)(int parts_no, int parent_parts_no);
+};
+
+struct parts_controller_ops {
+	void (*remove_controller)(struct page **erase_number_list, int index);
+	void (*set_active_controller)(int controller_no);
+	int (*get_active_controller)(void);
+};
+
+struct parts_input_ops {
+	void (*begin_input)(void);
+	void (*end_input)(void);
+	void (*reset_input)(void);
+	void (*update_input_state)(int passed_time);
+	void (*set_show_link)(int parts_no, int link_parts_no);
+};
 
 #endif /* SYSTEM4_PARTS_INTERNAL_H */

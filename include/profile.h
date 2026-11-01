@@ -12,10 +12,18 @@
 #include <stdbool.h>
 
 struct ain;
+struct parts_widget_ops;
+struct parts_controller_ops;
+struct parts_input_ops;
 
 // PartsEngine. Two generations: v14 (Haharanman, Dohna Dohna) and ain v7 with
 // activities (妻みぐい３). Engines older than these have none of it.
 struct parts_features {
+	// Functions that differ as a whole (src/parts/parts_internal.h).
+	const struct parts_widget_ops *widgets;
+	const struct parts_controller_ops *controllers;
+	const struct parts_input_ops *input;
+
 	/* ---- v14 ---- */
 	// Local and global transforms as a tree, anchors, rotation, hit boxes.
 	bool native_transforms;
@@ -47,8 +55,6 @@ struct parts_features {
 	/* ---- ain v7 with activities ---- */
 	// The declarations written for ain v7 with activities.
 	bool v7_bindings;
-	// BeginInput/EndInput nest (the old input path otherwise).
-	bool nested_input_scopes;
 	// Hidden parts are not hovered, no hover state without a click, KeyPress.
 	bool activity_pointer;
 	// The Whole key and wheel events.
@@ -67,8 +73,50 @@ struct parts_features {
 	bool movies_in_update;
 };
 
+// Other libraries.
+struct hll_features {
+	// The log of AnteaterADVEngine as v14 keeps it, reset on a restart.
+	bool adv_log_v14;
+	// The window settings structure of v14 SystemService.
+	bool window_settings_v14;
+	// SystemService's table of mouse cursors, not the single one.
+	bool mouse_cursor_configs;
+	// Math.Rand from the v14 generator (R521).
+	bool math_r521;
+	// The Mersenne Twister of Math is seeded from the clock.
+	bool math_clock_seed;
+	// The wheel in notches, for a script reading it as v14 does.
+	bool wheel_notches;
+	// MsgSkip's flags as v14 stores them.
+	bool msgskip_v14;
+	// Sound groups, when the game has the table for them.
+	bool sound_groups;
+};
+
+// What the VM's values look like to a library.
+struct lang_features {
+	// Arrays typed by element, with shared struct pages, and generic options.
+	bool typed_arrays;
+};
+
+// One game's oddities, keyed by name in src/hacks.c.
+struct game_quirks {
+	bool daibanchou_en;
+	bool rance02_mg;
+	bool rance6_mg;
+	bool rance7_mg;
+	bool rance8;
+	bool rance8_mg;
+	bool dungeons_and_dolls;
+};
+
 struct game_profile {
 	struct parts_features parts;
+	struct hll_features hll;
+	struct lang_features lang;
+	struct game_quirks quirks;
+	// 1280x720 when AliceStart.ini has no size (the v14 message functions).
+	bool default_view_720p;
 };
 
 extern struct game_profile profile;

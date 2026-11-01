@@ -30,6 +30,7 @@
 #include "input.h"
 #include "vm.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 struct gpx_surface {
 	struct texture texture;
@@ -360,7 +361,7 @@ static void Gpx2Plus_CopyStretchReduce(int destSurface, int dx, int dy, int dWid
 
 static void Gpx2Plus_CopyStretchReduceAMap(int destSurface, int dx, int dy, int dWidth, int dHeight, int srcSurface, int sx, int sy, int sWidth, int sHeight)
 {
-	if (game_daibanchou_en)
+	if (profile.quirks.daibanchou_en)
 		sWidth /= 2;
 	struct texture *dst = get_texture(destSurface);
 	struct texture *src = get_texture(srcSurface);

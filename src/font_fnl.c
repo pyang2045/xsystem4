@@ -26,6 +26,7 @@
 #include "gfx/font.h"
 #include "translation.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 struct fnl_bitmap_glyph {
 	unsigned width;
@@ -282,7 +283,7 @@ struct font *fnl_font_load(struct fnl *lib, unsigned index)
 	font->super.size_char = fnl_font_size_char;
 	font->super.size_char_kerning = fnl_font_size_char_kerning;
 
-	if (!game_rance7_mg)
+	if (!profile.quirks.rance7_mg)
 		gfx_text_advance_edges = true;
 
 	return &font->super;

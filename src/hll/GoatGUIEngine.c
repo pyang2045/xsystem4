@@ -22,6 +22,7 @@
 #include "parts.h"
 #include "xsystem4.h"
 #include "hll.h"
+#include "profile.h"
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -209,7 +210,7 @@ static void GoatGUIEngine_PreLink(void)
 	assert(libno >= 0);
 
 	fun = get_fun(libno, "SetPartsCG");
-	if (fun && game_rance8) {
+	if (fun && profile.quirks.rance8) {
 		static_library_replace(&lib_GoatGUIEngine, "SetPartsCG", PE_SetPartsCG_by_string_index);
 	}
 	else if (fun && fun->arguments[1].type.data == AIN_INT) {

@@ -26,6 +26,7 @@
 #include "AnteaterADVEngine.h"
 #include "iarray.h"
 #include "hll.h"
+#include "profile.h"
 
 /*
  * AnteaterADVEngine
@@ -449,7 +450,7 @@ void ADVSceneKeeper_Clear(void)
 
 bool ADVSceneKeeper_Save(struct page **iarray)
 {
-	if (!iarray || ain->version >= 14)
+	if (!iarray || profile.hll.adv_log_v14)
 		return true;
 	if (*iarray) {
 		delete_page_vars(*iarray);
@@ -474,7 +475,7 @@ bool ADVSceneKeeper_Save(struct page **iarray)
 
 bool ADVSceneKeeper_Load(struct page **iarray)
 {
-	if (!iarray || ain->version >= 14)
+	if (!iarray || profile.hll.adv_log_v14)
 		return false;
 	if (!(*iarray))
 		return false;
@@ -538,7 +539,7 @@ static void AnteaterADVEngine_ModuleFini(void)
 	// loads a save, so a new game after a return to the title would show,
 	// and save, the pages of the run before. Games before v14 keep the
 	// buffer over a restart, as they always did.
-	if (ain->version >= 14) {
+	if (profile.hll.adv_log_v14) {
 		if (adv_trace())
 			NOTICE("S2 backlog reset pages=%d", logs ? ADVLogList_GetNumofADVLog() : 0);
 		ADVLogList_Clear();
@@ -637,8 +638,6 @@ static int v14_num_of_adv_log(void)
 
 static int AnteaterADVEngine_v14_GetNumofADVLog(void)
 {
-	if (ain->version < 14)
-		return ADVLogList_GetNumofADVLog();
 	int n = v14_num_of_adv_log();
 	// Traced when the count the script is given changes.
 	static int traced = -1;
@@ -653,17 +652,11 @@ static int AnteaterADVEngine_v14_GetNumofADVLog(void)
 // against all the pages there are.
 static int AnteaterADVEngine_v14_GetNumofADVLogText(int log_no)
 {
-	if (ain->version < 14)
-		return ADVLogList_GetNumofADVLogText(log_no);
 	return v14_log_lines(log_entry(log_no));
 }
 
 static void AnteaterADVEngine_v14_AddNewPage(void)
 {
-	if (ain->version < 14) {
-		ADVLogList_AddNewPage();
-		return;
-	}
 	if (!enabled)
 		return;
 	struct adv_log *log = current_log();
@@ -870,12 +863,12 @@ HLL_LIBRARY(AnteaterADVEngine,
 	    HLL_EXPORT(Clear, ADVLogList_Clear),
 	    HLL_EXPORT(AddText, AnteaterADVEngine_v14_AddText),
 	    HLL_EXPORT(AddNewLine, ADVLogList_AddNewLine),
-	    HLL_EXPORT(AddNewPage, AnteaterADVEngine_v14_AddNewPage),
+	    HLL_EXPORT(AddNewPage, ADVLogList_AddNewPage),
 	    HLL_EXPORT(AddVoice, AnteaterADVEngine_v14_AddVoice),
 	    HLL_EXPORT(SetEnable, ADVLogList_SetEnable),
 	    HLL_EXPORT(IsEnable, ADVLogList_IsEnable),
-	    HLL_EXPORT(GetNumofADVLog, AnteaterADVEngine_v14_GetNumofADVLog),
-	    HLL_EXPORT(GetNumofADVLogText, AnteaterADVEngine_v14_GetNumofADVLogText),
+	    HLL_EXPORT(GetNumofADVLog, ADVLogList_GetNumofADVLog),
+	    HLL_EXPORT(GetNumofADVLogText, ADVLogList_GetNumofADVLogText),
 	    HLL_EXPORT(GetADVLogText, AnteaterADVEngine_v14_GetADVLogText),
 	    HLL_EXPORT(GetNumofADVLogVoice, AnteaterADVEngine_v14_GetNumofADVLogVoice),
 	    HLL_EXPORT(GetADVLogVoice, AnteaterADVEngine_v14_GetADVLogVoice),
@@ -898,6 +891,13 @@ static void AnteaterADVEngine_PreLink(void)
 		libno = ain_get_library(ain, "AnteaterADVLogList");
 	if (libno < 0)
 		return;
+
+	if (profile.hll.adv_log_v14) {
+		static_library_replace(&lib_AnteaterADVEngine, "AddNewPage", AnteaterADVEngine_v14_AddNewPage);
+		static_library_replace(&lib_AnteaterADVEngine, "GetNumofADVLog", AnteaterADVEngine_v14_GetNumofADVLog);
+		static_library_replace(&lib_AnteaterADVEngine, "GetNumofADVLogText",
+				AnteaterADVEngine_v14_GetNumofADVLogText);
+	}
 
 	// v14: Save/Load(wrap<array<int>>) get the buffer as an int heap slot.
 	fun = get_fun(libno, "Save");

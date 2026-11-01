@@ -20,6 +20,7 @@
 #include "gfx/font.h"
 #include "xsystem4.h"
 #include "system4/string.h"
+#include "profile.h"
 
 // Get texture for source sprite
 static struct texture *STEX(int sp_no)
@@ -166,7 +167,7 @@ static void DrawGraph_FillAlphaColor(int dst, int x, int y, int w, int h, int r,
 static void DrawGraph_FillAMap(int dst, int x, int y, int w, int h, int alpha)
 {
 	gfx_fill_amap(DTEX(dst), x, y, w, h, alpha);
-	if (game_rance7_mg) {
+	if (profile.quirks.rance7_mg) {
 		// Short-term fix for https://github.com/nunuhara/xsystem4/issues/237
 		sprite_text_clear(sact_get_sprite(dst));
 	}

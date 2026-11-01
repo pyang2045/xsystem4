@@ -52,6 +52,7 @@
 #include "scene.h"
 #include "sprite.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 // ResumeLoad from a nested vm_execute (see CALLHLL): where it is unwound to.
 static jmp_buf resume_buf;
@@ -4278,7 +4279,7 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 		int str = stack_pop().i;
 		int32_t ch = string_get_char(heap_get_string(str), i);
 		// 'é' for EN Rance Quest
-		if (game_rance8_mg && ch == -91)
+		if (profile.quirks.rance8_mg && ch == -91)
 			stack_push(165);
 		else
 			stack_push(ch);
@@ -5970,7 +5971,7 @@ static void call_global_destructors(void)
 
 static void vm_free(void)
 {
-	if (game_dungeons_and_dolls) {
+	if (profile.quirks.dungeons_and_dolls) {
 		// Dungeons & Dolls saves the game state in destructors of global variables
 		call_global_destructors();
 	}

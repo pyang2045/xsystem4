@@ -26,6 +26,7 @@
 #include "vm/heap.h"
 #include "vm/page.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 // Pending ResumeLoad state — deferred to CALLHLL handler in vm.c
 // because vm_load_image replaces the entire VM state (heap, stack, call stack, IP).
@@ -94,7 +95,7 @@ static void system_ResumeLoad(struct string *keyName, struct string *fileName)
 static void system_Peek(void)
 {
 	handle_events();
-	if (ain->version < 14)
+	if (!profile.parts.input_sessions)
 		PE_UpdateInputState(0);
 }
 
@@ -102,7 +103,7 @@ static void system_Peek(void)
 static void system_PeekAll(void)
 {
 	handle_events();
-	if (ain->version < 14)
+	if (!profile.parts.input_sessions)
 		PE_UpdateInputState(0);
 }
 

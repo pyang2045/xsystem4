@@ -28,6 +28,7 @@
 #include "gfx/font.h"
 #include "translation.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 /*
  * NOTE: There are two different text rendering APIs: SACT2 and DrawGraph.
@@ -282,10 +283,10 @@ static uint32_t char_to_code(const char *ch, enum charmap charmap)
 		gb18030_char2unicode(ch, &c);
 	} else {
 		sjis_char2unicode(ch, &c);
-		if (c == '^' && game_rance02_mg)
+		if (c == '^' && profile.quirks.rance02_mg)
 			return 0xE9; // é
 		// half-width katakana 'no' (ﾉ)
-		if (c == 0xFF89 && game_rance6_mg)
+		if (c == 0xFF89 && profile.quirks.rance6_mg)
 			return 0xE9; // é
 	}
 	return c;

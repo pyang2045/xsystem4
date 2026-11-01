@@ -21,6 +21,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ffi.h>
+#include "profile.h"
 #include "system4/ain.h"
 #include "system4/string.h"
 #include "system4/utfsjis.h"
@@ -324,7 +325,7 @@ static void trace_hll_call(struct ain_library *lib, struct ain_hll_function *f,
  */
 bool hll_generic_is_option(int hll_arg3)
 {
-	return ain->version >= 14 && hll_arg3 > 0 && (hll_arg3 & 0x20000);
+	return profile.lang.typed_arrays && hll_arg3 > 0 && (hll_arg3 & 0x20000);
 }
 
 int hll_generic_slots(int hll_arg3)
@@ -726,7 +727,7 @@ void hll_call(int libno, int fno, int hll_arg3)
 	bool emplace_value_wrap = false, emplace_unknown_wrap = false;
 	int emplace_slot = hll_self_slot, emplace_index = 0;
 	uint32_t emplace_seq = heap_get_seq(emplace_slot);
-	if (ain->version >= 14 && f->return_type.data == AIN_WRAP
+	if (profile.lang.typed_arrays && f->return_type.data == AIN_WRAP
 	    && !strcmp(ain->libraries[libno].name, "Array") && !strcmp(f->name, "EmplaceBack")) {
 		struct page *a = page_index_valid(emplace_slot) ? heap[emplace_slot].page : NULL;
 		if (a && a->type == ARRAY_PAGE) {

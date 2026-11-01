@@ -129,13 +129,6 @@ void screenshot_save(void);
 
 #define MMAP_IF_64BIT (sizeof(void*) >= 8 ? ARCHIVE_MMAP : 0)
 
-extern bool game_daibanchou_en;
-extern bool game_rance02_mg;
-extern bool game_rance6_mg;
-extern bool game_rance7_mg;
-extern bool game_rance8;
-extern bool game_rance8_mg;
-extern bool game_dungeons_and_dolls;
 
 /* The string SystemService.GetGameVersionByText returns for this game (hacks.c). */
 const char *game_version_text(void);

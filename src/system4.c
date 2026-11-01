@@ -702,9 +702,7 @@ int main(int argc, char *argv[])
 	profile_init(ain);
 	// New PartsEngine games can omit the display dimensions from AliceStart.ini.
 	// Keep explicit dimensions and the legacy 800x600 default for older APIs.
-	int parts_lib = ain_get_library(ain, "PartsEngine");
-	if (ain->version >= 14 && parts_lib >= 0
-			&& ain_get_library_function(ain, parts_lib, "SeekMessage") >= 0) {
+	if (profile.default_view_720p) {
 		if (!view_width_from_ini)
 			config.view_width = 1280;
 		if (!view_height_from_ini)

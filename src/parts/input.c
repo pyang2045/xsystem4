@@ -1153,14 +1153,20 @@ static void parts_whole_keys_update(int passed_time)
 	}
 }
 
+static void v14_update_input_state(int passed_time)
+{
+	v14_update_input(passed_time);
+	// The scheduled input (src/input.c) learns that the input was read.
+	input_auto_read();
+}
+
 void PE_UpdateInputState(int passed_time)
 {
-	if (profile.parts.input_sessions) {
-		v14_update_input(passed_time);
-		// The scheduled input (src/input.c) learns that the input was read.
-		input_auto_read();
-		return;
-	}
+	profile.parts.input->update_input_state(passed_time);
+}
+
+static void classic_update_input_state(int passed_time)
+{
 	Point cur_pos;
 	bool cur_clicking = key_is_down(VK_LBUTTON);
 	mouse_get_pos(&cur_pos.x, &cur_pos.y);
@@ -1331,17 +1337,24 @@ void parts_set_show_link(struct parts *parts, int link_parts_no)
 /* Shared with the engines before v14 (GUIEngine, GoatGUIEngine, the older
  * PartsEngine), which keep their behaviour: both parts are got or made, and
  * the number is kept as it is. */
-void PE_SetOnCursorShowLinkPartsNumber(int parts_no, int link_parts_no)
+static void v14_set_show_link(int parts_no, int link_parts_no)
 {
-	if (profile.parts.input_sessions) {
-		if (parts_no > 0)
-			parts_set_show_link(parts_get(parts_no), link_parts_no);
-		return;
-	}
+	if (parts_no > 0)
+		parts_set_show_link(parts_get(parts_no), link_parts_no);
+	return;
+}
+
+static void classic_set_show_link(int parts_no, int link_parts_no)
+{
 	struct parts *parts = parts_get(parts_no);
 	struct parts *link_parts = parts_get(link_parts_no);
 	parts->linked_to = link_parts_no;
 	link_parts->linked_from = parts_no;
+}
+
+void PE_SetOnCursorShowLinkPartsNumber(int parts_no, int link_parts_no)
+{
+	profile.parts.input->set_show_link(parts_no, link_parts_no);
 }
 
 /* The engines before v14: -1 is no link. */
@@ -1529,16 +1542,26 @@ static void v14_reset_input_session(bool begin)
 	parts_began_click = begin;
 }
 
+static void v14_reset_input(void)
+{
+	v14_input_depth = 0;
+	v14_reset_input_session(false);
+	v14_active_parts = 0;
+	v14_prev_have_pos = false;
+}
+
+static void v7_reset_input(void)
+{
+	parts_set_input_depth(0);
+}
+
+static void classic_reset_input(void)
+{
+}
+
 void parts_reset_input(void)
 {
-	if (profile.parts.input_sessions) {
-		v14_input_depth = 0;
-		v14_reset_input_session(false);
-		v14_active_parts = 0;
-		v14_prev_have_pos = false;
-	} else if (profile.parts.nested_input_scopes) {
-		parts_set_input_depth(0);
-	}
+	profile.parts.input->reset_input();
 }
 
 int parts_get_input_depth(void)
@@ -1553,37 +1576,60 @@ void parts_set_input_depth(int depth)
 	parts_began_click = depth > 0;
 }
 
+// Native 0x58a720: reset/restart the session, then increment depth.
+static void v14_begin_input(void)
+{
+	v14_reset_input_session(true);
+	v14_input_depth++;
+}
+
+// Native 0x58a750: end the child, resume a remaining outer scope, and clamp
+// an unmatched EndInput at zero.
+static void v14_end_input(void)
+{
+	if (v14_input_depth)
+		v14_input_depth--;
+	v14_reset_input_session(v14_input_depth > 0);
+}
+
+// The scopes nest, as on v14.
+static void v7_begin_input(void)
+{
+	v14_input_depth++;
+	parts_began_click = true;
+}
+
+// The end of a child (the CG viewer, a scene of 回想) leaves the list that
+// opened it taking input.
+static void v7_end_input(void)
+{
+	if (v14_input_depth)
+		v14_input_depth--;
+	parts_began_click = v14_input_depth > 0;
+	clicked_parts = 0;
+	drag_state_reset();
+}
+
+static void classic_begin_input(void)
+{
+	parts_began_click = true;
+}
+
+static void classic_end_input(void)
+{
+	parts_began_click = false;
+	clicked_parts = 0;
+	drag_state_reset();
+}
+
 void PE_BeginInput(void)
 {
-	if (profile.parts.input_sessions) {
-		// Native 0x58a720: reset/restart the session, then increment depth.
-		v14_reset_input_session(true);
-		v14_input_depth++;
-		return;
-	}
-	// ain v7 with activities: the scopes nest, as on v14 (below).
-	if (profile.parts.nested_input_scopes)
-		v14_input_depth++;
-	parts_began_click = true;
+	profile.parts.input->begin_input();
 }
 
 void PE_EndInput(void)
 {
-	if (profile.parts.input_sessions) {
-		// Native 0x58a750: end the child, resume a remaining outer scope,
-		// and clamp an unmatched EndInput at zero.
-		if (v14_input_depth)
-			v14_input_depth--;
-		v14_reset_input_session(v14_input_depth > 0);
-		return;
-	}
-	// ain v7 with activities: the end of a child (the CG viewer, a scene of
-	// 回想) leaves the list that opened it taking input.
-	if (profile.parts.nested_input_scopes && v14_input_depth)
-		v14_input_depth--;
-	parts_began_click = profile.parts.nested_input_scopes && v14_input_depth > 0;
-	clicked_parts = 0;
-	drag_state_reset();
+	profile.parts.input->end_input();
 }
 
 void PE_SetDrag(int parts_no, bool enable)
@@ -1644,3 +1690,27 @@ bool PE_IsCursorIn(int parts_no, int mouse_x, int mouse_y, int state)
 	Point mouse_pos = { mouse_x, mouse_y };
 	return parts_hittest(parts, state, mouse_pos);
 }
+
+const struct parts_input_ops parts_input_v14 = {
+	.begin_input = v14_begin_input,
+	.end_input = v14_end_input,
+	.reset_input = v14_reset_input,
+	.update_input_state = v14_update_input_state,
+	.set_show_link = v14_set_show_link,
+};
+
+const struct parts_input_ops parts_input_classic = {
+	.begin_input = classic_begin_input,
+	.end_input = classic_end_input,
+	.reset_input = classic_reset_input,
+	.update_input_state = classic_update_input_state,
+	.set_show_link = classic_set_show_link,
+};
+
+const struct parts_input_ops parts_input_v7 = {
+	.begin_input = v7_begin_input,
+	.end_input = v7_end_input,
+	.reset_input = v7_reset_input,
+	.update_input_state = classic_update_input_state,
+	.set_show_link = classic_set_show_link,
+};

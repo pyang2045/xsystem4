@@ -48,6 +48,7 @@
  */
 #define STS_MIXER_IMPLEMENTATION
 #include "sts_mixer.h"
+#include "profile.h"
 
 #define CHUNK_SIZE 1024
 
@@ -960,7 +961,7 @@ static int groups_row(struct ex_table *t, int col, int key)
 static bool groups_read_config(struct groups_config *gc)
 {
 	// ain v7: 妻みぐい３ has the same table and timemaps.
-	if (!ain || (ain->version != 14 && ain->version != 7) || ain_get_library(ain, "MainEXFile") < 0)
+	if (!ain || !profile.hll.sound_groups || ain_get_library(ain, "MainEXFile") < 0)
 		return false;
 	struct ex *ex = main_ex_file();
 	struct ex_value *v = ex ? ex_get(ex, GROUP_NAME(TABLE)) : NULL;

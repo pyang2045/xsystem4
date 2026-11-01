@@ -31,6 +31,7 @@
 #include "vm/heap.h"
 #include "vm/page.h"
 #include "serialize_struct.h"
+#include "profile.h"
 
 // v14: hll_arg3 from CALLHLL encodes element type info for Array operations.
 // Set by ffi.c before each HLL call. High bits indicate reference-counted elements.
@@ -184,7 +185,7 @@ static void array_option_resize(struct page **array, int numof, bool keep)
 // in that field, and an array without a page says nothing.
 static int array_value_struct(struct page *a)
 {
-	if (ain->version < 14 || hll_current_arg3 != 2)
+	if (!profile.lang.typed_arrays || hll_current_arg3 != 2)
 		return -1;
 	if (!a || a->type != ARRAY_PAGE || a->a_type != AIN_ARRAY_STRUCT || a->array.rank > 1)
 		return -1;
@@ -410,7 +411,7 @@ out:
 static bool array_primitive_alloc(struct page **array, int numof)
 {
 	struct page *old = *array;
-	if (ain->version < 14 || hll_current_arg3 != 1 || !old
+	if (!profile.lang.typed_arrays || hll_current_arg3 != 1 || !old
 	    || old->type != ARRAY_PAGE || old->array.rank != 1
 	    || old->array.elem_slots > 1)
 		return false;
@@ -837,7 +838,7 @@ static void array_clear_typed(struct page **array)
 static void Array_Free(struct page **array)
 {
 	if (array && *array && (*array)->type == ARRAY_PAGE) {
-		if (ain->version >= 14) {
+		if (profile.lang.typed_arrays) {
 			array_clear_typed(array);
 			return;
 		}
@@ -928,7 +929,7 @@ static int Array_At(struct page **self, int index)
 		return 0;
 	}
 	if (!array_elem_is_ref()) {
-		if (ain->version >= 14) heap_ref(hll_self_slot);
+		if (profile.lang.typed_arrays) heap_ref(hll_self_slot);
 		stack_push(hll_self_slot);
 		stack_push(index);
 	} else {
@@ -978,7 +979,7 @@ static void Array_PopBack(struct page **array)
 		if (removed > 0)
 			heap_unref(removed);
 	}
-	if (new_size == 0 && ain->version < 14) {
+	if (new_size == 0 && !profile.lang.typed_arrays) {
 		free_page(a);
 		*array = NULL;
 		return;
@@ -998,7 +999,7 @@ static void Array_Clear(struct page **array)
 {
 	if (!array)
 		return;
-	if (ain->version >= 14 && *array && (*array)->type == ARRAY_PAGE) {
+	if (profile.lang.typed_arrays && *array && (*array)->type == ARRAY_PAGE) {
 		array_clear_typed(array);
 		return;
 	}
@@ -2136,7 +2137,7 @@ static int Array_ShallowCopy(struct page **self)
 	 * retains its heap owner. These concrete single-slot pages already
 	 * represent the shared object directly; the result needs its own ref.
 	 * Leave unverified primitive, nested and multi-slot shapes unchanged. */
-	bool retain = ain->version >= 14 && src->array.rank == 1
+	bool retain = profile.lang.typed_arrays && src->array.rank == 1
 		&& (src->a_type == AIN_ARRAY_STRUCT || src->a_type == AIN_REF_ARRAY_STRUCT
 		    || src->a_type == AIN_ARRAY_STRING || src->a_type == AIN_REF_ARRAY_STRING);
 	for (int i = 0; i < src->nr_vars; i++) {
@@ -2292,7 +2293,7 @@ static int Array_EmplaceBack(struct page **array)
 			struct_type = hll_current_arg3 & 0xFFFF;
 		if (struct_type >= 0 && struct_type < ain->nr_structures) {
 			new_a->array.struct_type = struct_type;
-			if (ain->version >= 14 && of_page)
+			if (profile.lang.typed_arrays && of_page)
 				new_val = vm_construct_struct(struct_type);
 			if (new_val <= 0)
 				new_val = alloc_struct(struct_type);

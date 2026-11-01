@@ -36,6 +36,7 @@
 #include "vm.h"
 #include "xsystem4.h"
 #include "debugger.h"
+#include "profile.h"
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -917,7 +918,7 @@ static struct {
 
 static bool wheel_is_v14(void)
 {
-	return ain && ain->version >= 14;
+	return profile.hll.wheel_notches;
 }
 
 static void wheel_add_notches(double notches)

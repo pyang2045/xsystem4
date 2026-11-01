@@ -30,6 +30,7 @@
 #include "xsystem4.h"
 #include "hll.h"
 #include "plugin.h"
+#include "profile.h"
 
 static void ChipmunkSpriteEngine_PreLink(void);
 static int ChipmunkSpriteEngine_Debug_GetFillRate(void) { return 0; }
@@ -445,7 +446,7 @@ static void ChipmunkSpriteEngine_PreLink(void)
 	}
 
 	fun = get_fun(libno, "SP_SetCG");
-	if (fun && game_rance8) {
+	if (fun && profile.quirks.rance8) {
 		static_library_replace(&lib_ChipmunkSpriteEngine, "SP_SetCG",
 				ChipmunkSpriteEngine_SP_SetCG_by_string_id);
 	} else if (fun && fun->arguments[1].type.data == AIN_INT) {
@@ -455,7 +456,7 @@ static void ChipmunkSpriteEngine_PreLink(void)
 	// TODO: SP_SetCutCG
 
 	fun = get_fun(libno, "CG_IsExist");
-	if (fun && game_rance8) {
+	if (fun && profile.quirks.rance8) {
 		static_library_replace(&lib_ChipmunkSpriteEngine, "CG_IsExist",
 				ChipmunkSpriteEngine_CG_IsExist_by_string_id);
 	} else if (fun && fun->arguments[0].type.data == AIN_INT) {
@@ -463,7 +464,7 @@ static void ChipmunkSpriteEngine_PreLink(void)
 	}
 
 	fun = get_fun(libno, "CG_GetMetrics");
-	if (fun && game_rance8) {
+	if (fun && profile.quirks.rance8) {
 		static_library_replace(&lib_ChipmunkSpriteEngine, "CG_GetMetrics",
 				ChipmunkSpriteEngine_CG_GetMetrics_by_string_id);
 	} else if (fun && fun->arguments[0].type.data == AIN_INT) {

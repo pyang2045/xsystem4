@@ -13,7 +13,14 @@
 
 struct game_profile profile;
 
+extern const struct parts_widget_ops parts_widget_v14, parts_widget_classic;
+extern const struct parts_controller_ops parts_controller_v14, parts_controller_classic;
+extern const struct parts_input_ops parts_input_v14, parts_input_v7, parts_input_classic;
+
 static const struct parts_features parts_v14 = {
+	.widgets = &parts_widget_v14,
+	.controllers = &parts_controller_v14,
+	.input = &parts_input_v14,
 	.native_transforms = true,
 	.native_compositing = true,
 	.typed_components = true,
@@ -29,10 +36,12 @@ static const struct parts_features parts_v14 = {
 };
 
 static const struct parts_features parts_activities_v7 = {
+	.widgets = &parts_widget_classic,
+	.controllers = &parts_controller_classic,
+	.input = &parts_input_v7,
 	.activity_widgets = true,
 	.activity_save = true,
 	.v7_bindings = true,
-	.nested_input_scopes = true,
 	.activity_pointer = true,
 	.whole_key_events = true,
 	.widget_parts_messages = true,
@@ -41,7 +50,11 @@ static const struct parts_features parts_activities_v7 = {
 	.save_activity_fields = true,
 };
 
-static const struct parts_features parts_classic = { 0 };
+static const struct parts_features parts_classic = {
+	.widgets = &parts_widget_classic,
+	.controllers = &parts_controller_classic,
+	.input = &parts_input_classic,
+};
 
 static bool has_parts_function(const struct ain *ain, const char *name)
 {
@@ -60,4 +73,19 @@ void profile_init(const struct ain *ain)
 	else
 		profile.parts = parts_classic;
 	profile.parts.movies_in_update = ain->version == 7;
+
+	if (ain->version >= 14) {
+		profile.hll = (struct hll_features) {
+			.adv_log_v14 = true,
+			.window_settings_v14 = true,
+			.mouse_cursor_configs = true,
+			.math_r521 = true,
+			.math_clock_seed = true,
+			.wheel_notches = true,
+			.msgskip_v14 = true,
+		};
+		profile.lang.typed_arrays = true;
+		profile.default_view_720p = has_parts_function(ain, "SeekMessage");
+	}
+	profile.hll.sound_groups = ain->version == 14 || ain->version == 7;
 }

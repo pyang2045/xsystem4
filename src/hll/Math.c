@@ -29,6 +29,7 @@
 #include "hll.h"
 #include "vm/page.h"
 #include "xsystem4.h"
+#include "profile.h"
 
 struct shuffle_table {
 	int id;
@@ -165,7 +166,7 @@ static bool math_rand_seeded;
 
 static bool math_uses_r521(void)
 {
-	return ain->version >= 14;
+	return profile.hll.math_r521;
 }
 
 static struct sys4_rand521 *math_rand_state(void)
@@ -514,7 +515,7 @@ static uint32_t mt_generate(void)
 			// 0x4b516c: at engine start-up the original seeds the MT
 			// generator from the clock too (0x4c7110 -> 0x4c63b0); other
 			// AIN versions keep the fixed default seed.
-			mt_init(ain->version >= 14 ? sys4_rand_time_seed() : 5489);
+			mt_init(profile.hll.math_clock_seed ? sys4_rand_time_seed() : 5489);
 		for (int i = 0; i < MT_N; i++) {
 			uint32_t y = (mt_state[i] & 0x80000000U) | (mt_state[(i+1) % MT_N] & 0x7fffffffU);
 			mt_state[i] = mt_state[(i + MT_M) % MT_N] ^ (y >> 1);

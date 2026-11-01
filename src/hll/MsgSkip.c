@@ -37,6 +37,7 @@
 #include "xsystem4.h"
 
 #include "hll.h"
+#include "profile.h"
 
 static bool enabled = false;
 static int state = 0;
@@ -527,7 +528,7 @@ static void MsgSkip_PreLink(void)
 	assert(libno >= 0);
 	if (ain_get_library_function(ain, libno, "Init") >= 0)
 		return;
-	if (ain->version >= 14) {
+	if (profile.hll.msgskip_v14) {
 		if (!msk_active)
 			msk_init();
 		return;
