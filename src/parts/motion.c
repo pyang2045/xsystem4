@@ -361,6 +361,9 @@ void PE_AddMotionCG_format(int parts_no, struct string *cg_format, int begin_cg_
 		int begin_t, int end_t, struct string *curve_name)
 {
 	// TODO: use curve
+	// No name, no frames to change to.
+	if (!cg_format->size)
+		return;
 	struct parts *parts = parts_get(parts_no);
 	struct parts_motion *motion = parts_motion_alloc(PARTS_MOTION_CG_FORMAT, begin_t, end_t);
 	motion->begin.i = begin_cg_no;

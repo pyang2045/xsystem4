@@ -314,6 +314,40 @@ static void config_init(void)
 	config.save_dir = new_save_dir;
 }
 
+/*
+ * A Chinese patch of this kind (Longinus.ini: TBL_MAPPED, TBL=CHS.TBL) is a second
+ * code file whose text is valid SJIS, a table from SJIS codes to GBK, and an archive
+ * of translated CGs the script loads itself (AFL_AddArchive). The game's own
+ * AliceStart.ini is kept: AliceStart.CHS is in GBK and only differs in the code file.
+ * The code files differ, so the saves get a folder of their own.
+ */
+static bool chs_patch = false;
+
+static void chs_patch_enable(void)
+{
+	const char *ext = file_extension(config.ain_filename);
+	if (!ext)
+		ERROR("--chs: no code file name");
+	size_t base_len = ext - config.ain_filename;
+	char *code = xmalloc(base_len + 4);
+	memcpy(code, config.ain_filename, base_len);
+	strcpy(code + base_len, "CHS");
+	free(config.ain_filename);
+	config.ain_filename = code;
+
+	char *table = gamedir_path("CHS.TBL");
+	translation_load_sjis_table(table);
+	free(table);
+
+	char *name = xmalloc(strlen(config.game_name) + 5);
+	strcpy(name, config.game_name);
+	strcat(name, "_CHS");
+	free(config.game_name);
+	config.game_name = name;
+	free(config.save_dir);
+	config.save_dir = get_save_path(save_folder_name);
+}
+
 static bool config_init_with_ini(const char *ini_path)
 {
 	if (!read_config(ini_path))
@@ -409,6 +443,7 @@ static void usage(void)
 	puts("        --font-x-scale   Specify the x scale for text rendering (1.0 = default scale)");
 	puts("        --locale         Show message translations from a .po file");
 	puts("        --locale-font    Specify the TrueType font for characters missing from the game font");
+	puts("        --chs            Use the Chinese patch in the game folder (<CodeName>.CHS, CHS.TBL)");
 	puts("        --dump-pot       Write the messages to a .pot translation template and exit");
 	puts("    -j, --joypad         Enable joypad");
 	puts("        --msgskip-delay  Specify the delay in ms to add when skipping messages with CTRL");
@@ -450,6 +485,7 @@ enum {
 	LOPT_LOCALE,
 	LOPT_LOCALE_FONT,
 	LOPT_DUMP_POT,
+	LOPT_CHS,
 #ifdef DEBUGGER_ENABLED
 	LOPT_NODEBUG,
 	LOPT_DEBUG,
@@ -527,6 +563,7 @@ int main(int argc, char *argv[])
 			{ "locale",        required_argument, 0, LOPT_LOCALE },
 			{ "locale-font",   required_argument, 0, LOPT_LOCALE_FONT },
 			{ "dump-pot",      required_argument, 0, LOPT_DUMP_POT },
+			{ "chs",           no_argument,       0, LOPT_CHS },
 			{ "skip-title",    no_argument,       0, LOPT_SKIP_TITLE },
 #ifdef DEBUGGER_ENABLED
 			{ "nodebug",       no_argument,       0, LOPT_NODEBUG },
@@ -575,6 +612,9 @@ int main(int argc, char *argv[])
 			break;
 		case LOPT_DUMP_POT:
 			dump_pot = optarg;
+			break;
+		case LOPT_CHS:
+			chs_patch = true;
 			break;
 		case LOPT_FONT_X_SCALE:
 			config.manual_text_x_scale = true;
@@ -670,6 +710,8 @@ int main(int argc, char *argv[])
 	} else {
 		usage_error("Can't initialize game with argument '%s'", argv[0]);
 	}
+	if (chs_patch)
+		chs_patch_enable();
 	ainfile = gamedir_path(config.ain_filename);
 
 	read_user_config();

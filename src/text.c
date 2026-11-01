@@ -155,6 +155,10 @@ void gfx_font_init(void)
 
 static struct font *get_font(unsigned face)
 {
+	// A patch's text is in simplified Chinese; the game's TrueType fonts are
+	// Japanese (the .fnl faces below go to translation_font() themselves).
+	if (face <= 255 && translation_has_sjis_table() && translation_font())
+		return translation_font();
 	if (face > 255) {
 		face -= 256;
 		if (face >= MAX_FNL_FONTS || !font_fnl[face]) {

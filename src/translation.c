@@ -59,10 +59,49 @@ static uint16_t slot_to_sjis(int k)
 	return (slot_rows[k / SLOTS_PER_ROW] << 8) | trail;
 }
 
+// SJIS code -> Unicode from a patch's table; 0 keeps the game font's glyph.
+static uint32_t *sjis_table;
+static size_t sjis_table_size;
+
+void translation_load_sjis_table(const char *path)
+{
+	size_t len;
+	uint8_t *data = file_read(path, &len);
+	if (!data)
+		ERROR("Failed to read '%s'", display_utf0(path));
+	sjis_table_size = len / 2;
+	sjis_table = xcalloc(sjis_table_size, sizeof(uint32_t));
+	iconv_t cd = iconv_open("UTF-32LE", "GB18030");
+	if (cd == (iconv_t)-1)
+		ERROR("iconv_open failed");
+	for (size_t code = 0x100; code < sjis_table_size; code++) {
+		uint16_t v = data[code * 2] | (data[code * 2 + 1] << 8);
+		// Longinus.ini: YF_CODING, XIN_CODING. The note and the heart have no GBK
+		// code; the patch's text keeps their SJIS codes.
+		if (v < 0x100 || code == 0x81F4 || code == 0x818A)
+			continue;
+		char gbk[2] = { v >> 8, v & 0xFF };
+		char *in = gbk;
+		char *out = (char *)&sjis_table[code];
+		size_t in_left = 2, out_left = 4;
+		if (iconv(cd, &in, &in_left, &out, &out_left) == (size_t)-1)
+			sjis_table[code] = 0;
+	}
+	iconv_close(cd);
+	free(data);
+}
+
+bool translation_has_sjis_table(void)
+{
+	return sjis_table;
+}
+
 uint32_t translation_sjis_to_unicode(uint32_t code)
 {
 	if (code & TEXT_CODE_UNICODE)
 		return code & ~TEXT_CODE_UNICODE;
+	if (code < sjis_table_size && sjis_table[code])
+		return sjis_table[code];
 	if (!nr_slots || code > 0xffff)
 		return 0;
 	int row = slot_row_of_lead[code >> 8];
@@ -456,7 +495,7 @@ struct font *translation_font(void)
 {
 	static struct font *font;
 	static bool tried;
-	if (font || tried || (!translation_loaded && !ain_is_utf8))
+	if (font || tried || (!translation_loaded && !ain_is_utf8 && !sjis_table))
 		return font;
 	tried = true;
 
