@@ -41,6 +41,8 @@ struct hll_function {
 	void *fun;
 	// Bound by static_library_fill: any registration takes its place.
 	bool is_fill;
+	// Called since the start (see hll_note_called).
+	bool called;
 	ffi_cif cif;
 	unsigned int nr_args;
 	ffi_type **args;
@@ -338,6 +340,28 @@ int hll_generic_slots(int hll_arg3)
 	return slots + (hll_generic_is_option(hll_arg3) ? 1 : 0);
 }
 
+/*
+ * XSYS4_HLL_CALLED=<file>: a line for each HLL function on its first call, as in
+ * the link report, so tools/link-report.py names them. It is written as it
+ * happens: test runs end by a signal. Which of a game's declarations ran tells
+ * what a run covered, and what it ran that does nothing.
+ */
+static FILE *hll_called_file;
+
+static void hll_note_called(int libno, int fno, void *fun)
+{
+	if (!hll_called_file)
+		return;
+	const struct ain_library *lib = &ain->libraries[libno];
+	fprintf(hll_called_file, "%s.%s %d ", lib->name, lib->functions[fno].name,
+			lib->functions[fno].nr_arguments);
+	if (fun)
+		fprintf(hll_called_file, "%td\n", (char*)fun - (char*)init_libraries);
+	else
+		fprintf(hll_called_file, "-\n");
+	fflush(hll_called_file);
+}
+
 void hll_call(int libno, int fno, int hll_arg3)
 {
 	struct ain_hll_function *f = &ain->libraries[libno].functions[fno];
@@ -360,6 +384,8 @@ void hll_call(int libno, int fno, int hll_arg3)
 				unimp_log[idx].count = 0;
 			}
 			int cnt = idx >= 0 ? ++unimp_log[idx].count : 1;
+			if (cnt == 1)
+				hll_note_called(libno, fno, NULL);
 			if (cnt <= 5 || cnt % 1000000 == 0) {
 				WARNING("UNIMPL HLL: %s.%s (args=%d, cnt=%d)",
 					ain->libraries[libno].name, f->name, f->nr_arguments, cnt);
@@ -410,6 +436,15 @@ void hll_call(int libno, int fno, int hll_arg3)
 	}
 
 	struct hll_function *fun = &libraries[libno][fno];
+
+	if (!fun->called) {
+		fun->called = true;
+		hll_note_called(libno, fno, fun->fun);
+		// A placeholder does nothing and says nothing, unlike a function
+		// with no binding.
+		if (fun->is_fill && dev_getenv("XSYS4_STUB_LOG"))
+			WARNING("STUB HLL: %s.%s", ain->libraries[libno].name, f->name);
+	}
 
 	void *args[HLL_MAX_ARGS];
 	void *ptrs[HLL_MAX_ARGS];
@@ -1389,6 +1424,9 @@ void init_libraries(void)
 	const char *report = getenv("XSYS4_LINK_REPORT");
 	if (report)
 		write_link_report(report);
+	const char *called = dev_getenv("XSYS4_HLL_CALLED");
+	if (called && !(hll_called_file = fopen(called, "w")))
+		WARNING("Can't write %s", called);
 	library_run_all("_ModuleInit");
 	libraries_initialized = true;
 }
