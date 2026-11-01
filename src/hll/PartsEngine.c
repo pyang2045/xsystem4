@@ -57,6 +57,9 @@ static void PartsEngine_ModuleFini(void)
 
 static void PartsEngine_Update(int passed_time, bool is_skip, bool message_window_show)
 {
+	// ain v7: the ending movie.
+	if (ain->version == 7)
+		PE_update_parts_movies();
 	PE_Update(passed_time, message_window_show);
 }
 
@@ -1656,6 +1659,12 @@ static bool PE_stub_PlayPartsMovie(int number, int msec, int state)
 	return true;
 }
 
+// ain v7: PlayPartsMovie(Number, State), from the start.
+static bool PE_v7_PlayPartsMovie(int number, int state)
+{
+	return PE_stub_PlayPartsMovie(number, 0, state);
+}
+
 static void PE_stub_SetMovieTime(possibly_unused int number, possibly_unused int msec, possibly_unused int state) { }
 
 /* The end is the end of the sound (0x44aa50). A parts without a movie has
@@ -2376,6 +2385,13 @@ static void pe_v7_register(int libno)
 		static_library_register(lib, "SetMulColorForBackScene", PE_SetMulColorForBackScene);
 		static_library_register(lib, "SetAlphaForBackScene", PE_SetAlphaForBackScene);
 		static_library_register(lib, "SetShowForBackScene", PE_SetShowForBackScene);
+	}
+	fun = get_fun(libno, "PlayPartsMovie");
+	if (fun && fun->nr_arguments == 2) {
+		static_library_register(lib, "CreatePartsMovie", PE_stub_CreatePartsMovie);
+		static_library_register(lib, "ReleasePartsMovie", PE_stub_ReleasePartsMovie);
+		static_library_register(lib, "PlayPartsMovie", PE_v7_PlayPartsMovie);
+		static_library_register(lib, "IsEndPartsMovie", PE_stub_IsEndPartsMovie);
 	}
 	fun = get_fun(libno, "Parts_SetSoundName");
 	if (fun && fun->nr_arguments == 3 && fun->arguments[0].type.data == AIN_INT

@@ -602,6 +602,17 @@ static bool KiwiSoundEngine_GetMixerName_v14(int n, int name_slot)
 	return true;
 }
 
+// ain v7 (妻みぐい３): the same functions without the filter name.
+static bool KiwiSoundEngine_PlaySe_v7(int se_id, struct string *name)
+{
+	return KiwiSoundEngine_PlaySe_v14(se_id, name, NULL);
+}
+
+static bool KiwiSoundEngine_Prepare_v7(int id, struct string *name, bool streaming)
+{
+	return KiwiSoundEngine_Prepare_v14(id, name, NULL, streaming);
+}
+
 static bool kiwi_type_is(const struct ain_type *t, enum ain_data_type d)
 {
 	return t->data == d;
@@ -646,6 +657,12 @@ void *kiwi_select_function(const struct ain_hll_function *f, void *dflt)
 	if (!strcmp(f->name, "Prepare") && kiwi_shape(f, AIN_BOOL, 4) && kiwi_type_is(&a[0].type, AIN_INT)
 	    && kiwi_type_is(&a[1].type, AIN_STRING) && kiwi_type_is(&a[2].type, AIN_STRING) && kiwi_type_is(&a[3].type, AIN_BOOL))
 		return (void *)KiwiSoundEngine_Prepare_v14;
+	if (!strcmp(f->name, "PlaySe") && kiwi_shape(f, AIN_BOOL, 2) && kiwi_type_is(&a[0].type, AIN_INT)
+	    && kiwi_type_is(&a[1].type, AIN_STRING))
+		return (void *)KiwiSoundEngine_PlaySe_v7;
+	if (!strcmp(f->name, "Prepare") && kiwi_shape(f, AIN_BOOL, 3) && kiwi_type_is(&a[0].type, AIN_INT)
+	    && kiwi_type_is(&a[1].type, AIN_STRING) && kiwi_type_is(&a[2].type, AIN_BOOL))
+		return (void *)KiwiSoundEngine_Prepare_v7;
 	if (!strcmp(f->name, "GetGroupNum") && kiwi_shape(f, AIN_INT, 1) && kiwi_type_is(&a[0].type, AIN_INT))
 		return (void *)KiwiSoundEngine_GetGroupNum_v14;
 	if (!strcmp(f->name, "GetGroupNumFromFile") && kiwi_shape(f, AIN_INT, 1) && kiwi_type_is(&a[0].type, AIN_STRING))
