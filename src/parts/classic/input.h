@@ -159,7 +159,7 @@ static void parts_update_mouse(struct parts *parts, Point cur_pos, bool cur_clic
 
 /*
  * ain v7: the Whole key events (the mouse buttons go to the parts under the
- * cursor). KeyPress repeats while the key is held, at the usual rates: the
+ * cursor, and the left one to the Whole click). KeyPress repeats while the key is held, at the usual rates: the
  * original's are not known.
  */
 static void parts_whole_keys_update(int passed_time)
@@ -197,6 +197,11 @@ static void classic_update_input_state(int passed_time)
 	bool hover_consumed = false;
 	bool click_consumed = false;
 	struct parts *parts;
+	// The Whole click, whatever is under the cursor (C_CG_MODE_BROWSE goes to
+	// the next CG on it). Before the parts' messages: the thumbnail's click
+	// opens the viewer, whose handler would otherwise get this same release.
+	if (profile.parts.whole_key_events && prev_clicking && !cur_clicking)
+		parts_msg_push(NULL, PARTS_MSG_MOUSE_CLICK, "iii", cur_pos.x, cur_pos.y, VK_LBUTTON);
 	// Iterate front-to-back (highest z first) for proper cursor consumption
 	PARTS_LIST_FOREACH_REVERSE(parts) {
 		parts_update_mouse(parts, cur_pos, cur_clicking, passed_time,

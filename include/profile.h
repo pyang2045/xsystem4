@@ -74,7 +74,7 @@ struct parts_features {
 	/* ---- ain v7 with activities ---- */
 	// Hidden parts are not hovered, no hover state without a click, KeyPress.
 	bool activity_pointer;
-	// The Whole key and wheel events.
+	// The Whole key, wheel and left click events.
 	bool whole_key_events;
 	// Widgets report through the parts message queue.
 	bool widget_parts_messages;
