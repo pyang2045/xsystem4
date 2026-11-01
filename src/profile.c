@@ -56,6 +56,7 @@ static const struct {
 			.controllers = &parts_controller_v14,
 			.input = &parts_input_v14,
 			.bindings = &parts_bindings_v14,
+			.save_version = 14,
 			.native_transforms = true,
 			.native_compositing = true,
 			.typed_components = true,
@@ -91,6 +92,7 @@ static const struct {
 			.controllers = &parts_controller_v7,
 			.input = &parts_input_v7,
 			.bindings = &parts_bindings_v7,
+			.save_version = 14,
 			.activity_widgets = true,
 			.activity_save = true,
 			.activity_pointer = true,
@@ -111,6 +113,8 @@ static const struct {
 			.controllers = &parts_controller_classic,
 			.input = &parts_input_classic,
 			.bindings = &parts_bindings_classic,
+			// Older engines retain their byte-for-byte layout.
+			.save_version = 3,
 		},
 	},
 };
@@ -142,7 +146,7 @@ static void report_bytes(FILE *f, const void *p, size_t size)
 
 void profile_report(FILE *f)
 {
-	fprintf(f, "#profile %s:", profile.row);
+	fprintf(f, "#profile %s:%d:", profile.row, profile.parts.save_version);
 	report_bytes(f, &profile.parts.native_transforms,
 		sizeof(profile.parts) - offsetof(struct parts_features, native_transforms));
 	fputc(':', f);

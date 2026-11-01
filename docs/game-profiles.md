@@ -43,6 +43,9 @@ Name a field for what it does (`controller_ids`), not when it applies (`is_v14`)
 files of rule 3, when the number of checks in those files changes, and on comparing a game name outside
 `src/hacks.c`.
 
+A row also has the version of its parts saves (`save_version`). A format change for one generation moves
+that row alone, to a number above every row's, so another game's saves stay readable.
+
 ## 3. The VM follows the bytecode
 
 `src/vm.c`, `src/page.c`, `src/heap.c`, `src/savedata.c`, `src/resume.c` and the calling convention in

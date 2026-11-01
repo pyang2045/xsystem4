@@ -113,7 +113,10 @@
  * that SetButtonEnable can change them later (the message window's system
  * buttons, made at boot, are in every save).
  */
-#define CURRENT_SAVE_VERSION 14
+/* The version a game writes is in its row (profile.parts.save_version), so a
+ * format change for one generation leaves the others' saves alone. A number is
+ * given out once, for all rows: a new feature takes the next number above every
+ * row's, and its row alone moves to it. */
 #define SAVE_CG_DEFORMS 0x46444350 /* "PCDF" */
 #define SAVE_WHEELABLE 0x45485750 /* "PWHE" */
 #define SAVE_SOUND_NAMES 0x444e5350 /* "PSND" */
@@ -1105,7 +1108,7 @@ static bool cg_deforms_differ(struct parts *parts)
 	return false;
 }
 
-// The CG deform section (see CURRENT_SAVE_VERSION), for the parts the
+// The CG deform section (see the versions above), for the parts the
 // parts list has.
 static void save_cg_deforms(struct iarray_writer *w, bool save_hidden)
 {
@@ -1212,7 +1215,7 @@ static bool parts_has_sound_name(struct parts *parts)
 	return false;
 }
 
-// The sound name section (see CURRENT_SAVE_VERSION), for the parts whose
+// The sound name section (see the versions above), for the parts whose
 // records the save has.
 static void save_sound_names(struct iarray_writer *w, bool save_hidden)
 {
@@ -1473,11 +1476,9 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 
 	struct iarray_writer w;
 	iarray_init_writer(&w, "XPE");
-	// Older engines retain their byte-for-byte v3 layout.
-	int version = profile.parts.activity_save ? CURRENT_SAVE_VERSION : 3;
+	int version = profile.parts.save_version;
 	iarray_write(&w, version);
-	if (CURRENT_SAVE_VERSION > 1)
-		save_numeral_fonts(&w);
+	save_numeral_fonts(&w);
 
 	// TODO: once the Rance 9 save format stabilizes, bump save version
 	// and save unconditionally
@@ -1617,7 +1618,7 @@ bool PE_SaveBackScene(struct page **buffer)
 	PE_UpdateComponent(0);
 	struct iarray_writer w;
 	iarray_init_writer(&w, "XBS");
-	iarray_write(&w, CURRENT_SAVE_VERSION);
+	iarray_write(&w, profile.parts.save_version);
 	unsigned count_pos = iarray_writer_pos(&w);
 	iarray_write(&w, 0);
 	unsigned count = 0;
@@ -1625,7 +1626,7 @@ bool PE_SaveBackScene(struct page **buffer)
 	PARTS_LIST_FOREACH(parts) {
 		if (!parts_in_back_scene(parts) || parts_is_controller_root(parts))
 			continue;
-		save_parts(&w, parts, CURRENT_SAVE_VERSION);
+		save_parts(&w, parts, profile.parts.save_version);
 		count++;
 	}
 	iarray_write_at(&w, count_pos, count);
@@ -1658,7 +1659,7 @@ bool PE_LoadBackScene(struct page **buffer)
 		return false;
 	int version = iarray_read(&r);
 	int count = iarray_read(&r);
-	if (version != CURRENT_SAVE_VERSION || count < 0) {
+	if (version != profile.parts.save_version || count < 0) {
 		WARNING("unrecognized back scene data");
 		return false;
 	}
@@ -1729,7 +1730,7 @@ bool PE_Load(struct page **buffer)
 		return false;
 	}
 	int version = iarray_read(&r);
-	if (version > CURRENT_SAVE_VERSION) {
+	if (version > profile.parts.save_version) {
 		WARNING("unrecognized savedata version");
 		return false;
 	}

@@ -36,6 +36,8 @@ struct parts_features {
 	const struct parts_controller_ops *controllers;
 	const struct parts_input_ops *input;
 	const struct parts_bindings *bindings;
+	// The version of the parts in a save (src/parts/save.c).
+	int save_version;
 
 	/* ---- v14 ---- */
 	// Local and global transforms as a tree, anchors, rotation, hit boxes.
