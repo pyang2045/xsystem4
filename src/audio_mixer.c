@@ -471,6 +471,12 @@ int channel_fade(struct channel *ch, int time, int volume, bool stop)
 {
 	if (!time && stop)
 		return channel_stop(ch);
+	// A new fade ends the running one, and a fade that was to stop the sound
+	// stops it now (0x4a4b60 -> 0x4a4d30, 0x4a4df0 in Haharanman.exe). Otherwise
+	// a voice's duck (BeginBGMFadeImpl) cancels the stop of a looping effect,
+	// which then plays on (ループ効果音／金カウント in 妻みぐい３).
+	if (ch->grouped && ch->fade.fading && ch->fade.stop)
+		channel_stop(ch);
 
 	SDL_LockAudioDevice(audio_device);
 	if (!time) {
