@@ -142,6 +142,13 @@
  */
 #define SAVE_CONTROLLER_IDS 0x44494350 /* "PCID" */
 
+/*
+ * ain v7: the input scopes (PE_BeginInput) open at the save, a section after
+ * the buttons. A load resumes the script inside them, whatever was open
+ * before it (the title, its load list), and it ends each of them.
+ */
+#define SAVE_INPUT_DEPTH 0x50444950 /* "PIDP" */
+
 static int save_controller_no(int id)
 {
 	int index = parts_controller_index(id);
@@ -1557,6 +1564,10 @@ static bool parts_engine_save(struct page **buffer, bool save_hidden)
 		save_unique_ids(&w, save_hidden);
 		save_user_components(&w, save_hidden);
 		save_buttons(&w, save_hidden);
+		if (parts_v7_activities) {
+			iarray_write(&w, SAVE_INPUT_DEPTH);
+			iarray_write(&w, parts_get_input_depth());
+		}
 	}
 
 	// The controller ID section is the end of the save, after every list
@@ -1801,12 +1812,18 @@ bool PE_Load(struct page **buffer)
 		load_unique_ids(&r);
 		load_user_components(&r);
 		load_buttons(&r);
+		if (parts_v7_activities && !r.error && r.pos < r.size
+				&& r.data[r.pos].i == SAVE_INPUT_DEPTH) {
+			iarray_read(&r);
+			parts_set_input_depth(iarray_read(&r));
+		}
 	}
 	// (the controller ID section follows the lists; it was read first)
 	if (parts_multi_controller && parts_activity_save()) {
 		load_controller_finish(active, ids != NULL);
 		static bool warned;
-		if (!ids && !warned) {
+		// ain v7: a layer's ID is its position, there is nothing to get wrong.
+		if (!ids && !warned && ain->version >= 14) {
 			warned = true;
 			WARNING("PartsEngine save without controller IDs (written before a layer's ID "
 				"became its root parts number): layer IDs the script kept from it are not valid");

@@ -1086,6 +1086,8 @@ void parts_add_motion(struct parts *parts, struct parts_motion *motion);
 // input.c
 extern bool parts_began_click;
 void parts_reset_input(void);
+int parts_get_input_depth(void);
+void parts_set_input_depth(int depth);
 void parts_input_release(struct parts *parts);
 bool parts_screen_to_box(struct parts *parts, struct parts_common *common, float sx, float sy,
 		float *bx, float *by);

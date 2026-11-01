@@ -1535,7 +1535,21 @@ void parts_reset_input(void)
 		v14_reset_input_session(false);
 		v14_active_parts = 0;
 		v14_prev_have_pos = false;
+	} else if (parts_v7_activities) {
+		parts_set_input_depth(0);
 	}
+}
+
+int parts_get_input_depth(void)
+{
+	return v14_input_depth;
+}
+
+// A load resumes the script inside the scopes of the save (ain v7).
+void parts_set_input_depth(int depth)
+{
+	v14_input_depth = depth;
+	parts_began_click = depth > 0;
 }
 
 void PE_BeginInput(void)
@@ -1546,6 +1560,9 @@ void PE_BeginInput(void)
 		v14_input_depth++;
 		return;
 	}
+	// ain v7 with activities: the scopes nest, as on v14 (below).
+	if (parts_v7_activities)
+		v14_input_depth++;
 	parts_began_click = true;
 }
 
@@ -1559,7 +1576,11 @@ void PE_EndInput(void)
 		v14_reset_input_session(v14_input_depth > 0);
 		return;
 	}
-	parts_began_click = false;
+	// ain v7 with activities: the end of a child (the CG viewer, a scene of
+	// 回想) leaves the list that opened it taking input.
+	if (parts_v7_activities && v14_input_depth)
+		v14_input_depth--;
+	parts_began_click = parts_v7_activities && v14_input_depth > 0;
 	clicked_parts = 0;
 	drag_state_reset();
 }

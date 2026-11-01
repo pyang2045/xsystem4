@@ -157,6 +157,9 @@ static bool audio_anonymous_free(void)
 // 0, so a v14 group from its timemap row), in a channel of its own.
 bool audio_play_sound(int sound_no)
 {
+	// A parts without a hover or click sound.
+	if (sound_no < 0)
+		return false;
 	if (!audio_anonymous_free())
 		return false;
 	struct channel *ch = channel_open_streaming(ASSET_SOUND, sound_no, false);

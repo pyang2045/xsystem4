@@ -356,9 +356,29 @@ static bool KiwiSoundEngine_IsExistFile(struct string *name)
 		|| asset_exists_by_name(ASSET_BGM, name->text, NULL);
 }
 
+/*
+ * GetLengthFromFile(string): the length in ms, truncated, of the
+ * file Prepare would open for the name (0x4a42a0 looks it up with Prepare's
+ * 0x4a4050; here Prepare_v14's order, Sound, Voice, then BGM: port strategy),
+ * 0 for a name without one and for a file that is neither a WAV nor Ogg
+ * Vorbis (mixer_data_length_ms). The scripts' AFL_Sound_GetLength wraps it;
+ * the ending waits that long plus a join time after each voice.
+ */
 static int KiwiSoundEngine_GetLengthFromFile(struct string *name)
 {
-	(void)name;
+	if (!name || !name->text[0])
+		return 0;
+	static const enum asset_type types[] = { ASSET_SOUND, ASSET_VOICE, ASSET_BGM };
+	for (unsigned i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
+		int no;
+		if (!asset_exists_by_name(types[i], name->text, &no))
+			continue;
+		struct archive_data *dfile = asset_get(types[i], no);
+		int ms = mixer_data_length_ms(dfile);
+		if (dfile)
+			archive_free_data(dfile);
+		return ms;
+	}
 	return 0;
 }
 
@@ -537,34 +557,6 @@ static int KiwiSoundEngine_GetGroupNum_v14(int id)
 	return g >= 0 ? g : 0;
 }
 
-/*
- * GetLengthFromFile(string) with groups: the length in ms, truncated, of the
- * file Prepare would open for the name (0x4a42a0 looks it up with Prepare's
- * 0x4a4050; here Prepare_v14's order, Sound, Voice, then BGM: port strategy),
- * 0 for a name without one and for a file that is neither a WAV nor Ogg
- * Vorbis (mixer_data_length_ms). The scripts' AFL_Sound_GetLength wraps it;
- * the ending waits that long plus a join time after each voice.
- */
-static int KiwiSoundEngine_GetLengthFromFile_v14(struct string *name)
-{
-	if (!mixer_groups_enabled())
-		return KiwiSoundEngine_GetLengthFromFile(name);
-	if (!name || !name->text[0])
-		return 0;
-	static const enum asset_type types[] = { ASSET_SOUND, ASSET_VOICE, ASSET_BGM };
-	for (unsigned i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
-		int no;
-		if (!asset_exists_by_name(types[i], name->text, &no))
-			continue;
-		struct archive_data *dfile = asset_get(types[i], no);
-		int ms = mixer_data_length_ms(dfile);
-		if (dfile)
-			archive_free_data(dfile);
-		return ms;
-	}
-	return 0;
-}
-
 // The timemap's group of a name; 2 when no timemap has the name (0x4a1a38).
 static int KiwiSoundEngine_GetGroupNumFromFile_v14(struct string *name)
 {
@@ -658,8 +650,6 @@ void *kiwi_select_function(const struct ain_hll_function *f, void *dflt)
 		return (void *)KiwiSoundEngine_GetGroupNum_v14;
 	if (!strcmp(f->name, "GetGroupNumFromFile") && kiwi_shape(f, AIN_INT, 1) && kiwi_type_is(&a[0].type, AIN_STRING))
 		return (void *)KiwiSoundEngine_GetGroupNumFromFile_v14;
-	if (!strcmp(f->name, "GetLengthFromFile") && kiwi_shape(f, AIN_INT, 1) && kiwi_type_is(&a[0].type, AIN_STRING))
-		return (void *)KiwiSoundEngine_GetLengthFromFile_v14;
 	if (!strcmp(f->name, "GetGroupVolume") && kiwi_shape(f, AIN_FLOAT, 1) && kiwi_type_is(&a[0].type, AIN_INT))
 		return (void *)KiwiSoundEngine_GetGroupVolume_v14;
 	if (!strcmp(f->name, "GetMixerDefaultVolume") && kiwi_shape(f, AIN_BOOL, 2) && kiwi_type_is(&a[0].type, AIN_INT)
