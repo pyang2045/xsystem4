@@ -17,6 +17,7 @@
 struct game_profile profile;
 
 extern const struct parts_widget_ops parts_widget_v14, parts_widget_v7, parts_widget_classic;
+extern const struct parts_transform_ops parts_transform_v14, parts_transform_v7, parts_transform_classic;
 extern const struct parts_controller_ops parts_controller_v14, parts_controller_v7, parts_controller_classic;
 extern const struct parts_input_ops parts_input_v14, parts_input_v7, parts_input_classic;
 extern const struct parts_bindings parts_bindings_v14, parts_bindings_v7, parts_bindings_classic;
@@ -54,6 +55,7 @@ static const struct {
 		.parts = {
 			.widgets = &parts_widget_v14,
 			.controllers = &parts_controller_v14,
+			.transforms = &parts_transform_v14,
 			.input = &parts_input_v14,
 			.bindings = &parts_bindings_v14,
 			.save_version = 14,
@@ -90,6 +92,7 @@ static const struct {
 		.parts = {
 			.widgets = &parts_widget_v7,
 			.controllers = &parts_controller_v7,
+			.transforms = &parts_transform_v7,
 			.input = &parts_input_v7,
 			.bindings = &parts_bindings_v7,
 			.save_version = 14,
@@ -111,6 +114,7 @@ static const struct {
 		.parts = {
 			.widgets = &parts_widget_classic,
 			.controllers = &parts_controller_classic,
+			.transforms = &parts_transform_classic,
 			.input = &parts_input_classic,
 			.bindings = &parts_bindings_classic,
 			// Older engines retain their byte-for-byte layout.

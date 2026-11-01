@@ -587,10 +587,12 @@ static void lb_v14_box_size(struct parts *box, int *w, int *h)
  * origin modes.
  * A box whose own size changes this way reports it from parts_do_layout.
  */
-void parts_layout_size_changed(struct parts *parts)
+void classic_layout_size_changed(struct parts *parts)
 {
-	if (!profile.parts.native_transforms)
-		return;
+}
+
+void v14_layout_size_changed(struct parts *parts)
+{
 	for (struct parts *p = parts, *a = parts->parent; a; p = a, a = a->parent) {
 		if (lb_v14_lays_out(a)) {
 			parts_component_dirty(a);
@@ -605,6 +607,11 @@ void parts_layout_size_changed(struct parts *parts)
 			continue;
 		return;
 	}
+}
+
+void parts_layout_size_changed(struct parts *parts)
+{
+	profile.parts.transforms->layout_size_changed(parts);
 }
 
 /*
@@ -734,7 +741,7 @@ static void lb_v14_flow_layout(struct parts *box)
 // the states; the original replaces the whole widget, 0x5372c0) is a user
 // component here, while lb_v14_child_size, parts_layout_size_changed and the
 // hit test still see the box. The game's pactex has no such component.
-static void parts_do_layout_v14(struct parts *parts)
+void v14_do_layout(struct parts *parts)
 {
 	if (parts->component_type == 17)
 		lb_v14_user_component(parts);
@@ -746,10 +753,11 @@ static void parts_do_layout_v14(struct parts *parts)
 
 void parts_do_layout(struct parts *parts)
 {
-	if (profile.parts.native_transforms) {
-		parts_do_layout_v14(parts);
-		return;
-	}
+	profile.parts.transforms->do_layout(parts);
+}
+
+void classic_do_layout(struct parts *parts)
+{
 	if (parts->states[0].type != PARTS_LAYOUT_BOX)
 		return;
 	struct parts_layout_box *lb = &parts->states[0].layout_box;

@@ -15,6 +15,7 @@
 struct ain;
 struct ain_hll_function;
 struct parts_widget_ops;
+struct parts_transform_ops;
 struct parts_controller_ops;
 struct parts_input_ops;
 
@@ -34,6 +35,7 @@ struct parts_features {
 	// Functions that differ as a whole (src/parts/parts_internal.h).
 	const struct parts_widget_ops *widgets;
 	const struct parts_controller_ops *controllers;
+	const struct parts_transform_ops *transforms;
 	const struct parts_input_ops *input;
 	const struct parts_bindings *bindings;
 	// The version of the parts in a save (src/parts/save.c).

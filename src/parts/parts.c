@@ -741,34 +741,47 @@ void parts_parent_transform(struct parts *parts, mat4 out)
 }
 
 // Where the parts' anchor is on screen, from the parent's current transform.
-static Point parts_anchor_pos(struct parts *parts)
+static Point classic_anchor_pos(struct parts *parts)
 {
-	if (!profile.parts.native_transforms) {
-		Point anchor = parts_placed_pos(parts);
-		if (parts->parent)
-			anchor = parts_child_pos(&parts->parent->global, anchor);
-		return anchor;
-	}
+	Point anchor = parts_placed_pos(parts);
+	if (parts->parent)
+		anchor = parts_child_pos(&parts->parent->global, anchor);
+	return anchor;
+}
+
+static Point v14_anchor_pos(struct parts *parts)
+{
 	mat4 m;
 	parts_level_transform(parts->parent ? &parts->parent->global : NULL,
 			&parts->local, parts_placed_pos(parts), m);
 	return parts_transform_anchor(m);
 }
 
+static Point parts_anchor_pos(struct parts *parts)
+{
+	return profile.parts.transforms->anchor_pos(parts);
+}
+
+static void classic_place_global(struct parts *parts, const struct parts_params *parent)
+{
+	Point pos = parts_placed_pos(parts);
+	if (parent) {
+		parts->global.pos = parts_child_pos(parent, pos);
+	} else {
+		parts->global.pos = (Point) { root_pos.x + pos.x, root_pos.y + pos.y };
+	}
+}
+
+static void v14_place_global(struct parts *parts, const struct parts_params *parent)
+{
+	parts_level_transform(parent, &parts->local, parts_placed_pos(parts), parts->global.matrix);
+	parts->global.pos = parts_transform_anchor(parts->global.matrix);
+}
+
 // parent == NULL: a top-level parts, relative to root_pos.
 static void parts_update_global_pos(struct parts *parts, const struct parts_params *parent)
 {
-	if (!profile.parts.native_transforms) {
-		Point pos = parts_placed_pos(parts);
-		if (parent) {
-			parts->global.pos = parts_child_pos(parent, pos);
-		} else {
-			parts->global.pos = (Point) { root_pos.x + pos.x, root_pos.y + pos.y };
-		}
-	} else {
-		parts_level_transform(parent, &parts->local, parts_placed_pos(parts), parts->global.matrix);
-		parts->global.pos = parts_transform_anchor(parts->global.matrix);
-	}
+	profile.parts.transforms->place_global(parts, parent);
 
 	struct parts *child;
 	PARTS_FOREACH_CHILD(child, parts) {
@@ -779,16 +792,22 @@ static void parts_update_global_pos(struct parts *parts, const struct parts_para
 // After a change of this parts' own transform: itself and its subtree.
 // Before v14 the parts' own scale and flips do not move its anchor, only
 // its children's.
+static void classic_update_transform(struct parts *parts)
+{
+	struct parts *child;
+	PARTS_FOREACH_CHILD(child, parts) {
+		parts_update_global_pos(child, &parts->global);
+	}
+}
+
+static void v14_update_transform(struct parts *parts)
+{
+	parts_update_global_pos(parts, parts->parent ? &parts->parent->global : NULL);
+}
+
 static void parts_update_transform(struct parts *parts)
 {
-	if (!profile.parts.native_transforms) {
-		struct parts *child;
-		PARTS_FOREACH_CHILD(child, parts) {
-			parts_update_global_pos(child, &parts->global);
-		}
-		return;
-	}
-	parts_update_global_pos(parts, parts->parent ? &parts->parent->global : NULL);
+	profile.parts.transforms->update_transform(parts);
 }
 
 static void parts_accumulate_add_color(const struct parts_params *parent, SDL_Color local,
@@ -801,12 +820,19 @@ static void parts_accumulate_add_color(const struct parts_params *parent, SDL_Co
  * children) and in that update for a top-level parts. Before v14 nothing is
  * derived: the global parameters are saved and loaded as they are.
  */
-void parts_load_transform(struct parts *parts)
+static void classic_load_transform(struct parts *parts)
 {
-	if (!profile.parts.native_transforms)
-		return;
+}
+
+static void v14_load_transform(struct parts *parts)
+{
 	parts_level_transform(NULL, &parts->local, parts_placed_pos(parts), parts->global.matrix);
 	parts_accumulate_add_color(NULL, parts->local.add_color, parts->sub_color_mode, &parts->global);
+}
+
+void parts_load_transform(struct parts *parts)
+{
+	profile.parts.transforms->load_transform(parts);
 }
 
 void parts_set_pos(struct parts *parts, Point pos)
@@ -876,24 +902,31 @@ static void parts_screen_upper_left_float(struct parts *parts, struct parts_comm
 	*y = m[0][1] * bx + m[1][1] * by + m[3][1];
 }
 
-Point parts_screen_upper_left(struct parts *parts, struct parts_common *common)
+static Point classic_screen_upper_left(struct parts *parts, struct parts_common *common)
 {
-	if (!profile.parts.native_transforms) {
-		// As it was: the corner's offset from the anchor, mirrored by the
-		// flips and not scaled.
-		Point anchor = parts_anchor_pos(parts);
-		int rx = common->hitbox.x - parts->local.pos.x, ry = common->hitbox.y - parts->local.pos.y;
-		return (Point) {
-			anchor.x + (parts->global.reverse_lr ? -rx : rx),
-			anchor.y + (parts->global.reverse_tb ? -ry : ry)
-		};
-	}
+	// As it was: the corner's offset from the anchor, mirrored by the
+	// flips and not scaled.
+	Point anchor = parts_anchor_pos(parts);
+	int rx = common->hitbox.x - parts->local.pos.x, ry = common->hitbox.y - parts->local.pos.y;
+	return (Point) {
+		anchor.x + (parts->global.reverse_lr ? -rx : rx),
+		anchor.y + (parts->global.reverse_tb ? -ry : ry)
+	};
+}
+
+static Point v14_screen_upper_left(struct parts *parts, struct parts_common *common)
+{
 	// The corner in the box (0 unless a surface area moves it), through the
 	// box transform: the flips mirror it around the anchor, and the scales
 	// and rotations above the parts move it as they move the drawing.
 	float x, y;
 	parts_screen_upper_left_float(parts, common, &x, &y);
 	return (Point) { (int)lroundf(x), (int)lroundf(y) };
+}
+
+Point parts_screen_upper_left(struct parts *parts, struct parts_common *common)
+{
+	return profile.parts.transforms->screen_upper_left(parts, common);
 }
 
 static void parts_update_global_z(struct parts *parts, int parent_z)
@@ -1160,14 +1193,23 @@ static void parts_update_global_rotate_x(struct parts *parts, float parent_rot_x
 	}
 }
 
+// Before v14 a rotation does not move the children.
+static void classic_after_rotation(possibly_unused struct parts *parts)
+{
+}
+
+static void v14_after_rotation(struct parts *parts)
+{
+	parts_update_transform(parts);
+}
+
 void parts_set_rotation_x(struct parts *parts, float rot)
 {
 	parts->local.rotation.x = rot;
 	parts_update_global_rotate_x(parts, parts->parent ? parts->parent->global.rotation.x : 0.0f);
 	// v14: the rotation is part of the matrix (parts_rotate_xy) and the
 	// children turn with it, as with the Z rotation.
-	if (profile.parts.native_transforms)
-		parts_update_transform(parts);
+	profile.parts.transforms->after_rotation(parts);
 	parts_dirty(parts);
 }
 
@@ -1185,8 +1227,7 @@ void parts_set_rotation_y(struct parts *parts, float rot)
 {
 	parts->local.rotation.y = rot;
 	parts_update_global_rotate_y(parts, parts->parent ? parts->parent->global.rotation.y : 0.0f);
-	if (profile.parts.native_transforms)
-		parts_update_transform(parts);
+	profile.parts.transforms->after_rotation(parts);
 	parts_dirty(parts);
 }
 
@@ -1206,8 +1247,7 @@ void parts_set_rotation_z(struct parts *parts, float rot)
 	parts_update_global_rotate_z(parts, parts->parent ? parts->parent->global.rotation.z : 0.0f);
 	// The children turn around this parts' anchor with it (v14; before it
 	// a rotation does not move them).
-	if (profile.parts.native_transforms)
-		parts_update_transform(parts);
+	profile.parts.transforms->after_rotation(parts);
 	parts_dirty(parts);
 }
 
@@ -1910,17 +1950,25 @@ static bool parts_has_dirty_parent(struct parts *parts)
 	return false;
 }
 
+static void classic_combine_pos(struct parts_params *parent, possibly_unused struct parts_params *child,
+		Point pos, struct parts_params *out)
+{
+	out->pos = parts_child_pos(parent, pos);
+}
+
+static void v14_combine_pos(struct parts_params *parent, struct parts_params *child,
+		Point pos, struct parts_params *out)
+{
+	parts_level_transform(parent, child, pos, out->matrix);
+	out->pos = parts_transform_anchor(out->matrix);
+}
+
 // pos: where the child is placed in the parent (parts_placed_pos).
 static void parts_combine_params(struct parts_params *parent, struct parts_params *child,
 		Point pos, bool sub_color_mode, struct parts_params *out)
 {
 	out->z = parent->z + child->z;
-	if (!profile.parts.native_transforms) {
-		out->pos = parts_child_pos(parent, pos);
-	} else {
-		parts_level_transform(parent, child, pos, out->matrix);
-		out->pos = parts_transform_anchor(out->matrix);
-	}
+	profile.parts.transforms->combine_pos(parent, child, pos, out);
 	out->show = parent->show && child->show;
 	out->alpha = parent->alpha * (child->alpha / 255.0f);
 	out->scale.x = parent->scale.x * child->scale.x;
@@ -2979,8 +3027,7 @@ void PE_ReleaseAllWithoutSystem(struct page **erase_number_list)
 			if (!parts_is_controller_root(parts))
 				*erase_number_list = array_pushback(*erase_number_list,
 						(union vm_value){.i = parts->no}, AIN_ARRAY_INT, -1);
-			if (profile.parts.controller_ids)
-				pe_v14_activity_parts_released(parts->no);
+			profile.parts.controllers->parts_released(parts->no);
 			parts_release(parts->no);
 		}
 		parts = next;
@@ -3879,24 +3926,51 @@ static int ctrl_active_index(void)
 // a number some parts already has (the script may Wrap a layer ID it kept
 // after erasing the layer, which creates a parts of that number); older
 // engines: the position, so that pushes and pops keep ID == position.
-static int ctrl_alloc_id(void)
+static int v14_alloc_controller_id(void)
 {
-	int id = profile.parts.controller_ids ? PARTS_CONTROLLER_ID_BASE : 0;
-	while (parts_controller_index(id) >= 0
-			|| (profile.parts.controller_ids && parts_table && parts_exists(id)))
+	int id = PARTS_CONTROLLER_ID_BASE;
+	while (parts_controller_index(id) >= 0 || (parts_table && parts_exists(id)))
 		id++;
 	return id;
 }
 
+static int classic_alloc_controller_id(void)
+{
+	int id = 0;
+	while (parts_controller_index(id) >= 0)
+		id++;
+	return id;
+}
+
+static int v14_controller_default_id(int position)
+{
+	return PARTS_CONTROLLER_ID_BASE + position;
+}
+
+static int classic_controller_default_id(int position)
+{
+	return position;
+}
+
 int parts_controller_default_id(int position)
 {
-	return profile.parts.controller_ids ? PARTS_CONTROLLER_ID_BASE + position : position;
+	return profile.parts.controllers->default_id(position);
+}
+
+static bool v14_is_controller_root(struct parts *parts)
+{
+	return parts->no >= PARTS_CONTROLLER_ID_BASE && parts->no == parts->controller_no;
+}
+
+// Before v14 a controller has no root parts.
+static bool classic_is_controller_root(possibly_unused struct parts *parts)
+{
+	return false;
 }
 
 bool parts_is_controller_root(struct parts *parts)
 {
-	return profile.parts.controller_ids && parts->no >= PARTS_CONTROLLER_ID_BASE
-		&& parts->no == parts->controller_no;
+	return profile.parts.controllers->is_root(parts);
 }
 
 // v14: the root parts of a controller, numbered with the controller's ID.
@@ -3918,9 +3992,19 @@ static struct parts *ctrl_root_create(int id)
 	return root;
 }
 
+static struct parts *classic_controller_root(possibly_unused int id)
+{
+	return NULL;
+}
+
 struct parts *parts_controller_root(int id)
 {
-	if (!profile.parts.controller_ids || id < PARTS_CONTROLLER_ID_BASE)
+	return profile.parts.controllers->root(id);
+}
+
+static struct parts *v14_controller_root(int id)
+{
+	if (id < PARTS_CONTROLLER_ID_BASE)
 		return NULL;
 	struct parts *root = parts_try_get(id);
 	if (!root && parts_controller_index(id) >= 0)
@@ -3948,10 +4032,17 @@ static void ctrl_root_attach(struct parts *parts)
 	}
 }
 
+static void classic_relink_roots(void)
+{
+}
+
 void parts_controller_relink_roots(void)
 {
-	if (!profile.parts.controller_ids)
-		return;
+	profile.parts.controllers->relink_roots();
+}
+
+static void v14_relink_roots(void)
+{
 	struct parts *parts;
 	PARTS_LIST_FOREACH(parts) {
 		if (!parts_is_controller_root(parts))
@@ -4041,14 +4132,27 @@ int PE_AddController(int index)
 	if (ctrl_stack.nr_controllers >= PARTS_CONTROLLER_STACK_MAX)
 		VM_ERROR("controller stack overflow");
 
-	int id = ctrl_alloc_id();
+	int id = profile.parts.controllers->alloc_id();
 	ctrl_insert(pos, id);
 	ctrl_stack.active = id;
-	// v14: the ID is the number of the controller's root parts (0x53d220).
-	if (profile.parts.controller_ids && parts_table)
-		ctrl_root_create(id);
+	profile.parts.controllers->controller_added(id);
 	ctrl_resort_from(pos + 1);
 	return id;
+}
+
+// v14: the ID is the number of the controller's root parts (0x53d220).
+static void v14_controller_added(int id)
+{
+	if (parts_table)
+		ctrl_root_create(id);
+}
+
+static void classic_controller_added(possibly_unused int id)
+{
+}
+
+static void classic_parts_released(possibly_unused int parts_no)
+{
 }
 
 // Releases the parts of the controller `p` belongs to if that is `id`. The
@@ -4068,8 +4172,7 @@ static void ctrl_release_parts(struct page **erase_number_list, int id)
 			if (!parts_is_controller_root(p))
 				*erase_number_list = array_pushback(*erase_number_list,
 						(union vm_value){.i = p->delegate_index}, AIN_ARRAY_INT, -1);
-			if (profile.parts.controller_ids)
-				pe_v14_activity_parts_released(p->no);
+			profile.parts.controllers->parts_released(p->no);
 			parts_release(p->no);
 		}
 		p = next;
@@ -4369,13 +4472,72 @@ const struct parts_widget_ops parts_widget_classic = {
 	.set_parent = classic_set_parent,
 };
 
+const struct parts_transform_ops parts_transform_v14 = {
+	.anchor_pos = v14_anchor_pos,
+	.place_global = v14_place_global,
+	.update_transform = v14_update_transform,
+	.load_transform = v14_load_transform,
+	.after_rotation = v14_after_rotation,
+	.screen_upper_left = v14_screen_upper_left,
+	.combine_pos = v14_combine_pos,
+	.screen_to_box = v14_screen_to_box,
+	.layout_size_changed = v14_layout_size_changed,
+	.do_layout = v14_do_layout,
+	.anchor_transform = v14_anchor_transform,
+	.clip_area_transform = v14_clip_area_transform,
+};
+
+const struct parts_transform_ops parts_transform_classic = {
+	.anchor_pos = classic_anchor_pos,
+	.place_global = classic_place_global,
+	.update_transform = classic_update_transform,
+	.load_transform = classic_load_transform,
+	.after_rotation = classic_after_rotation,
+	.screen_upper_left = classic_screen_upper_left,
+	.combine_pos = classic_combine_pos,
+	.screen_to_box = classic_screen_to_box,
+	.layout_size_changed = classic_layout_size_changed,
+	.do_layout = classic_do_layout,
+	.anchor_transform = classic_anchor_transform,
+	.clip_area_transform = classic_clip_area_transform,
+};
+
+const struct parts_transform_ops parts_transform_v7 = {
+	.anchor_pos = classic_anchor_pos,
+	.place_global = classic_place_global,
+	.update_transform = classic_update_transform,
+	.load_transform = classic_load_transform,
+	.after_rotation = classic_after_rotation,
+	.screen_upper_left = classic_screen_upper_left,
+	.combine_pos = classic_combine_pos,
+	.screen_to_box = classic_screen_to_box,
+	.layout_size_changed = classic_layout_size_changed,
+	.do_layout = classic_do_layout,
+	.anchor_transform = classic_anchor_transform,
+	.clip_area_transform = classic_clip_area_transform,
+};
+
 const struct parts_controller_ops parts_controller_v14 = {
+	.alloc_id = v14_alloc_controller_id,
+	.default_id = v14_controller_default_id,
+	.is_root = v14_is_controller_root,
+	.root = v14_controller_root,
+	.relink_roots = v14_relink_roots,
+	.controller_added = v14_controller_added,
+	.parts_released = pe_v14_activity_parts_released,
 	.remove_controller = v14_remove_controller,
 	.set_active_controller = v14_set_active_controller,
 	.get_active_controller = v14_get_active_controller,
 };
 
 const struct parts_controller_ops parts_controller_classic = {
+	.alloc_id = classic_alloc_controller_id,
+	.default_id = classic_controller_default_id,
+	.is_root = classic_is_controller_root,
+	.root = classic_controller_root,
+	.relink_roots = classic_relink_roots,
+	.controller_added = classic_controller_added,
+	.parts_released = classic_parts_released,
 	.remove_controller = classic_remove_controller,
 	.set_active_controller = classic_set_active_controller,
 	.get_active_controller = classic_get_active_controller,
@@ -4401,6 +4563,13 @@ const struct parts_widget_ops parts_widget_v7 = {
 };
 
 const struct parts_controller_ops parts_controller_v7 = {
+	.alloc_id = classic_alloc_controller_id,
+	.default_id = classic_controller_default_id,
+	.is_root = classic_is_controller_root,
+	.root = classic_controller_root,
+	.relink_roots = classic_relink_roots,
+	.controller_added = classic_controller_added,
+	.parts_released = classic_parts_released,
 	.remove_controller = classic_remove_controller,
 	.set_active_controller = classic_set_active_controller,
 	.get_active_controller = classic_get_active_controller,

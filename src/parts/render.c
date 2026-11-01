@@ -104,21 +104,22 @@ static void parts_reverse_scale(mat4 m, bool lr, bool tb)
  * their rotation (parts_child_pos) and the scale is the product down the
  * tree. No earlier engine was read or compared for the matrix rule.
  */
-void parts_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
+void classic_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
 {
-	if (!profile.parts.native_transforms) {
-		glm_mat4_identity(out);
-		glm_translate(out, (vec3) { parts->global.pos.x, parts->global.pos.y, 0 });
-		parts_reverse_scale(out, parts->global.reverse_lr != parts->local.reverse_lr,
-				parts->global.reverse_tb != parts->local.reverse_tb);
-		if (rotate_scale) {
-			// FIXME: need perspective for 3D rotate
-			glm_rotate_z(out, angle, out);
-			glm_scale(out, (vec3){ parts->global.scale.x, parts->global.scale.y, 1.0 });
-		}
-		parts_reverse_scale(out, parts->local.reverse_lr, parts->local.reverse_tb);
-		return;
+	glm_mat4_identity(out);
+	glm_translate(out, (vec3) { parts->global.pos.x, parts->global.pos.y, 0 });
+	parts_reverse_scale(out, parts->global.reverse_lr != parts->local.reverse_lr,
+			parts->global.reverse_tb != parts->local.reverse_tb);
+	if (rotate_scale) {
+		// FIXME: need perspective for 3D rotate
+		glm_rotate_z(out, angle, out);
+		glm_scale(out, (vec3){ parts->global.scale.x, parts->global.scale.y, 1.0 });
 	}
+	parts_reverse_scale(out, parts->local.reverse_lr, parts->local.reverse_tb);
+}
+
+void v14_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
+{
 	parts_parent_transform(parts, out);
 	Point pos = parts_placed_pos(parts);
 	glm_translate(out, (vec3) { pos.x, pos.y, 0 });
@@ -131,6 +132,11 @@ void parts_anchor_transform(struct parts *parts, float angle, bool rotate_scale,
 		glm_scale(out, (vec3){ parts->local.scale.x, parts->local.scale.y, 1.0 });
 	}
 	parts_reverse_scale(out, parts->local.reverse_lr, parts->local.reverse_tb);
+}
+
+void parts_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out)
+{
+	profile.parts.transforms->anchor_transform(parts, angle, rotate_scale, out);
 }
 
 /*
@@ -162,10 +168,13 @@ void parts_box_transform(struct parts *parts, struct parts_common *common, mat4 
  * projects the origin, then adds local-scale offsets; 0x579ec0 intersects
  * the inherited rectangle. It does not rotate the rectangle's four corners.
  * Return 0 for no clip, -1 for an empty clip, 1 with screen-to-unit-clip. */
-int parts_clip_area_transform(struct parts *parts, mat4 out)
+int classic_clip_area_transform(struct parts *parts, mat4 out)
 {
-	if (!profile.parts.native_transforms)
-		return 0;
+	return 0;
+}
+
+int v14_clip_area_transform(struct parts *parts, mat4 out)
+{
 	bool enabled = false;
 	double left = 0, top = 0, right = 0, bottom = 0;
 	for (struct parts *p = parts; p; p = p->parent) {
@@ -202,6 +211,11 @@ int parts_clip_area_transform(struct parts *parts, mat4 out)
 	out[3][0] = -left / (right - left);
 	out[3][1] = -top / (bottom - top);
 	return 1;
+}
+
+int parts_clip_area_transform(struct parts *parts, mat4 out)
+{
+	return profile.parts.transforms->clip_area_transform(parts, out);
 }
 
 /* Native 0x53546f -> 0x537900 resolves a local mask; 0x579ceb keeps the

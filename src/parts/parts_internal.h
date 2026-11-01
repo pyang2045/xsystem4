@@ -1259,7 +1259,42 @@ struct parts_widget_ops {
 	void (*set_parent)(int parts_no, int parent_parts_no);
 };
 
+struct parts_transform_ops {
+	Point (*anchor_pos)(struct parts *parts);
+	void (*place_global)(struct parts *parts, const struct parts_params *parent);
+	void (*update_transform)(struct parts *parts);
+	void (*load_transform)(struct parts *parts);
+	void (*after_rotation)(struct parts *parts);
+	Point (*screen_upper_left)(struct parts *parts, struct parts_common *common);
+	void (*combine_pos)(struct parts_params *parent, struct parts_params *child, Point pos,
+			struct parts_params *out);
+	bool (*screen_to_box)(struct parts *parts, struct parts_common *c, float sx, float sy,
+			float *bx, float *by);
+	void (*layout_size_changed)(struct parts *parts);
+	void (*do_layout)(struct parts *parts);
+	void (*anchor_transform)(struct parts *parts, float angle, bool rotate_scale, mat4 out);
+	int (*clip_area_transform)(struct parts *parts, mat4 out);
+};
+
+#define PARTS_TRANSFORM_GENERATION(g) \
+	bool g##_screen_to_box(struct parts *parts, struct parts_common *c, float sx, float sy, \
+			float *bx, float *by); \
+	void g##_layout_size_changed(struct parts *parts); \
+	void g##_do_layout(struct parts *parts); \
+	void g##_anchor_transform(struct parts *parts, float angle, bool rotate_scale, mat4 out); \
+	int g##_clip_area_transform(struct parts *parts, mat4 out);
+PARTS_TRANSFORM_GENERATION(v14)
+PARTS_TRANSFORM_GENERATION(classic)
+#undef PARTS_TRANSFORM_GENERATION
+
 struct parts_controller_ops {
+	int (*alloc_id)(void);
+	int (*default_id)(int position);
+	bool (*is_root)(struct parts *parts);
+	struct parts *(*root)(int id);
+	void (*relink_roots)(void);
+	void (*controller_added)(int id);
+	void (*parts_released)(int parts_no);
 	void (*remove_controller)(struct page **erase_number_list, int index);
 	void (*set_active_controller)(int controller_no);
 	int (*get_active_controller)(void);
