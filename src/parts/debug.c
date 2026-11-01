@@ -408,6 +408,7 @@ static cJSON *parts_motion_param_to_json(union parts_motion_param param, enum pa
 		return obj;
 	case PARTS_MOTION_ALPHA:
 	case PARTS_MOTION_CG:
+	case PARTS_MOTION_CG_FORMAT:
 	case PARTS_MOTION_NUMERAL_NUMBER:
 		return cJSON_CreateNumber(param.i);
 	case PARTS_MOTION_HGAUGE_RATE:
@@ -428,6 +429,7 @@ static cJSON *parts_motion_to_json(struct parts_motion *motion)
 		[PARTS_MOTION_POS] = "pos",
 		[PARTS_MOTION_ALPHA] = "alpha",
 		[PARTS_MOTION_CG] = "cg",
+		[PARTS_MOTION_CG_FORMAT] = "cg_format",
 		[PARTS_MOTION_HGAUGE_RATE] = "hgauge_rate",
 		[PARTS_MOTION_VGAUGE_RATE] = "vgauge_rate",
 		[PARTS_MOTION_NUMERAL_NUMBER] = "numeral_number",

@@ -53,8 +53,9 @@ enum parts_motion_type {
 	PARTS_MOTION_ROTATE_X,
 	PARTS_MOTION_ROTATE_Y,
 	PARTS_MOTION_ROTATE_Z,
-	PARTS_MOTION_VIBRATION_SIZE
-#define PARTS_NR_MOTION_TYPES (PARTS_MOTION_VIBRATION_SIZE+1)
+	PARTS_MOTION_VIBRATION_SIZE,
+	PARTS_MOTION_CG_FORMAT
+#define PARTS_NR_MOTION_TYPES (PARTS_MOTION_CG_FORMAT+1)
 };
 
 union parts_motion_param {
@@ -84,6 +85,8 @@ struct parts_motion {
 	union parts_motion_param end;
 	int begin_time;
 	int end_time;
+	// PARTS_MOTION_CG_FORMAT: the CG names, with the number from begin to end
+	struct string *cg_format;
 };
 
 TAILQ_HEAD(parts_motion_list, parts_motion);

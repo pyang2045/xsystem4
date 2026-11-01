@@ -40,6 +40,13 @@ static bool is_activities_v7(const struct ain *ain)
 		&& !has_parts_function(ain, "GetMessageUniqueID");
 }
 
+// Oyako Rankan: PartsEngine next to GUIEngine, with PartsEngine's own stack
+// of GUI controllers.
+static bool is_gui_parts_v6(const struct ain *ain)
+{
+	return ain->version == 6 && has_parts_function(ain, "PushGUIController");
+}
+
 static const struct {
 	const char *name;
 	bool (*match)(const struct ain *ain);
@@ -107,6 +114,20 @@ static const struct {
 			.movies_in_update = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
+	},
+	{
+		.name = "gui_parts_v6",
+		.match = is_gui_parts_v6,
+		.parts = {
+			.widgets = &parts_widget_classic,
+			.controllers = &parts_controller_classic,
+			.transforms = &parts_transform_classic,
+			.input = &parts_input_classic,
+			.bindings = &parts_bindings_classic,
+			.save_version = 3,
+		},
+		// Its config screens read all three (■入力 tab of the config).
+		.hll = { .mouse_cursor_configs = true },
 	},
 	// Keep last: it takes every game the rows above don't.
 	{

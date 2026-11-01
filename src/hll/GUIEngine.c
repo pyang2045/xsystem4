@@ -25,6 +25,11 @@
 
 static void GUIEngine_PreLink(void);
 
+// Native 0x6e5cc0, 0x6e5cd0: update and draw the GUIEngine's own widgets. The port
+// creates none of them for a game with PartsEngine (see GUIEngine_PreLink).
+static void GUIEngine_UpdateModel(possibly_unused int passed_time) {}
+static void GUIEngine_UpdateView(possibly_unused int passed_time) {}
+
 static void GUIEngine_ModuleInit(void)
 {
 	gfx_init();
@@ -541,6 +546,8 @@ HLL_LIBRARY(GUIEngine,
 	    HLL_EXPORT(IsExist, PE_IsExist),
 	    HLL_TODO_EXPORT(PushController, GUIEngine_PushController),
 	    HLL_TODO_EXPORT(PopController, GUIEngine_PopController),
+	    HLL_EXPORT(UpdateModel, GUIEngine_UpdateModel),
+	    HLL_EXPORT(UpdateView, GUIEngine_UpdateView),
 	    HLL_EXPORT(UpdateComponent, PE_UpdateComponent),
 	    HLL_EXPORT(BeginInput, PE_BeginInput),
 	    HLL_EXPORT(EndInput, PE_EndInput),

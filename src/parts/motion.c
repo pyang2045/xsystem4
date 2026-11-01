@@ -14,6 +14,10 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "system4.h"
 #include "system4/string.h"
 
@@ -56,6 +60,8 @@ static struct parts_motion *parts_motion_alloc(enum parts_motion_type type, int 
 
 static void parts_motion_free(struct parts_motion *motion)
 {
+	if (motion->cg_format)
+		free_string(motion->cg_format);
 	free(motion);
 }
 
@@ -147,6 +153,28 @@ static Point motion_vibration_point(struct parts_motion *m, int t)
 	};
 }
 
+// A CG name in a format with one %d or %0Nd, as AddMotionCG takes it.
+static struct string *motion_cg_name(struct string *format, int no)
+{
+	const char *p = strchr(format->text, '%');
+	char num[32];
+	if (!p)
+		return string_dup(format);
+	int digits = 0;
+	const char *q = p + 1;
+	while (isdigit((unsigned char)*q))
+		digits = digits * 10 + (*q++ - '0');
+	if (*q != 'd' || digits >= (int)sizeof(num) - 12) {
+		WARNING("Unsupported CG name format: %s", display_sjis0(format->text));
+		return string_dup(format);
+	}
+	snprintf(num, sizeof(num), "%0*d", digits ? digits : 1, no);
+	struct string *s = make_string(format->text, p - format->text);
+	string_append_cstr(&s, num, strlen(num));
+	string_append_cstr(&s, q + 1, strlen(q + 1));
+	return s;
+}
+
 static void parts_update_with_motion(struct parts *parts, struct parts_motion *motion)
 {
 	switch (motion->type) {
@@ -160,6 +188,15 @@ static void parts_update_with_motion(struct parts *parts, struct parts_motion *m
 		parts_cg_set_by_index(parts, parts_get_cg(parts, parts->state),
 				motion_calculate_i(motion, motion_t));
 		break;
+	case PARTS_MOTION_CG_FORMAT: {
+		struct parts_cg *cg = parts_get_cg(parts, parts->state);
+		struct string *name = motion_cg_name(motion->cg_format,
+				motion_calculate_i(motion, motion_t));
+		if (!cg->name || strcmp(cg->name->text, name->text))
+			parts_cg_set(parts, cg, name);
+		free_string(name);
+		break;
+	}
 	case PARTS_MOTION_HGAUGE_RATE:
 		parts_hgauge_set_rate(parts, parts_get_hgauge(parts, parts->state),
 				motion_calculate_f(motion, motion_t));
@@ -316,6 +353,19 @@ void PE_AddMotionCG_by_index(int parts_no, int begin_cg_no, int nr_cg, int begin
 	struct parts_motion *motion = parts_motion_alloc(PARTS_MOTION_CG, begin_t, end_t);
 	motion->begin.i = begin_cg_no;
 	motion->end.i = begin_cg_no + nr_cg - 1;
+	parts_add_motion(parts, motion);
+}
+
+// 0x546360, 0x533e60. Oyako Rankan: the frames of an effect by name.
+void PE_AddMotionCG_format(int parts_no, struct string *cg_format, int begin_cg_no, int nr_cg,
+		int begin_t, int end_t, struct string *curve_name)
+{
+	// TODO: use curve
+	struct parts *parts = parts_get(parts_no);
+	struct parts_motion *motion = parts_motion_alloc(PARTS_MOTION_CG_FORMAT, begin_t, end_t);
+	motion->begin.i = begin_cg_no;
+	motion->end.i = begin_cg_no + nr_cg - 1;
+	motion->cg_format = string_dup(cg_format);
 	parts_add_motion(parts, motion);
 }
 

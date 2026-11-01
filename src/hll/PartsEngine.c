@@ -2295,8 +2295,18 @@ const struct parts_bindings parts_bindings_v7 = {
 	.postlink = v7_postlink,
 };
 
+// Oyako Rankan names the frames (a format and a number); no game here has
+// the same function with numbers.
+static void classic_postlink(int libno)
+{
+	bind_controllers(libno);
+	struct ain_hll_function *fun = get_fun(libno, "AddMotionCG");
+	if (fun && fun->nr_arguments > 1 && fun->arguments[1].type.data == AIN_STRING)
+		static_library_register(&lib_PartsEngine, "AddMotionCG", PE_AddMotionCG_format);
+}
+
 const struct parts_bindings parts_bindings_classic = {
-	.postlink = bind_controllers,
+	.postlink = classic_postlink,
 };
 
 // Runs after link_libraries(): static_library_register() requires the

@@ -859,6 +859,11 @@ static void save_parts_motion(struct iarray_writer *w, struct parts_motion *moti
 		iarray_write(w, motion->begin.x);
 		iarray_write(w, motion->begin.y);
 		break;
+	case PARTS_MOTION_CG_FORMAT:
+		iarray_write(w, motion->begin.i);
+		iarray_write(w, motion->end.i);
+		iarray_write_string(w, motion->cg_format);
+		break;
 	}
 	iarray_write(w, motion->begin_time);
 	iarray_write(w, motion->end_time);
@@ -894,6 +899,11 @@ static struct parts_motion *load_parts_motion(struct iarray_reader *r)
 	case PARTS_MOTION_VIBRATION_SIZE:
 		motion->begin.x = iarray_read(r);
 		motion->begin.y = iarray_read(r);
+		break;
+	case PARTS_MOTION_CG_FORMAT:
+		motion->begin.i = iarray_read(r);
+		motion->end.i = iarray_read(r);
+		motion->cg_format = iarray_read_string(r);
 		break;
 	}
 	motion->begin_time = iarray_read(r);

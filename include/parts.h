@@ -327,6 +327,8 @@ void PE_AddMotionAlpha(int parts_no, int begin_a, int end_a, int begin_t, int en
 void PE_AddMotionAlpha_curve(int parts_no, int begin_a, int end_a, int begin_t, int end_t,
 		struct string *curve_name);
 void PE_AddMotionCG_by_index(int parts_no, int begin_cg_no, int nr_cg, int begin_t, int end_t);
+void PE_AddMotionCG_format(int parts_no, struct string *cg_format, int begin_cg_no, int nr_cg,
+		int begin_t, int end_t, struct string *curve_name);
 void PE_AddMotionHGaugeRate(int parts_no, float begin_numerator, float begin_denominator,
 			    float end_numerator, float end_denominator, int begin_t, int end_t);
 void PE_AddMotionHGaugeRate_curve(int parts_no, float begin_numerator, float begin_denominator,
