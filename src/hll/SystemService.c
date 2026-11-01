@@ -50,6 +50,11 @@ static int SystemService_GetMixerName(int n, struct string **name)
 
 static bool SystemService_GetMixerDefaultVolume(int n, int *volume)
 {
+	// With sound groups the defaults are the group table's. 妻みぐい３'s
+	// 初始化 buttons read them here; config has no channels for it, so they
+	// got 0 (config::GetDefaultVolume starts from 0).
+	if (mixer_groups_enabled())
+		return mixer_get_default_volume(n, volume);
 	if (n < 0 || (unsigned)n >= config.mixer_nr_channels)
 		return false;
 	*volume = config.mixer_volumes[n];
