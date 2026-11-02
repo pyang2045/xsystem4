@@ -1590,9 +1590,10 @@ bool parts_numeral_update(struct parts *parts, struct parts_numeral *num)
 	}
 	w += (nr_chars-1) * num->space;
 
-	// copy chars to texture
+	// copy chars to texture; the gaps of num->space stay transparent (an
+	// opaque start showed them as black bars, 妻みぐい３'s 回想回収率)
 	gfx_delete_texture(&num->common.texture);
-	gfx_init_texture_rgba(&num->common.texture, w, h, (SDL_Color){0, 0, 0, 255});
+	gfx_init_texture_rgba(&num->common.texture, w, h, (SDL_Color){0, 0, 0, 0});
 
 	int x = 0;
 	for (int i = nr_chars-1; i>= 0; i--) {
