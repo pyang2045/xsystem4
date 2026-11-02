@@ -180,6 +180,13 @@ struct parts *parts_try_get(int parts_no)
 	return NULL;
 }
 
+// GetFreeSystemPartsNumberNotSaved's numbers (母娘乱館 0x5363a0) come from a
+// range of their own, base 2000000000 (0x534c1d); the save writes no parts at
+// or above it (0x536b70). Only the numbers handed out are marked here: the
+// scripts push constants near INT_MAX that may name parts of their own.
+#define PARTS_FIRST_NOT_SAVED_NUMBER 2000000000
+static int first_free_not_saved = PARTS_FIRST_NOT_SAVED_NUMBER;
+
 struct parts *parts_get(int parts_no)
 {
 	struct ht_slot *slot = ht_put_int(parts_table, parts_no, NULL);
@@ -188,6 +195,8 @@ struct parts *parts_get(int parts_no)
 
 	struct parts *parts = parts_alloc();
 	parts->no = parts_no;
+	if (parts_no >= PARTS_FIRST_NOT_SAVED_NUMBER && parts_no < first_free_not_saved)
+		parts->want_save = false;
 	// A new parts goes to the active controller (v14: to the top one while
 	// none is designated, 0x53d1d0).
 	parts->controller_no = PE_get_active_controller();
@@ -3175,6 +3184,16 @@ int PE_GetFreeNumber(void)
 	}
 	// XXX: the ID is incremented even if the parts is not created
 	return first_free++;
+}
+
+// CMessageDrawParts (母娘乱館) draws each message on one of these: a load
+// that brought the drawn line back would leave it on screen under the next.
+int PE_GetFreeNumberNotSaved(void)
+{
+	while (PE_IsExist(first_free_not_saved)) {
+		first_free_not_saved++;
+	}
+	return first_free_not_saved++;
 }
 
 // What PE_Reset leaves of the v14 engine, for a restart (system.Reset). The

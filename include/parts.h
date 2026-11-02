@@ -197,6 +197,7 @@ int PE_GetParts3DLayerPluginID(int parts_no, int state);
 bool PE_ReleaseParts3DLayerPluginID(int parts_no, int state);
 // GUIEngine
 int PE_GetFreeNumber(void);
+int PE_GetFreeNumberNotSaved(void);
 bool PE_IsExist(int parts_no);
 // PartsFunc interface
 void PE_set_active_controller(int controller_no);
