@@ -365,7 +365,7 @@ static struct po_entry *po_read(const char *path, int *nr_out, int *fuzzy_out)
 void translation_apply(struct ain *ain, const char *po_path)
 {
 	int nr, fuzzy;
-	if (ain_is_gb18030) {
+	if (game_charset_is_gbk()) {
 		WARNING("%s: .po translations don't support GBK games (ignored)", po_path);
 		return;
 	}
