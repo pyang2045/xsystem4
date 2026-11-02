@@ -200,11 +200,28 @@ static enum sact_keycode sdl_to_sact_button(int button)
 	}
 }
 
+/*
+ * A text input loop of InputString (母娘乱館's save comment) ends only on
+ * Return, Esc or the right button, as the script checks; a left click on the
+ * dialog's buttons does nothing while it runs, in the original as well. On a
+ * touch screen there is no Return without the on-screen keyboard, so while
+ * the IME is open the left button also reads as Return: a click ends the
+ * input with what was typed.
+ */
+static bool click_returns;
+
+void input_set_click_returns(bool on)
+{
+	click_returns = on;
+}
+
 bool key_is_down(enum sact_keycode code)
 {
 	if (code < 0 || code >= VK_NR_KEYCODES) {
 		return false;
 	}
+	if (code == VK_RETURN && click_returns && key_state[VK_LBUTTON])
+		return true;
 	return key_state[code];
 }
 

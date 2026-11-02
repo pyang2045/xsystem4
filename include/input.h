@@ -144,6 +144,8 @@ void input_modal_closed(void);
 // Ask the user before SDL_QUIT ends the program (the v14 window setting).
 void input_set_close_confirm(bool on);
 bool key_is_down(enum sact_keycode code);
+// While InputString's IME is open, the left button also reads as Return (see input.c).
+void input_set_click_returns(bool on);
 void key_clear_flag(bool no_ctrl);
 bool joy_key_is_down(uint8_t code);
 void joy_clear_flag(void);
