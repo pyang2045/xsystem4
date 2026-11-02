@@ -83,13 +83,15 @@ A JSON config names the app and adds its icon and files (see `ios/app.py` for ev
   "display_name": "My Game",
   "bundle_id": "com.example.mygame",
   "assets": "Assets.xcassets",
-  "resources": {"fonts/NotoSansCJKsc-Regular.otf": "fonts/NotoSansCJKsc-Regular.otf"}
+  "resources": {"fonts/NotoSansCJKsc-Regular.otf": "fonts/NotoSansCJKsc-Regular.otf"},
+  "fetch": {"fonts/NotoSansCJKsc-Regular.otf": {"url": "https://...", "sha256": "..."}}
 }
 ```
 
 Languages are not part of the app: each game folder holds its own `locale/<lang>.po`, and the
 start list shows each one. `fonts/NotoSansCJKsc-Regular.otf`, if the app has it, draws translated
-text. `assets` is an asset catalog whose `AppIcon` set holds the icon (one
+text. `fetch` downloads a file too big for git, and checks it, when the project or the app is
+made. `assets` is an asset catalog whose `AppIcon` set holds the icon (one
 1024×1024 PNG is enough).
 
 ```sh

@@ -17,7 +17,10 @@ the Xcode project (NAME.xcodeproj) and its Info.plist (NAME/Info.plist) are writ
       "version": "1.0",                    optional; default: last version tag (1.2.3 or v1.2.3)
                                            of the config's git repo
       "assets": "Assets.xcassets",         optional asset catalog; its AppIcon set is the icon
-      "resources": {"fonts/x.otf": "x.otf"}  optional: bundle path -> file (same base name)
+      "resources": {"fonts/x.otf": "x.otf"},  optional: bundle path -> file (same base name)
+      "fetch": {"x.otf": {"url": "https://...", "sha256": "..."}}
+                                           optional: files too big for git; `resources` and
+                                           `xcodeproj` download a missing one and check it
     }
 
 ios/xsystem4.json is the plain app: no icon; any games in Documents.
@@ -62,6 +65,11 @@ def deps_dir():
     return os.path.abspath(os.environ.get("XSYS4_IOS_DEPS") or os.path.join(XS, "ios-deps"))
 
 
+def sha256_of(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
 class Config:
     def __init__(self, path):
         self.path = os.path.abspath(path)
@@ -82,6 +90,21 @@ class Config:
         for dest, src in self.resources.items():
             if os.path.basename(dest) != os.path.basename(src):
                 sys.exit("%s: resource %s must keep the name of %s" % (path, dest, src))
+        self.fetch = {os.path.normpath(os.path.join(self.dir, k)): v for k, v in c.get("fetch", {}).items()}
+
+    def fetch_files(self):
+        for path, f in self.fetch.items():
+            if os.path.exists(path) and sha256_of(path) == f["sha256"]:
+                continue
+            print("Downloading %s" % f["url"], file=sys.stderr)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            tmp = path + ".part"
+            r = subprocess.run(["curl", "-fsSL", "-o", tmp, f["url"]])
+            if r.returncode != 0 or sha256_of(tmp) != f["sha256"]:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+                sys.exit("%s: download failed or has the wrong SHA-256" % f["url"])
+            os.replace(tmp, path)
 
     def git_version(self):
         r = subprocess.run(["git", "-C", self.dir, "describe", "--tags", "--abbrev=0",
@@ -522,9 +545,11 @@ def main():
     elif cmd == "plist":
         sys.stdout.write(info_plist(cfg, *sys.argv[3:5]) if len(sys.argv) >= 5 else info_plist(cfg))
     elif cmd == "resources":
+        cfg.fetch_files()
         for dest, src in resources(cfg):
             print("%s\t%s" % (dest, src))
     else:
+        cfg.fetch_files()
         print(Project(cfg, os.path.abspath(sys.argv[3]) if len(sys.argv) > 3 else None).write())
 
 
