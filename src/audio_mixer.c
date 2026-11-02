@@ -104,8 +104,8 @@ struct mixer {
 	struct mixer **children;
 	int nr_children;
 
-	// v14 sound groups: the integer volumes the game reads back. `volume`
-	// is the current one (0..100, `mixer.gain` is volume / 100); both are
+	// v14 sound groups: the integer volumes the game reads back (also
+	// kept for Volume.sav of the INI's mixers). `volume` is the current one (0..100, `mixer.gain` is volume / 100); both are
 	// written on the main thread only, `mixer.gain` under the device lock.
 	int volume;
 	int default_volume;
@@ -1096,7 +1096,7 @@ static bool volume_sav_write(const char *path, const uint8_t *data, size_t size)
 
 void mixer_groups_save(void)
 {
-	if (!groups_enabled || !config.save_dir)
+	if (!(groups_enabled || (profile.hll.volume_sav && nr_mixers <= GROUPS_MAX)) || !config.save_dir)
 		return;
 	uint8_t buf[sizeof(volume_sav_bytes)];
 	int len = 2 + 3 * nr_mixers;
@@ -1205,8 +1205,12 @@ static void legacy_mixers_init(void)
 	for (int i = 0; i < nr_mixers; i++) {
 		sts_mixer_init(&mixers[i].mixer, 44100, STS_MIXER_SAMPLE_FORMAT_FLOAT);
 		int volume = i < (int)config.mixer_nr_channels ? config.mixer_volumes[i] : config.default_volume;
+		mixers[i].volume = clamp(0, 100, volume);
 		mixers[i].mixer.gain = clamp(0.0f, 1.0f, (float)volume / 100.0f);
 	}
+	// The mixers' numbers are the INI's, as the file's entries are.
+	if (profile.hll.volume_sav && nr_mixers <= GROUPS_MAX)
+		groups_read_volumes();
 
 	// initialize mixer streams
 	for (int i = 0; i < nr_mixers; i++) {
@@ -1307,6 +1311,7 @@ int mixer_set_volume(int n, int volume)
 		mixers[n].volume = clamp(0, 100, volume);
 		mixers[n].mixer.gain = mixers[n].volume / 100.0f;
 	} else {
+		mixers[n].volume = clamp(0, 100, volume);
 		mixers[n].mixer.gain = clamp(0.0f, 1.0f, (float)volume / 100.0f);
 	}
 	SDL_UnlockAudioDevice(audio_device);

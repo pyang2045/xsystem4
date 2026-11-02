@@ -128,7 +128,10 @@ static const struct {
 			.save_version = 3,
 		},
 		// Its config screens read all three (■入力 tab of the config).
-		.hll = { .mouse_cursor_configs = true },
+		// The config screens set the volumes and never store them: the
+		// engine keeps them in Volume.sav (sys40::CSoundVolumeManager,
+		// read 0x463f00, written 0x463ad0, as with the groups).
+		.hll = { .mouse_cursor_configs = true, .volume_sav = true },
 		// The legacy score fires (41 on the JP script, 39 on the Chinese one, whose
 		// text is valid SJIS too), and text with a TrueType face came out as GBK.
 		.lang = { .strings_are_sjis = true },

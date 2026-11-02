@@ -106,6 +106,8 @@ struct hll_features {
 	bool msgskip_v14;
 	// Sound groups, when the game has the table for them.
 	bool sound_groups;
+	// Volume.sav for the mixers of AliceStart.ini, when there are no groups.
+	bool volume_sav;
 	// A .fnl size draws from the face of 4 times its height, when there is one.
 	bool fnl_face_by_scale;
 };
