@@ -45,11 +45,7 @@ bool translation_write_pot(struct ain *ain, const char *path);
 // Call before the VM runs. Errors abort; mismatches are warned about.
 void translation_apply(struct ain *ain, const char *po_path);
 
-// Loads a table of a Chinese patch (65536 or fewer little-endian GBK codes, by
-// SJIS code): the text stays SJIS for the VM, and its double-byte characters draw
-// with translation_font(). Errors abort.
-void translation_load_sjis_table(const char *path);
-bool translation_has_sjis_table(void);
+bool translation_is_loaded(void);
 
 // The Unicode character behind an assigned SJIS code or a TEXT_CODE_UNICODE
 // code, or 0.
