@@ -2,13 +2,13 @@
  *
  * - The working directory becomes the app bundle, where shaders/, fonts/ and locale/ are.
  * - $XSYSTEM4_HOME (config files), unless set, is Library/Application Support/xsystem4.
- * - The game is the app's Documents folder (shared in the Files app), or a folder in it,
- *   that holds a .ain file.
- * - Saves go to Documents/SAVE FOLDER (the .ini's SaveFolder, SaveData by default), where
- *   the Files app and Finder show them.
- * - A translation when the device's first language starts with a key of the Info.plist
- *   dictionary XSys4Translations (language prefix -> .po file in the bundle, e.g. "zh" ->
- *   "locale/zh_CN.po"); the app's packaging sets it.
+ * - The games are the app's Documents folder (shared in the Files app), or folders in it,
+ *   that hold a .ain file, each with its languages in locale/<lang>.po. One game with no
+ *   language starts at once; otherwise a list asks, at every launch.
+ * - Saves go to Documents/SAVE FOLDER/GAME FOLDER (SAVE FOLDER is the .ini's SaveFolder,
+ *   SaveData by default), where the Files app and Finder show them. A game's languages
+ *   share them.
+ * - A translation's characters draw with fonts/NotoSansCJKsc-Regular.otf if the app has it.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@
 
 #include "system4.h"
 #include "ios.h"
+#include "translation.h"
+#include "xsystem4.h"
 
 static bool has_ain(NSString *dir)
 {
@@ -42,20 +44,82 @@ static bool has_ain(NSString *dir)
 	return false;
 }
 
-static char *find_game(NSString *docs)
+@interface IOSEntry : NSObject
+@property NSString *title, *dir, *po;
+@end
+@implementation IOSEntry
+@end
+
+static NSString *language_title(NSString *lang)
 {
+	return [lang hasPrefix:@"zh"] ? @"中文" : lang;
+}
+
+static void add_game(NSMutableArray<IOSEntry *> *entries, NSString *dir, NSString *title)
+{
+	IOSEntry *entry = [IOSEntry new];
+	entry.title = title;
+	entry.dir = dir;
+	[entries addObject:entry];
+	NSString *locale = [dir stringByAppendingPathComponent:@"locale"];
+	NSArray<NSString *> *names = [[NSFileManager.defaultManager contentsOfDirectoryAtPath:locale error:nil]
+		sortedArrayUsingSelector:@selector(compare:)];
+	for (NSString *name in names) {
+		if ([name.pathExtension caseInsensitiveCompare:@"po"] != NSOrderedSame)
+			continue;
+		entry = [IOSEntry new];
+		entry.title = [NSString stringWithFormat:@"%@ (%@)", title,
+			language_title(name.stringByDeletingPathExtension)];
+		entry.dir = dir;
+		entry.po = [locale stringByAppendingPathComponent:name];
+		[entries addObject:entry];
+	}
+}
+
+static NSArray<IOSEntry *> *find_games(NSString *docs)
+{
+	NSMutableArray<IOSEntry *> *entries = [NSMutableArray array];
 	if (has_ain(docs))
-		return strdup(docs.fileSystemRepresentation);
+		add_game(entries, docs, @"Game");
 	NSArray<NSString *> *names = [[NSFileManager.defaultManager contentsOfDirectoryAtPath:docs error:nil]
 		sortedArrayUsingSelector:@selector(compare:)];
 	for (NSString *name in names) {
 		NSString *dir = [docs stringByAppendingPathComponent:name];
 		BOOL is_dir;
 		if ([NSFileManager.defaultManager fileExistsAtPath:dir isDirectory:&is_dir] && is_dir && has_ain(dir))
-			return strdup(dir.fileSystemRepresentation);
+			add_game(entries, dir, name);
 	}
-	return NULL;
+	return entries;
 }
+
+static IOSEntry *choose_entry(NSArray<IOSEntry *> *entries)
+{
+	if (entries.count == 1)
+		return entries[0];
+	const char *pick = dev_getenv("XSYS4_IOS_PICK");
+	if (pick && (NSUInteger)atoi(pick) < entries.count)
+		return entries[atoi(pick)];
+	SDL_MessageBoxButtonData *buttons = xcalloc(entries.count, sizeof(SDL_MessageBoxButtonData));
+	for (NSUInteger i = 0; i < entries.count; i++) {
+		buttons[i].buttonid = (int)i;
+		buttons[i].text = entries[i].title.UTF8String;
+	}
+	SDL_MessageBoxData box = {
+		.flags = SDL_MESSAGEBOX_INFORMATION,
+		.title = "Choose a game",
+		.message = "",
+		.numbuttons = (int)entries.count,
+		.buttons = buttons,
+	};
+	int chosen = -1;
+	if (SDL_ShowMessageBox(&box, &chosen) < 0 || chosen < 0)
+		chosen = 0;
+	free(buttons);
+	return entries[chosen];
+}
+
+extern char *translation_font_path;
+static NSString *save_subfolder;
 
 char *ios_setup(const char **locale)
 {
@@ -70,28 +134,22 @@ char *ios_setup(const char **locale)
 			setenv("XSYSTEM4_HOME", support.fileSystemRepresentation, 1);
 		}
 
-		*locale = NULL;
-		NSString *lang = NSLocale.preferredLanguages.firstObject;
-		NSDictionary *translations = [NSBundle.mainBundle objectForInfoDictionaryKey:@"XSys4Translations"];
-		if ([translations isKindOfClass:NSDictionary.class]) {
-			for (NSString *prefix in translations) {
-				NSString *po = translations[prefix];
-				if ([lang hasPrefix:prefix] && [po isKindOfClass:NSString.class] && [fm fileExistsAtPath:po]) {
-					*locale = strdup(po.fileSystemRepresentation);
-					break;
-				}
-			}
-		}
+		if ([fm fileExistsAtPath:@"fonts/NotoSansCJKsc-Regular.otf"])
+			translation_font_path = "fonts/NotoSansCJKsc-Regular.otf";
 
 		NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
 				NSUserDomainMask, YES).firstObject;
-		char *game = find_game(docs);
-		if (!game) {
+		NSArray<IOSEntry *> *entries = find_games(docs);
+		if (!entries.count) {
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Game files not found",
-				"Copy the game folder (the one holding the .ain file) into this app's "
+				"Copy a game folder (the one holding the .ain file) into this app's "
 				"folder in the Files app (On My iPad), then start the app again.", NULL);
 			exit(1);
 		}
+		IOSEntry *entry = choose_entry(entries);
+		*locale = entry.po ? strdup(entry.po.fileSystemRepresentation) : NULL;
+		char *game = strdup(entry.dir.fileSystemRepresentation);
+		save_subfolder = [entry.dir isEqualToString:docs] ? @"" : entry.dir.lastPathComponent;
 		NOTICE("Game: %s", game);
 		return game;
 	}
@@ -103,6 +161,7 @@ char *ios_save_dir(const char *folder)
 		NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
 				NSUserDomainMask, YES).firstObject;
 		NSString *name = [NSString stringWithUTF8String:folder];
-		return strdup([docs stringByAppendingPathComponent:name].fileSystemRepresentation);
+		NSString *dir = [[docs stringByAppendingPathComponent:name] stringByAppendingPathComponent:save_subfolder];
+		return strdup(dir.fileSystemRepresentation);
 	}
 }

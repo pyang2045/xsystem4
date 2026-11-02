@@ -17,11 +17,10 @@ the Xcode project (NAME.xcodeproj) and its Info.plist (NAME/Info.plist) are writ
       "version": "1.0",                    optional; default: last version tag (1.2.3 or v1.2.3)
                                            of the config's git repo
       "assets": "Assets.xcassets",         optional asset catalog; its AppIcon set is the icon
-      "resources": {"locale/x.po": "../x.po"},   optional: bundle path -> file (same base name)
-      "translations": {"zh": "locale/x.po"}      optional: language prefix -> bundle path
+      "resources": {"fonts/x.otf": "x.otf"}  optional: bundle path -> file (same base name)
     }
 
-ios/xsystem4.json is the plain app: no icon, no translation; any game in Documents.
+ios/xsystem4.json is the plain app: no icon; any games in Documents.
 `plist` without BUILD prints the Info.plist for Xcode (with $(...) build variables); with
 BUILD (CFBundleVersion) and PLATFORM (iPhoneOS or iPhoneSimulator) one for make_app.sh.
 `xcodeproj` takes its source lists from ios/xsystem4.xcodeproj, or from an iOS meson build
@@ -83,7 +82,6 @@ class Config:
         for dest, src in self.resources.items():
             if os.path.basename(dest) != os.path.basename(src):
                 sys.exit("%s: resource %s must keep the name of %s" % (path, dest, src))
-        self.translations = c.get("translations", {})
 
     def git_version(self):
         r = subprocess.run(["git", "-C", self.dir, "describe", "--tags", "--abbrev=0",
@@ -115,8 +113,6 @@ def info_plist(cfg, build=None, platform=None):
         "UIFileSharingEnabled": True,  # the game goes into Documents through Finder or Files
         "LSSupportsOpeningDocumentsInPlace": True,
     }
-    if cfg.translations:
-        p["XSys4Translations"] = cfg.translations
     if build:  # filled in for make_app.sh; Xcode does this itself
         p.update(CFBundleExecutable=cfg.name, CFBundleIdentifier=cfg.bundle_id, CFBundleName=cfg.name,
                  CFBundleShortVersionString=cfg.version, CFBundleVersion=build,

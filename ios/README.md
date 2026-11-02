@@ -2,7 +2,7 @@
 
 xsystem4 runs on iPadOS 17 and later with the Metal renderer. The app has no game inside: the
 player copies a game folder (the one holding the `.ain` file) into the app's folder with the
-Files app or Finder file sharing, and the app starts the first game it finds there. Saves are
+Files app or Finder file sharing, and the app starts a game from there, asking which if there are several. Saves are
 kept beside it in `SaveData`, where the Files app and Finder show them (see below).
 
 Touch: tap = click, two-finger tap or a tap outside the picture = right click, 1 s hold = Ctrl
@@ -83,14 +83,13 @@ A JSON config names the app and adds its icon and files (see `ios/app.py` for ev
   "display_name": "My Game",
   "bundle_id": "com.example.mygame",
   "assets": "Assets.xcassets",
-  "resources": {"locale/zh_CN.po": "../zh_CN.po"},
-  "translations": {"zh": "locale/zh_CN.po"}
+  "resources": {"fonts/NotoSansCJKsc-Regular.otf": "fonts/NotoSansCJKsc-Regular.otf"}
 }
 ```
 
-`translations` maps a language prefix to a `.po` file in the app: when the device's first
-language starts with the prefix, the dialogue comes from that file (Info.plist key
-`XSys4Translations`). `assets` is an asset catalog whose `AppIcon` set holds the icon (one
+Languages are not part of the app: each game folder holds its own `locale/<lang>.po`, and the
+start list shows each one. `fonts/NotoSansCJKsc-Regular.otf`, if the app has it, draws translated
+text. `assets` is an asset catalog whose `AppIcon` set holds the icon (one
 1024×1024 PNG is enough).
 
 ```sh

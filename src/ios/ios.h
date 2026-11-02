@@ -19,7 +19,7 @@
 // (malloc'd) and in *locale the .po to load, or NULL. See src/ios/ios.m.
 char *ios_setup(const char **locale);
 
-// The save folder: Documents/folder (malloc'd).
+// The save folder: Documents/folder/game folder (malloc'd).
 char *ios_save_dir(const char *folder);
 
 #endif /* SYSTEM4_IOS_H */
