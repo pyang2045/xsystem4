@@ -3,7 +3,7 @@
 xsystem4 runs on iPadOS 17 and later with the Metal renderer. The app has no game inside: the
 player copies a game folder (the one holding the `.ain` file) into the app's folder with the
 Files app or Finder file sharing, and the app starts a game from there, asking which if there are several. Saves are
-kept beside it in `SaveData`, where the Files app and Finder show them (see below).
+kept beside them in `SaveData`, where the Files app and Finder show them (see below).
 
 Touch: tap = click, two-finger tap or a tap outside the picture = right click, 1 s hold = Ctrl
 (skip), two-finger swipe = wheel.
@@ -21,19 +21,21 @@ On My iPad/xsystem4/              the app's folder (Documents)
 │   ├── MyGameCG.afa
 │   ├── MyGameSound.afa
 │   ├── ...                       the other .afa, .ex and .fnl files
+│   ├── locale/zh_CN.po           optional: a language for this game
 │   └── Data/
 └── SaveData/                     the saves (made at the first start)
-    ├── MyGame_User.sav
-    └── ...
+    └── MyGame/                   one folder per game, shared by its languages
+        ├── MyGame_User.sav
+        └── ...
 ```
 
 - The game folder may have any name. The `.ain` file can also sit directly in the app's
-  folder. With several game folders, the first by name is started.
+  folder. With several game folders or a `locale/*.po`, a list asks at each launch which to start.
 - The save folder is named by the .ini's `SaveFolder`, `SaveData` by default. The game reads
   and writes it directly: copy saves in or out with the Files app or Finder while the app is
   not running. Deleting a file there deletes that save.
 - Saves from xsystem4 on a computer are in `~/.xsystem4/GAME NAME/SaveData/` (or under
-  `$XSYSTEM4_HOME`): copy the files in it into the app's `SaveData`, and back.
+  `$XSYSTEM4_HOME`): copy the files in it into the app's `SaveData/GAME FOLDER`, and back.
 
 ## Build
 

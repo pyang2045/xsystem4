@@ -8,8 +8,9 @@ This fork
 ---------
 
 This fork (branch `haharanman-on-usada`) runs AliceSoft's **母爛漫 (Haharanman, 2019, ain
-v14)**, Japanese release, on macOS and iPadOS, and **妻みぐい３ (Tsumamigui 3, ain v7)**,
-Traditional Chinese release, on macOS. It builds on
+v14)**, Japanese release, on macOS and iPadOS, **妻みぐい３ (Tsumamigui 3, ain v7)**,
+Traditional Chinese release, on macOS, and **母娘乱館 (Oyako Rankan, 2012, ain v6)**, Japanese
+release, on macOS. The iPad app also starts the other two, tested only on the Simulator. It builds on
 [USADA-KARROT's fork](https://github.com/USADA-KARROT/xsystem4), which adds the ain v14 engine
 of Dohna Dohna (the `X_*` opcodes, the v14 HLL libraries, PartsEngine activities, the
 KiwiSoundEngine sound groups) and the Chinese GBK releases. Additions in this fork:
@@ -22,27 +23,34 @@ KiwiSoundEngine sound groups) and the Chinese GBK releases. Additions in this fo
   settings, the backlog with voice replay, the back scene, the CG, 回想 and music modes, sound
   groups and the ending movie. Each was tested on its own; the game has not been played through
   from start to end.
+* **母娘乱館 (ain v6).** The title, new game, the map, save, load and quick save, the backlog,
+  the config and the status screen, checked by screenshots; the galleries by logs and brightness.
+  All 482 scene functions ran under a temporary hook with no warnings, from the logs only. The `GUIEngine` widgets and
+  `HTTPDownloader` are not implemented, so its combo box and survey would fail.
 * **Game text in UTF-8.** A game whose `.ain` strings are UTF-8 is detected at startup and runs
   on the same charset switch as SJIS and GBK: string functions count characters, and the engine's
   own names (pactex keys, parts and mixer names) are looked up in the game's encoding.
 * **Versions kept apart.** Games from ain v1 to v14 have different APIs, and a change for one
-  must not reach another. `src/profile.c` has one row per generation (`classic`, 妻みぐい３'s
-  `activities_v7`, v14) holding its bindings, tables of functions and behaviours; each
+  must not reach another. `src/profile.c` has one row per generation (`classic`, 母娘乱館's
+  `gui_parts_v6`, 妻みぐい３'s `activities_v7`, v14) holding its bindings, tables of functions and behaviours; each
   generation's parts code is in `src/parts/{classic,v7,v14}/`. `meson test` rejects version checks
   in API code, and `tools/link-report.py` shows what each of a game's declarations is bound to,
   to compare before and after a change. See [docs/game-profiles.md](docs/game-profiles.md).
 * **Saving and loading in v14 games.** Generic arrays, scenes carried across a save (their
   activities, user components and button state), the backlog, appended EX files, quick save,
   and resuming in the right overload when a save was made mid-event.
-* **Translations without changing the game's files.** `--locale FILE.po` replaces message
-  text from a gettext `.po` file; `--dump-pot FILE` writes the template. A translated line's
-  ideographs come from one font; `--locale-font` names a TrueType font for characters the
-  game font lacks.
+* **Translations without changing the game's files.** Every game uses one format: a gettext
+  file at `locale/<lang>.po` in the game folder, chosen with `--lang <lang>`; `--locale FILE.po`
+  loads any other file and `--dump-pot FILE` writes the template. It replaces dialogue only, so
+  menus and images stay as they are, and a game's languages share its saves. SJIS and UTF-8
+  games are supported, GBK games are not. A translated line's ideographs come from one font;
+  `--locale-font` names a font for characters the game font lacks.
 * **Metal renderer** (`-Dmetal=enabled`, the default on macOS): the 2D OpenGL subset
   xsystem4 uses, on Metal, without ANGLE.
 * **iPad app** (iPadOS 17 and later): an Xcode project or a meson cross build, libraries from
-  pinned sources, a JSON config for a game's own app (name, icon, translation). See
-  [ios/README.md](ios/README.md).
+  pinned sources, a JSON config for an app's name, icon and files. One app holds any number of
+  games: with more than one game or language it asks at launch which to start, and each game
+  keeps its own saves. See [ios/README.md](ios/README.md).
 * **APEG movies without FFmpeg** (pl_mpeg backend), as used for the Haharanman ending.
 * `XSYS4_*` test and trace environment variables behind `-Ddev_hooks` (on by default; off for
   release builds), including which HLL functions a run called (`XSYS4_HLL_CALLED`) and which of
@@ -93,8 +101,8 @@ Finally install it to your system (optional),
 
 ### iPad
 
-xsystem4 builds as an iPadOS app (Xcode project or meson cross build); the player copies a
-game into the app with the Files app. See [ios/README.md](ios/README.md).
+xsystem4 builds as an iPadOS app (Xcode project or meson cross build); the player copies
+game folders into the app with the Files app. See [ios/README.md](ios/README.md).
 
 ### Windows
 
@@ -200,6 +208,10 @@ Alternatively, run xsystem4 from within the game directory,
 
     cd /path/to/game_directory
     xsystem4
+
+To show a translation from the game directory's `locale/zh_CN.po`,
+
+    build/src/xsystem4 --lang zh_CN /path/to/game_directory
 
 ### Windows
 
