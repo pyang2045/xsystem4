@@ -76,7 +76,7 @@ issues, please let me know or open a pull request to update this table.
 | 大帝国                                                  | Supported   |       |
 | ランス・クエスト                                        | Supported   |       |
 | ランス・クエスト マグナム                               | Supported   |       |
-| 母娘乱館                                                | Unknown     |       |
+| 母娘乱館                                                | Unknown     | Starts and saves on row `gui_parts_v6`; all 482 scenes run under a test hook, but not played through. Combo box and survey not implemented. |
 | パステルチャイム3 バインドシーカー                      | Supported   |       |
 | パスチャ3 プラスコンテンツ                              | Supported   |       |
 | どらぺこ！ ～おねだりドラゴンとおっぱい勇者～           | Unsupported |       |
