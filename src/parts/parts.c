@@ -2951,15 +2951,69 @@ void PE_SetPartsPixelDecide(int parts_no, bool pixel_decide)
 	parts_get(parts_no)->pixel_hittest = pixel_decide;
 }
 
+/*
+ * Thumbnail mode (母娘乱館, Oyakorankan.exe 0x546e90, 0x546eb0): the manager
+ * passes both calls to every state of every parts (0x536a10, 0x536ac0); only
+ * the CG sprite acts. It keeps the reduction (0x511170) and, when the mode is
+ * turned on, shows "サムネ／" + its CG name (the prefix from its constructor,
+ * 0x5101a0) if that CG exists, stretched by the reduction (0x511180 ->
+ * 0x521340, 0x521830); turned off, it loads its own CG again (0x521630).
+ * AFL_GameSave_SaveThumbnail renders the view between the two and shrinks it
+ * by the reduction, so a save's thumbnail shows the game's own small CGs
+ * (サムネ／イベント／..., 1/9 of the full size).
+ */
+static int thumbnail_reduction;
+
 bool PE_SetThumbnailReductionSize(int reduction_size)
 {
-	UNIMPLEMENTED("(%d)", reduction_size);
+	thumbnail_reduction = reduction_size;
 	return true;
+}
+
+static void parts_cg_show_thumbnail(struct parts *parts, struct parts_cg *cg)
+{
+	const char *prefix = ain_is_utf8 ? "サムネ／" : "\x83\x54\x83\x80\x83\x6c\x81\x5e";
+	char *name = xmalloc(strlen(prefix) + cg->name->size + 1);
+	strcpy(name, prefix);
+	strcat(name, cg->name->text);
+	int no;
+	struct cg *thumb = asset_cg_load_by_name(name, &no);
+	free(name);
+	if (!thumb)
+		return;
+
+	Texture src;
+	gfx_init_texture_with_cg(&src, thumb);
+	int w = thumb->metrics.w, h = thumb->metrics.h;
+	cg_free(thumb);
+	if (thumbnail_reduction >= 1) {
+		w *= thumbnail_reduction;
+		h *= thumbnail_reduction;
+	}
+	gfx_delete_texture(&cg->common.texture);
+	gfx_init_texture_blank(&cg->common.texture, w, h);
+	gfx_copy_stretch_with_alpha_map(&cg->common.texture, 0, 0, w, h, &src, 0, 0, src.w, src.h);
+	gfx_delete_texture(&src);
+	parts_set_dims(parts, &cg->common, w, h);
+	parts_dirty(parts);
 }
 
 bool PE_SetThumbnailMode(bool mode)
 {
-	UNIMPLEMENTED("(%s)", mode ? "true" : "false");
+	struct parts *parts;
+	PARTS_LIST_FOREACH(parts) {
+		for (int i = 0; i < PARTS_NR_STATES; i++) {
+			if (parts->states[i].type != PARTS_CG)
+				continue;
+			struct parts_cg *cg = &parts->states[i].cg;
+			if (!cg->name || !cg->name->size || !strncmp(cg->name->text, "<save>", 6))
+				continue;
+			if (mode)
+				parts_cg_show_thumbnail(parts, cg);
+			else
+				parts_cg_set(parts, cg, cg->name);
+		}
+	}
 	return true;
 }
 
