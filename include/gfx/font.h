@@ -173,6 +173,7 @@ void gfx_draw_text_to_pmap(Texture *dst, int x, int y, char *text);
 float gfx_size_char(struct text_style *ts, const char *ch);
 float gfx_size_char_kerning(struct text_style *ts, uint32_t code, uint32_t code_next);
 float gfx_size_text(struct text_style *ts, const char *text);
+int gfx_size_text_by_char(struct text_style *ts, const char *text);
 float gfx_get_actual_font_size(unsigned face, float size);
 float gfx_get_actual_font_size_round_down(unsigned face, float size);
 

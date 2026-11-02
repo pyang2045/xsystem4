@@ -845,7 +845,11 @@ static void build_draw_text(struct parts_construction_process *cproc, struct par
 static void copy_text_line(struct parts_cp_text *op, void *data)
 {
 	struct parts_construction_process *cproc = data;
-	int w = ceilf(gfx_size_text (&op->style, op->text->text));
+	// Over the width the script measured for the surface as well: a surface
+	// sized by TextParts_CalcSize kept the opaque black it was created with
+	// in the columns past the text (母娘乱館's save list).
+	int w = max(ceilf(gfx_size_text(&op->style, op->text->text)),
+			gfx_size_text_by_char(&op->style, op->text->text));
 	int h = ceilf(op->style.size + op->style.edge_up + op->style.edge_down);
 	gfx_fill_with_alpha(&cproc->common.texture, op->x, op->y, w, h,
 			op->style.edge_color.r, op->style.edge_color.g, op->style.edge_color.b, 0);

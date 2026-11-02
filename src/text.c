@@ -334,6 +334,22 @@ float gfx_size_text(struct text_style *ts, const char *text)
 	return x;
 }
 
+// The width TextParts_CalcSize (母娘乱館) adds up from SP_GetFontWidth, one
+// character at a time and each rounded up: wider than gfx_size_text.
+int gfx_size_text_by_char(struct text_style *ts, const char *text)
+{
+	int w = 0;
+	char ch[8];
+	while (text && *text) {
+		int n = min(game_char_bytes(text), (int)sizeof(ch) - 1);
+		memcpy(ch, text, n);
+		ch[n] = '\0';
+		w += ceilf(gfx_size_text(ts, ch));
+		text += n;
+	}
+	return w;
+}
+
 float gfx_get_actual_font_size(unsigned face, float size)
 {
 	struct font *font = get_font(face);
