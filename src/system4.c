@@ -441,6 +441,7 @@ static void usage(void)
 	puts("        --font-gothic    Specify the path to the gothic font to use");
 	puts("        --font-fnl       Specify the path to a .fnl font library to use");
 	puts("        --font-x-scale   Specify the x scale for text rendering (1.0 = default scale)");
+	puts("        --lang           Show a language from the game folder (locale/<lang>.po)");
 	puts("        --locale         Show message translations from a .po file");
 	puts("        --locale-font    Specify the TrueType font for characters missing from the game font");
 	puts("        --chs            Use the Chinese patch in the game folder (<CodeName>.CHS, CHS.TBL)");
@@ -484,6 +485,7 @@ enum {
 	LOPT_SKIP_TITLE,
 	LOPT_LOCALE,
 	LOPT_LOCALE_FONT,
+	LOPT_LANG,
 	LOPT_DUMP_POT,
 	LOPT_CHS,
 #ifdef DEBUGGER_ENABLED
@@ -541,6 +543,7 @@ int main(int argc, char *argv[])
 	char *font_gothic = NULL;
 	char *font_fnl = NULL;
 	char *locale_po = NULL;
+	const char *lang = NULL;
 	char *dump_pot = NULL;
 	char *joypad = NULL;
 	char *savedir = NULL;
@@ -562,6 +565,7 @@ int main(int argc, char *argv[])
 			{ "save-format",   required_argument, 0, LOPT_SAVE_FORMAT },
 			{ "locale",        required_argument, 0, LOPT_LOCALE },
 			{ "locale-font",   required_argument, 0, LOPT_LOCALE_FONT },
+			{ "lang",          required_argument, 0, LOPT_LANG },
 			{ "dump-pot",      required_argument, 0, LOPT_DUMP_POT },
 			{ "chs",           no_argument,       0, LOPT_CHS },
 			{ "skip-title",    no_argument,       0, LOPT_SKIP_TITLE },
@@ -609,6 +613,9 @@ int main(int argc, char *argv[])
 			break;
 		case LOPT_LOCALE_FONT:
 			translation_font_path = optarg;
+			break;
+		case LOPT_LANG:
+			lang = optarg;
 			break;
 		case LOPT_DUMP_POT:
 			dump_pot = optarg;
@@ -712,6 +719,15 @@ int main(int argc, char *argv[])
 	}
 	if (chs_patch)
 		chs_patch_enable();
+	if (lang && !locale_po) {
+		char rel[64];
+		if (strchr(lang, '/') || strlen(lang) > 32)
+			ERROR("Bad language '%s'", lang);
+		snprintf(rel, sizeof(rel), "locale/%s.po", lang);
+		locale_po = gamedir_path(rel);
+		if (!file_exists(locale_po))
+			ERROR("This game has no language '%s' (%s)", lang, rel);
+	}
 	ainfile = gamedir_path(config.ain_filename);
 
 	read_user_config();

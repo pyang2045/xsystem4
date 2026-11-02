@@ -403,6 +403,10 @@ static struct po_entry *po_read(const char *path, int *nr_out, int *fuzzy_out)
 void translation_apply(struct ain *ain, const char *po_path)
 {
 	int nr, fuzzy;
+	if (ain_is_gb18030) {
+		WARNING("%s: .po translations don't support GBK games (ignored)", po_path);
+		return;
+	}
 	struct po_entry *entries = po_read(po_path, &nr, &fuzzy);
 
 	// first pass: check each entry against the .ain, collect the characters
@@ -418,7 +422,7 @@ void translation_apply(struct ain *ain, const char *po_path)
 			e->no = -1;
 			continue;
 		}
-		char *orig = sjis2utf(ain->messages[e->no]->text, ain->messages[e->no]->size);
+		char *orig = game_to_utf8(ain->messages[e->no]->text, ain->messages[e->no]->size);
 		bool same = !strcmp(orig, e->msgid);
 		free(orig);
 		if (!same) {
@@ -427,6 +431,8 @@ void translation_apply(struct ain *ain, const char *po_path)
 			e->no = -1;
 			continue;
 		}
+		if (ain_is_utf8)
+			continue;
 		const uint8_t *s = (const uint8_t*)e->msgstr;
 		while (*s) {
 			uint32_t c;
@@ -476,10 +482,11 @@ void translation_apply(struct ain *ain, const char *po_path)
 	for (int i = 0; i < nr; i++) {
 		struct po_entry *e = &entries[i];
 		if (e->no >= 0) {
-			char *sjis = encode_message(e->msgstr);
+			// A UTF-8 game's strings need no codes: the engine draws any character.
+			char *text = ain_is_utf8 ? xstrdup(e->msgstr) : encode_message(e->msgstr);
 			free_string(ain->messages[e->no]);
-			ain->messages[e->no] = make_string(sjis, strlen(sjis));
-			free(sjis);
+			ain->messages[e->no] = make_string(text, strlen(text));
+			free(text);
 			applied++;
 		}
 		free(e->msgid);
@@ -562,7 +569,7 @@ bool translation_write_pot(struct ain *ain, const char *path)
 		struct string *m = ain->messages[i];
 		if (!m || !m->size)
 			continue;
-		char *u = sjis2utf(m->text, m->size);
+		char *u = game_to_utf8(m->text, m->size);
 		fprintf(f, "msgctxt \"%d\"\nmsgid ", i);
 		pot_write_string(f, u);
 		fputs("msgstr \"\"\n\n", f);
