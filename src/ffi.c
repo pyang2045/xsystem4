@@ -1467,6 +1467,16 @@ static struct hll_function *runtime_function(struct static_library *lib, const c
 	return NULL;
 }
 
+static bool (*register_filter)(const struct ain_hll_function *declaration);
+
+/* While set, static_library_register and static_library_fill bind only the
+ * declarations it accepts, and register leaves a bound one alone (no warning):
+ * one generation's functions offered to another (src/hll/PartsEngine.c). */
+void static_library_set_register_filter(bool (*accept)(const struct ain_hll_function *))
+{
+	register_filter = accept;
+}
+
 /* Bind a function the export table left empty, or that only has a fill. Two
  * functions for one declaration are a mistake: the first stays and this warns.
  * Must be called AFTER link_libraries() has run (i.e., from _PostLink). */
@@ -1475,6 +1485,8 @@ void static_library_register(struct static_library *lib, const char *name, void 
 	struct ain_hll_function *declaration;
 	struct hll_function *dst = runtime_function(lib, name, &declaration);
 	if (!dst)
+		return;
+	if (register_filter && (!register_filter(declaration) || (dst->fun && !dst->is_fill)))
 		return;
 	if (!dst->fun || dst->is_fill) {
 		link_static_library_function(dst, declaration, fun);
@@ -1490,7 +1502,7 @@ void static_library_fill(struct static_library *lib, const char *name, void *fun
 {
 	struct ain_hll_function *declaration;
 	struct hll_function *dst = runtime_function(lib, name, &declaration);
-	if (dst && !dst->fun) {
+	if (dst && !dst->fun && (!register_filter || register_filter(declaration))) {
 		link_static_library_function(dst, declaration, fun);
 		dst->is_fill = true;
 	}

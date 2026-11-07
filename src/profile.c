@@ -20,7 +20,7 @@ extern const struct parts_widget_ops parts_widget_v14, parts_widget_v7, parts_wi
 extern const struct parts_transform_ops parts_transform_v14, parts_transform_v7, parts_transform_classic;
 extern const struct parts_controller_ops parts_controller_v14, parts_controller_v7, parts_controller_classic;
 extern const struct parts_input_ops parts_input_v14, parts_input_v7, parts_input_classic;
-extern const struct parts_bindings parts_bindings_v14, parts_bindings_v7, parts_bindings_classic;
+extern const struct parts_bindings parts_bindings_v14, parts_bindings_v8, parts_bindings_v7, parts_bindings_classic;
 
 static bool has_parts_function(const struct ain *ain, const char *name)
 {
@@ -132,7 +132,7 @@ static const struct {
 			.controllers = &parts_controller_v7,
 			.transforms = &parts_transform_v7,
 			.input = &parts_input_v7,
-			.bindings = &parts_bindings_v7,
+			.bindings = &parts_bindings_v8,
 			.save_version = 16,
 			.activity_widgets = true,
 			.activity_save = true,

@@ -2284,6 +2284,28 @@ static void v7_postlink(int libno)
 	pe_activity_prelink();
 }
 
+/* No argument by reference: the ain v7 and v14 declarations of such a function
+ * pass the same values. */
+static bool by_value_declaration(const struct ain_hll_function *f)
+{
+	for (int i = 0; i < f->nr_arguments; i++) {
+		enum ain_data_type t = f->arguments[i].type.data;
+		if (t == AIN_WRAP || ain_is_ref_data_type(t))
+			return false;
+	}
+	return true;
+}
+
+/* ain v8 は～とふるママン: the v7 bindings (its declarations pass ref, not
+ * wrap), then v14's functions for what is left, where they take no reference. */
+static void v8_postlink(int libno)
+{
+	v7_postlink(libno);
+	static_library_set_register_filter(by_value_declaration);
+	pe_v14_register_batch(libno);
+	static_library_set_register_filter(NULL);
+}
+
 const struct parts_bindings parts_bindings_v14 = {
 	.prelink = v14_prelink,
 	.postlink = v14_postlink,
@@ -2292,6 +2314,10 @@ const struct parts_bindings parts_bindings_v14 = {
 
 const struct parts_bindings parts_bindings_v7 = {
 	.postlink = v7_postlink,
+};
+
+const struct parts_bindings parts_bindings_v8 = {
+	.postlink = v8_postlink,
 };
 
 // Oyako Rankan names the frames (a format and a number); no game here has
