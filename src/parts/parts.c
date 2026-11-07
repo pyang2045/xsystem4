@@ -1892,6 +1892,8 @@ static void parts_update_component(struct parts *parts)
 	}
 }
 
+static void parts_set_controller(struct parts *parts, int controller_no);
+
 void PE_UpdateComponent(possibly_unused int passed_time)
 {
 	// After loading a save, the game script may compute a negative time delta
@@ -1913,6 +1915,9 @@ void PE_UpdateComponent(possibly_unused int passed_time)
 			}
 			parts->parent = parent;
 			TAILQ_INSERT_TAIL(&parent->children, parts, child_list_entry);
+			if (profile.parts.child_takes_parent_controller
+					&& parent->controller_no != parts->controller_no)
+				parts_set_controller(parts, parent->controller_no);
 
 			// if parent is layout box, mark it dirty so that it can re-layout its children
 			if (parent->states[0].type == PARTS_LAYOUT_BOX)

@@ -145,6 +145,7 @@ static const struct {
 			.movies_in_update = true,
 			.messages_from_zero = true,
 			.whole_mouse_events = true,
+			.child_takes_parent_controller = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true },
 		.lang = { .no_method_empty_delegate = true },

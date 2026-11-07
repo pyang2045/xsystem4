@@ -95,6 +95,10 @@ struct parts_features {
 	// moves, and the mouse buttons among the Whole key events (the network
 	// dialog's KeyTrigger handler takes VK_LBUTTON).
 	bool whole_mouse_events;
+	// A parts whose parent is set goes, with its subtree, to the parent's
+	// controller: the message window's system buttons, made under another
+	// layer, are drawn over the window they hang on.
+	bool child_takes_parent_controller;
 };
 
 // Other libraries.
