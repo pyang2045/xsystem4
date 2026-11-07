@@ -146,6 +146,7 @@ static const struct {
 			.messages_from_zero = true,
 			.whole_mouse_events = true,
 			.child_takes_parent_controller = true,
+			.message_window_type = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true },
 		.lang = { .no_method_empty_delegate = true },

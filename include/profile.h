@@ -99,6 +99,9 @@ struct parts_features {
 	// controller: the message window's system buttons, made under another
 	// layer, are drawn over the window they hang on.
 	bool child_takes_parent_controller;
+	// An activity's message window (EPartsType 10) answers GetComponentType
+	// with 10: Ａ＿システムボタン設定 looks up the button's parents for it.
+	bool message_window_type;
 };
 
 // Other libraries.

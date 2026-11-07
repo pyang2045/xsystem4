@@ -954,6 +954,7 @@ enum {
 	PACTEX_EPT_CHECK_BOX = 1,
 	PACTEX_EPT_LAYOUT_BOX = 8,
 	PACTEX_EPT_RADIO_BOX = 9,
+	PACTEX_EPT_MESSAGE_WINDOW = 10,
 	PACTEX_EPT_USER_COMPONENT = 17,
 	PACTEX_EPT_LOW_LEVEL = 18,
 	PACTEX_EPT_CG = 19,
@@ -3238,7 +3239,8 @@ static bool pactex_apply_native_type(struct ex_tree *node, struct parts *p)
 	if (type < 0)
 		return false;
 	p->component_type = type;
-	p->has_widget_type = type <= PACTEX_EPT_RADIO_BOX;
+	p->has_widget_type = type <= PACTEX_EPT_RADIO_BOX
+		|| (type == PACTEX_EPT_MESSAGE_WINDOW && profile.parts.message_window_type);
 	if (type == PACTEX_EPT_LAYOUT_BOX)
 		pactex_apply_layout_box(type_info, p);
 	free(p->user_component_name);
