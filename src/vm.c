@@ -1122,6 +1122,38 @@ static inline bool keep_alive_enabled(void)
 	return AIN_VERSION_GTE(ain, 6, 1) && ain->version < 14;
 }
 
+/*
+ * Some compilers push one more operand for A_FIND, between the value and the
+ * comparison function: value, -1, fno (は～とふるママン, ain v8; 妻みぐい３'s v7
+ * code has value, fno). The bytecode says which: then every A_FIND has the
+ * PUSH -1 two instructions before it ("PUSH -1; PUSH fno", or
+ * "PUSH fno; PUSH -1; SWAP").
+ */
+static bool a_find_has_extra_operand(void)
+{
+	static int detected = -1;
+	if (detected >= 0)
+		return detected;
+	size_t prev2 = SIZE_MAX, prev1 = SIZE_MAX;
+	int sites = 0, extra = 0;
+	for (size_t addr = 0; addr + 2 <= ain->code_size;) {
+		uint16_t opcode = LittleEndian_getW(ain->code, addr);
+		if (opcode >= NR_OPCODES)
+			break;
+		if (opcode == A_FIND) {
+			sites++;
+			if (prev2 != SIZE_MAX && LittleEndian_getW(ain->code, prev2) == PUSH
+					&& (int32_t)LittleEndian_getDW(ain->code, prev2 + 2) == -1)
+				extra++;
+		}
+		prev2 = prev1;
+		prev1 = addr;
+		addr += instruction_width(opcode);
+	}
+	detected = sites > 0 && extra == sites;
+	return detected;
+}
+
 static void set_struct_page(int slot)
 {
 	call_stack[call_stack_ptr-1].struct_page = slot;
@@ -4500,6 +4532,9 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 	}
 	case A_FIND: {
 		int fno = stack_pop().i;
+		// See a_find_has_extra_operand: always -1 where it is there.
+		if (a_find_has_extra_operand())
+			stack_pop();
 		union vm_value v = stack_pop();
 		int end = stack_pop().i;
 		int start = stack_pop().i;

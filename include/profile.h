@@ -86,6 +86,11 @@ struct parts_features {
 	bool save_activity_fields;
 	// PartsEngine.Update also advances the parts movies.
 	bool movies_in_update;
+
+	/* ---- ain v8 with activities ---- */
+	// Message types from 0: MouseEnter..MouseClick are 0..4, MouseDoubleClick
+	// 5, the rest as before; GetMessageType is -1 on an empty queue.
+	bool messages_from_zero;
 };
 
 // Other libraries.

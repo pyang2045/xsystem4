@@ -56,6 +56,10 @@ void parts_msg_push(struct parts* parts, int type, const char *fmt, ...)
 	// No parts: a Whole event (ain v7 妻みぐい３: the backlog's wheel).
 	msg->parts_no = parts ? parts->no : 0;
 	msg->delegate_index = parts ? parts->delegate_index : -1;
+	// MouseEnter (1) .. MouseClick (5) are one lower; 5 is MouseDoubleClick.
+	if (profile.parts.messages_from_zero && type >= PARTS_MSG_MOUSE_ENTER
+			&& type <= PARTS_MSG_MOUSE_CLICK)
+		type--;
 	msg->type = type;
 	msg->nr_variables = 0;
 	msg->bool_vars = 0;
@@ -109,7 +113,8 @@ int PE_GetMessageType(void)
 	// phantom message forever and the frame never reaches the update
 	// events that drive Motion.
 	if (!msg)
-		return profile.parts.native_message_window ? -1 : 0;
+		return profile.parts.native_message_window
+			|| profile.parts.messages_from_zero ? -1 : 0;
 	return msg->type;
 }
 

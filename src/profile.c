@@ -40,6 +40,14 @@ static bool is_activities_v7(const struct ain *ain)
 		&& !has_parts_function(ain, "GetMessageUniqueID");
 }
 
+// は～とふるママン: ain v8 with activities and the v7 declarations (ref, not
+// wrap), plus v14's message windows and construction processes.
+static bool is_activities_v8(const struct ain *ain)
+{
+	return ain->version == 8 && has_parts_function(ain, "CreateActivity")
+		&& !has_parts_function(ain, "GetMessageUniqueID");
+}
+
 // Oyako Rankan: PartsEngine next to GUIEngine, with PartsEngine's own stack
 // of GUI controllers.
 static bool is_gui_parts_v6(const struct ain *ain)
@@ -115,6 +123,32 @@ static const struct {
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
 		.lang = { .no_method_empty_delegate = true },
+	},
+	{
+		.name = "activities_v8",
+		.match = is_activities_v8,
+		.parts = {
+			.widgets = &parts_widget_v7,
+			.controllers = &parts_controller_v7,
+			.transforms = &parts_transform_v7,
+			.input = &parts_input_v7,
+			.bindings = &parts_bindings_v7,
+			.save_version = 16,
+			.activity_widgets = true,
+			.activity_save = true,
+			.activity_pointer = true,
+			.whole_key_events = true,
+			.widget_parts_messages = true,
+			.margin_relayout = true,
+			.layers_by_position = true,
+			.save_activity_fields = true,
+			.movies_in_update = true,
+			.messages_from_zero = true,
+		},
+		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
+		.lang = { .no_method_empty_delegate = true },
+		// 1280x720 (its CGs); AliceStart.ini has no size.
+		.view_720p_with = "CreateActivity",
 	},
 	{
 		.name = "gui_parts_v6",
