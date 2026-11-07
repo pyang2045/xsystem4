@@ -69,6 +69,8 @@ static const struct {
 		.match = is_v14,
 		.parts = {
 			.widgets = &parts_widget_v14,
+			// A layer's ID is its root parts: C_ADV_SPRITE and C_ADV_FACE_SPRITE
+			// hang on GetAdvLayer(), the message window's layer.
 			.controllers = &parts_controller_v14,
 			.transforms = &parts_transform_v14,
 			.input = &parts_input_v14,
@@ -129,7 +131,7 @@ static const struct {
 		.match = is_activities_v8,
 		.parts = {
 			.widgets = &parts_widget_v7,
-			.controllers = &parts_controller_v7,
+			.controllers = &parts_controller_v14,
 			.transforms = &parts_transform_v7,
 			.input = &parts_input_v7,
 			.bindings = &parts_bindings_v8,
