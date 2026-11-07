@@ -1036,6 +1036,7 @@ struct sortable {
 };
 
 static int current_sort_function;
+static int current_sort_object = -1;
 
 static int array_compare_custom(const void *_a, const void *_b)
 {
@@ -1043,7 +1044,7 @@ static int array_compare_custom(const void *_a, const void *_b)
 	const struct sortable *b = _b;
 	stack_push(a->v);
 	stack_push(b->v);
-	vm_call(current_sort_function, -1);
+	vm_call(current_sort_function, current_sort_object);
 	int d = stack_pop().i;
 	return d ? d : a->index - b->index;
 }
@@ -1054,12 +1055,19 @@ static int array_compare_custom_string(const void *_a, const void *_b)
 	const struct sortable *b = _b;
 	stack_push(vm_string_ref(heap_get_string(a->v.i)));
 	stack_push(vm_string_ref(heap_get_string(b->v.i)));
-	vm_call(current_sort_function, -1);
+	vm_call(current_sort_function, current_sort_object);
 	int d = stack_pop().i;
 	return d ? d : a->index - b->index;
 }
 
 void array_sort(struct page *page, int compare_fno)
+{
+	array_sort_object(page, compare_fno, -1);
+}
+
+/* The comparison function is a method of object (a struct page), or a
+ * function when object is -1. */
+void array_sort_object(struct page *page, int compare_fno, int object)
 {
 	if (!page)
 		return;
@@ -1071,6 +1079,7 @@ void array_sort(struct page *page, int compare_fno)
 			values[i].index = i;
 		}
 		current_sort_function = compare_fno;
+		current_sort_object = object;
 		qsort(values, page->nr_vars, sizeof(struct sortable),
 			page->a_type == AIN_ARRAY_STRING ? array_compare_custom_string : array_compare_custom);
 		for (int i = 0; i < page->nr_vars; i++) {
@@ -1146,6 +1155,12 @@ void array_sort_mem(struct page *page, int member_no)
 
 int array_find(struct page *page, int start, int end, union vm_value v, int compare_fno)
 {
+	return array_find_object(page, start, end, v, compare_fno, -1);
+}
+
+int array_find_object(struct page *page, int start, int end, union vm_value v, int compare_fno,
+		int object)
+{
 	if (!page)
 		return -1;
 
@@ -1172,7 +1187,7 @@ int array_find(struct page *page, int start, int end, union vm_value v, int comp
 	for (int i = start; i < end; i++) {
 		stack_push(v);
 		stack_push(page->values[i]);
-		vm_call(compare_fno, -1);
+		vm_call(compare_fno, object);
 		if (stack_pop().i)
 			return i;
 	}

@@ -1117,6 +1117,24 @@ static void MainEXFile_PreLink(void)
 	int libno = ain_get_library(ain, "MainEXFile");
 	if (libno < 0)
 		return;
+	// The name getters by their own declarations: は～とふるママン (ain v8) has
+	// the v14 getters but these four with ref, as v7 declares them.
+	static const struct { const char *name; int arg; void *fun; } names[] = {
+		{ "GetNodeName", 2, MainEXFile_v7_GetNodeName },
+		{ "GetEXName", 2, MainEXFile_v7_GetEXName },
+		{ "GetNodeNameList", 1, MainEXFile_v7_GetNodeNameList },
+		{ "GetEXNameList", 1, MainEXFile_v7_GetEXNameList },
+	};
+	for (unsigned i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+		int f = ain_get_library_function(ain, libno, names[i].name);
+		if (f < 0)
+			continue;
+		struct ain_hll_function *decl = &ain->libraries[libno].functions[f];
+		if (decl->nr_arguments > names[i].arg
+				&& ain_is_ref_data_type(decl->arguments[names[i].arg].type.data))
+			static_library_replace(&lib_MainEXFile, names[i].name, names[i].fun);
+	}
+
 	int fno = ain_get_library_function(ain, libno, "Int");
 	if (fno < 0 || ain->libraries[libno].functions[fno].nr_arguments != 3
 	    || ain->libraries[libno].functions[fno].arguments[1].type.data != AIN_REF_INT)

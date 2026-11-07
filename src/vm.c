@@ -1123,13 +1123,15 @@ static inline bool keep_alive_enabled(void)
 }
 
 /*
- * Some compilers push one more operand for A_FIND, between the value and the
- * comparison function: value, -1, fno (は～とふるママン, ain v8; 妻みぐい３'s v7
- * code has value, fno). The bytecode says which: then every A_FIND has the
- * PUSH -1 two instructions before it ("PUSH -1; PUSH fno", or
- * "PUSH fno; PUSH -1; SWAP").
+ * Some compilers give A_FIND and A_SORT one more operand, before the
+ * comparison function: the object whose method it is, or -1 for a function
+ * (は～とふるママン, ain v8: "value, -1, fno", a lambda "PUSHSTRUCTPAGE; PUSH
+ * fno"; 妻みぐい３'s v7 code has value, fno). The bytecode says which: then
+ * every A_FIND and A_SORT has that operand two instructions before it
+ * ("PUSH -1; PUSH fno", "PUSH fno; PUSH -1; SWAP" or "PUSHSTRUCTPAGE; PUSH
+ * fno").
  */
-static bool a_find_has_extra_operand(void)
+static bool array_callbacks_take_object(void)
 {
 	static int detected = -1;
 	if (detected >= 0)
@@ -1140,10 +1142,11 @@ static bool a_find_has_extra_operand(void)
 		uint16_t opcode = LittleEndian_getW(ain->code, addr);
 		if (opcode >= NR_OPCODES)
 			break;
-		if (opcode == A_FIND) {
+		if (opcode == A_FIND || opcode == A_SORT) {
 			sites++;
-			if (prev2 != SIZE_MAX && LittleEndian_getW(ain->code, prev2) == PUSH
-					&& (int32_t)LittleEndian_getDW(ain->code, prev2 + 2) == -1)
+			uint16_t op2 = prev2 != SIZE_MAX ? LittleEndian_getW(ain->code, prev2) : 0;
+			if ((op2 == PUSH && (int32_t)LittleEndian_getDW(ain->code, prev2 + 2) == -1)
+					|| (prev2 != SIZE_MAX && op2 == PUSHSTRUCTPAGE))
 				extra++;
 		}
 		prev2 = prev1;
@@ -4526,20 +4529,19 @@ static inline __attribute__((always_inline)) enum opcode execute_instruction(enu
 	}
 	case A_SORT: {
 		int fno = stack_pop().i;
+		int object = array_callbacks_take_object() ? stack_pop().i : -1;
 		int array = stack_pop_var()->i;
-		array_sort(heap[array].page, fno);
+		array_sort_object(heap[array].page, fno, object);
 		break;
 	}
 	case A_FIND: {
 		int fno = stack_pop().i;
-		// See a_find_has_extra_operand: always -1 where it is there.
-		if (a_find_has_extra_operand())
-			stack_pop();
+		int object = array_callbacks_take_object() ? stack_pop().i : -1;
 		union vm_value v = stack_pop();
 		int end = stack_pop().i;
 		int start = stack_pop().i;
 		struct page *array = heap_get_page(stack_pop_var()->i);
-		stack_push(array_find(array, start, end, v, fno));
+		stack_push(array_find_object(array, start, end, v, fno, object));
 		// FIXME: string key isn't freed if array is empty
 		if (array && array_type(array->a_type) == AIN_STRING) {
 			heap_unref(v.i);
