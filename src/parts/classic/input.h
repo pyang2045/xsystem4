@@ -167,7 +167,8 @@ static void parts_whole_keys_update(int passed_time)
 	static bool down[256];
 	static int repeat_ms[256];
 	for (int vk = 0; vk < 256; vk++) {
-		if (vk == VK_LBUTTON || vk == VK_RBUTTON || vk == VK_MBUTTON)
+		if (!profile.parts.whole_mouse_events
+				&& (vk == VK_LBUTTON || vk == VK_RBUTTON || vk == VK_MBUTTON))
 			continue;
 		bool is_down = key_is_down(vk);
 		if (is_down && !down[vk]) {
@@ -262,6 +263,9 @@ static void classic_update_input_state(int passed_time)
 	// The Whole click, whatever is under the cursor (C_CG_MODE_BROWSE goes to
 	// the next CG on it). Before the parts' messages: the thumbnail's click
 	// opens the viewer, whose handler would otherwise get this same release.
+	if (profile.parts.whole_mouse_events
+			&& (cur_pos.x != parts_prev_pos.x || cur_pos.y != parts_prev_pos.y))
+		parts_msg_push(NULL, PARTS_MSG_MOUSE_MOVE, "ii", cur_pos.x, cur_pos.y);
 	if (profile.parts.whole_key_events && prev_clicking && !cur_clicking)
 		parts_msg_push(NULL, PARTS_MSG_MOUSE_CLICK, "iii", cur_pos.x, cur_pos.y, VK_LBUTTON);
 	// Iterate front-to-back (highest z first) for proper cursor consumption

@@ -144,6 +144,7 @@ static const struct {
 			.save_activity_fields = true,
 			.movies_in_update = true,
 			.messages_from_zero = true,
+			.whole_mouse_events = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
 		.lang = { .no_method_empty_delegate = true },

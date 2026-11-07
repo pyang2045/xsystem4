@@ -91,6 +91,10 @@ struct parts_features {
 	// Message types from 0: MouseEnter..MouseClick are 0..4, MouseDoubleClick
 	// 5, the rest as before; GetMessageType is -1 on an empty queue.
 	bool messages_from_zero;
+	// The Whole events also have the mouse: a MouseMove when the cursor
+	// moves, and the mouse buttons among the Whole key events (the network
+	// dialog's KeyTrigger handler takes VK_LBUTTON).
+	bool whole_mouse_events;
 };
 
 // Other libraries.
