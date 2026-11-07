@@ -1639,6 +1639,9 @@ void *string_select_function(const struct ain_hll_function *f, void *dflt)
 HLL_LIBRARY(String,
 	    HLL_EXPORT(ToInt, String_ToInt),
 	    HLL_EXPORT(ToFloat, String_ToFloat),
+	    // The older library's names (は～とふるママン).
+	    HLL_EXPORT(Int, String_ToInt),
+	    HLL_EXPORT(Float, String_ToFloat),
 	    HLL_EXPORT(Length, String_Length),
 	    HLL_EXPORT(LengthByte, String_LengthByte),
 	    HLL_EXPORT(Empty, String_Empty),

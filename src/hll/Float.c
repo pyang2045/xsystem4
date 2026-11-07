@@ -31,7 +31,14 @@ static struct string *Float_ToWideString(float *self, int decimal, int zeroPaddi
 	return cstr_to_string(buf);
 }
 
+// string String(ref float self, int Decimal): the older library's name.
+static struct string *Float_String(float *self, int decimal)
+{
+	return Float_ToString(self, decimal, 0);
+}
+
 HLL_LIBRARY(Float,
+	    HLL_EXPORT(String, Float_String),
 	    HLL_EXPORT(ToString, Float_ToString),
 	    HLL_EXPORT(ToWideString, Float_ToWideString)
 	    );

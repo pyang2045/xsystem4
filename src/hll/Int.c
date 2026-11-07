@@ -81,7 +81,15 @@ static struct string *Int_ToCharacter(int *self)
 	}
 }
 
+// string String(ref int self): the older library's name (は～とふるママン
+// formats its save slots' time scores with it).
+static struct string *Int_String(int *self)
+{
+	return Int_ToString(self, 0);
+}
+
 HLL_LIBRARY(Int,
+	    HLL_EXPORT(String, Int_String),
 	    HLL_EXPORT(ToString, Int_ToString),
 	    HLL_EXPORT(ToWideString, Int_ToWideString),
 	    HLL_EXPORT(ToHexString, Int_ToHexString),
