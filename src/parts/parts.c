@@ -1543,7 +1543,9 @@ static bool parts_numeral_update_v14(struct parts *parts, struct parts_numeral *
 
 bool parts_numeral_update(struct parts *parts, struct parts_numeral *num)
 {
-	if (profile.parts.typed_components)
+	// A font numeral (an activity's 表示タイプ 2 in は～とふるママン) has no
+	// CG font for the older builder to draw with.
+	if (profile.parts.typed_components || num->show_type == PARTS_NUMERAL_SHOW_FONT)
 		return parts_numeral_update_v14(parts, num);
 	// XXX: don't generate texture if number hasn't been set yet
 	if (!num->have_num || num->font_no < 0)
