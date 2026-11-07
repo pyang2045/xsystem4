@@ -4140,6 +4140,16 @@ static void PartsEngine_GetActivityIntentDataDestination(struct string **out, in
 	*out = cstr_to_string(in->dests[index]);
 }
 
+// は～とふるママン returns the destination.
+static struct string *PartsEngine_GetActivityIntentDataDestination_ret(int index,
+		struct string *name, struct string *parts_name)
+{
+	struct activity_intent *in = intent_get(name, parts_name);
+	if (!in || index < 0 || index >= in->nr_dests)
+		return string_ref(&EMPTY_STRING);
+	return cstr_to_string(in->dests[index]);
+}
+
 static int PartsEngine_GetActivityIntentDataType(struct string *name, struct string *parts_name)
 {
 	struct activity_intent *in = intent_get(name, parts_name);
@@ -4211,18 +4221,31 @@ static bool activity_arg_is(int lib_no, const char *name, int arg, enum ain_data
 /* The intent functions take the place of the empty ones only under the
  * declarations of ain v7 (妻みぐい３): GetActivityIntentDataDestination
  * (ref string Out, int Index, string Name, string PartsName). */
-static bool activity_intent_declared(void)
+/* Which GetActivityIntentDataDestination the program declares: 1 for
+ * (ref string Out, int Index, string Name, string PartsName), 2 for the one
+ * returning the string (int Index, string Name, string PartsName), 0 for
+ * none of them (the intent functions then stay unbound). */
+static int activity_intent_declared(void)
 {
 	int lib = ain_get_library(ain, "PartsEngine");
 	int fno = lib >= 0 ? ain_get_library_function(ain, lib, "GetActivityIntentDataDestination") : -1;
 	if (fno < 0)
-		return false;
+		return 0;
 	const struct ain_hll_function *f = &ain->libraries[lib].functions[fno];
-	return f->nr_arguments == 4 && f->arguments
-		&& f->arguments[0].type.data == AIN_REF_STRING
-		&& f->arguments[1].type.data == AIN_INT
-		&& f->arguments[2].type.data == AIN_STRING
-		&& f->arguments[3].type.data == AIN_STRING;
+	if (!f->arguments)
+		return 0;
+	if (f->nr_arguments == 4
+			&& f->arguments[0].type.data == AIN_REF_STRING
+			&& f->arguments[1].type.data == AIN_INT
+			&& f->arguments[2].type.data == AIN_STRING
+			&& f->arguments[3].type.data == AIN_STRING)
+		return 1;
+	if (f->nr_arguments == 3 && f->return_type.data == AIN_STRING
+			&& f->arguments[0].type.data == AIN_INT
+			&& f->arguments[1].type.data == AIN_STRING
+			&& f->arguments[2].type.data == AIN_STRING)
+		return 2;
+	return 0;
 }
 
 void pe_activity_prelink(void)
@@ -4256,7 +4279,8 @@ void pe_activity_prelink(void)
 			: (void *)PartsEngine_GetActivityPartsName);
 	static_library_register(lib, "AddActivityCloseParts", PartsEngine_AddActivityCloseParts);
 	static_library_register(lib, "IsExistActivityCloseParts", PartsEngine_IsExistActivityCloseParts);
-	if (activity_intent_declared()) {
+	int intent_form = activity_intent_declared();
+	if (intent_form) {
 		static_library_register(lib, "SetActivityIntentData", PartsEngine_SetActivityIntentData);
 		static_library_register(lib, "AddActivityIntentDataDestination",
 				PartsEngine_AddActivityIntentDataDestination);
@@ -4264,8 +4288,9 @@ void pe_activity_prelink(void)
 				PartsEngine_IsExistActivityIntentData);
 		static_library_register(lib, "NumofActivityIntentDataDestination",
 				PartsEngine_NumofActivityIntentDataDestination);
-		static_library_register(lib, "GetActivityIntentDataDestination",
-				PartsEngine_GetActivityIntentDataDestination);
+		static_library_register(lib, "GetActivityIntentDataDestination", intent_form == 1
+				? (void *)PartsEngine_GetActivityIntentDataDestination
+				: (void *)PartsEngine_GetActivityIntentDataDestination_ret);
 		static_library_register(lib, "GetActivityIntentDataType",
 				PartsEngine_GetActivityIntentDataType);
 	}
