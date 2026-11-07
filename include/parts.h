@@ -225,6 +225,8 @@ bool PE_AddFillAlphaColorToPartsConstructionProcess(int parts_no, int x, int y, 
 bool PE_AddFillAMapToPartsConstructionProcess(int parts_no, int x, int y, int w, int h, int a, int state);
 bool PE_AddFillWithAlphaToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
 		int r, int g, int b, int a, int state);
+bool PE_AddDrawLineToPartsConstructionProcess(int parts_no, int x1, int y1, int x2, int y2,
+		int r, int g, int b, int a, int state);
 bool PE_AddDrawRectToPartsConstructionProcess(int parts_no, int x, int y, int w, int h,
 		int r, int g, int b, int state);
 bool PE_AddDrawCutCGToPartsConstructionProcess(int parts_no, struct string *cg_name,
@@ -388,6 +390,9 @@ bool PE_SetPartsFontBoldWeight(int parts_no, float bold_weight, int state);
 bool PE_SetPartsFontEdgeColor(int parts_no, int r, int g, int b, int state);
 bool PE_SetPartsFontEdgeWeight(int parts_no, float edge_weight, int state);
 bool PE_SetTextCharSpace(int parts_no, int char_space, int state);
+struct string *PE_GetTextPartsText(int parts_no, int state);
+int PE_GetTextPos(int parts_no, int state);
+bool PE_SetTextPos(int parts_no, int pos, int state);
 bool PE_SetTextLineSpace(int parts_no, int line_space, int state);
 
 // flash.c

@@ -153,6 +153,9 @@ struct parts_text {
 	int line_space;
 	struct { float x; int y; } cursor;
 	struct text_style ts;
+	// テキスト位置 of the activity data (1-9, numeric keypad); kept for the
+	// scripts to read back, not used in the layout. Not saved.
+	int text_pos;
 };
 
 struct parts_animation {
@@ -291,14 +294,17 @@ enum parts_cp_op_type {
 	// v14 command 120 (FillPieWithAlpha; struct parts_cp_pie). Saved since
 	// XPE version 14, as 32..35.
 	PARTS_CP_FILL_PIE_WITH_ALPHA,
-#define PARTS_NR_CP_TYPES (PARTS_CP_FILL_PIE_WITH_ALPHA+1)
+	// v7/v8 command 18 (CASConstructionProcess@SetDrawLine; struct
+	// parts_cp_fill: x, y to w, h as the second point, r, g, b, a).
+	PARTS_CP_DRAW_LINE,
+#define PARTS_NR_CP_TYPES (PARTS_CP_DRAW_LINE+1)
 };
 // What XPE versions 11 to 13 saves hold for the types added last.
 _Static_assert(PARTS_CP_FILL_POLYGON_PIXEL_AMAP == 27 && PARTS_CP_FILL_POLYGON_AMAP == 28
 		&& PARTS_CP_SCALE_COPY_CG == 29 && PARTS_CP_CUT_CG_COPY == 30
 		&& PARTS_CP_CUT_CG_SCALE_BLEND == 31 && PARTS_CP_ADD_FILTER == 32
 		&& PARTS_CP_FILL_ELLIPSE_WITH_ALPHA == 34 && PARTS_CP_MUL_FILTER == 35
-		&& PARTS_CP_FILL_PIE_WITH_ALPHA == 36, "the values of enum parts_cp_op_type are saved");
+		&& PARTS_CP_FILL_PIE_WITH_ALPHA == 36 && PARTS_CP_DRAW_LINE == 37, "the values of enum parts_cp_op_type are saved");
 
 struct parts_cp_create {
 	int w;

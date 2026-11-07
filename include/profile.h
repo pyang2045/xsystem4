@@ -119,6 +119,10 @@ struct hll_features {
 	bool volume_sav;
 	// A .fnl size draws from the face of 4 times its height, when there is one.
 	bool fnl_face_by_scale;
+	// A .fnl text advances by its edges only, not also by its bold width:
+	// TextSurfaceManager.GetFontWidth, which the scripts size text
+	// surfaces by, leaves the bold out.
+	bool fnl_bold_no_advance;
 };
 
 // What the VM's values look like to a library.

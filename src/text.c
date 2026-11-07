@@ -306,6 +306,12 @@ float gfx_size_char_kerning(struct text_style *ts, uint32_t code, uint32_t code_
 	return size->font->size_char_kerning(size, code, code_next);
 }
 
+// What a .fnl text's bold adds to the advance (profile.hll.fnl_bold_no_advance).
+static float text_bold_advance(const struct text_style *ts)
+{
+	return profile.hll.fnl_bold_no_advance ? 0.0f : ceilf(ts->bold_width);
+}
+
 float gfx_size_text(struct text_style *ts, const char *text)
 {
 	if (!text || !*text) return 0.0f;
@@ -323,7 +329,7 @@ float gfx_size_text(struct text_style *ts, const char *text)
 	struct font_size *size = text_style_font_size(ts);
 	if (!size || !size->font) return 0.0f;
 	float edge_advance = gfx_text_advance_edges
-		? ts->edge_left + ts->edge_right + ceilf(ts->bold_width)
+		? ts->edge_left + ts->edge_right + text_bold_advance(ts)
 		: 0.0f;
 	float x = 0.0f;
 	while (*text) {
@@ -432,7 +438,7 @@ float gfx_render_textf(Texture *dst, float x, int y, char *msg, struct text_styl
 	if (gfx_text_cn_gdi())
 		edge_advance = gfx_text_cn_style_edge(ts);
 	else
-		edge_advance = gfx_text_advance_edges ? edge_width + ceilf(ts->bold_width) : 0.f;
+		edge_advance = gfx_text_advance_edges ? edge_width + text_bold_advance(ts) : 0.f;
 
 	enum text_render_mode mode = blend ? RENDER_BLENDED : RENDER_COPY;
 	if (edge_width > 0.01f) {

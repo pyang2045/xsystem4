@@ -47,6 +47,7 @@ void parts_cp_op_free(struct parts_cp_op *op)
 	case PARTS_CP_FILL_AMAP:
 	case PARTS_CP_FILL_WITH_ALPHA:
 	case PARTS_CP_DRAW_RECT:
+	case PARTS_CP_DRAW_LINE:
 	case PARTS_CP_DRAW_CUT_CG:
 	case PARTS_CP_COPY_CUT_CG:
 	case PARTS_CP_SCALE_COPY_CG:
@@ -223,6 +224,24 @@ bool PE_AddDrawRectToPartsConstructionProcess(int parts_no, int x, int y, int w,
 	op->fill = (struct parts_cp_fill) {
 		.x = x, .y = y, .w = w, .h = h,
 		.r = r, .g = g, .b = b, .a = 255
+	};
+
+	parts_add_cp_op(cproc, op);
+	return true;
+}
+
+bool PE_AddDrawLineToPartsConstructionProcess(int parts_no, int x1, int y1, int x2, int y2,
+		int r, int g, int b, int a, int state)
+{
+	if (!parts_state_valid(--state))
+		return false;
+
+	struct parts_construction_process *cproc = get_cproc(parts_no, state);
+	struct parts_cp_op *op = xcalloc(1, sizeof(struct parts_cp_op));
+	op->type = PARTS_CP_DRAW_LINE;
+	op->fill = (struct parts_cp_fill) {
+		.x = x1, .y = y1, .w = x2, .h = y2,
+		.r = r, .g = g, .b = b, .a = a
 	};
 
 	parts_add_cp_op(cproc, op);
@@ -767,6 +786,11 @@ static void build_draw_rect(struct parts_construction_process *cproc, struct par
 	gfx_draw_line(&cproc->common.texture, op->x, op->y, op->x, y2, op->r, op->g, op->b);
 	gfx_draw_line(&cproc->common.texture, x2, op->y, x2, y2, op->r, op->g, op->b);
 	gfx_draw_line(&cproc->common.texture, op->x, y2, x2, y2, op->r, op->g, op->b);
+}
+
+static void build_draw_line(struct parts_construction_process *cproc, struct parts_cp_fill *op)
+{
+	gfx_draw_line(&cproc->common.texture, op->x, op->y, op->w, op->h, op->r, op->g, op->b);
 }
 
 static void build_draw_cut_cg(struct parts_construction_process *cproc, struct parts_cp_cut_cg *op)
@@ -2193,6 +2217,54 @@ static void build_cut_cg_scale_blend(uint8_t *pixels, int tw, int th, const stru
 	cg_free(cg);
 }
 
+/* The pixels of a surface this build created and has only filled since
+ * (Create, then Fill or FillWithAlpha): what the texture holds, without reading it back. The
+ * rain and converge lines of the ADV effects (は～とふるママン) build each of
+ * their hundreds of parts so, and every text part of the activities; a read
+ * back each costs a GPU sync. NULL when another command came between. */
+static uint8_t *cp_known_pixels(struct parts_construction_process *cproc, struct parts_cp_op *until)
+{
+	struct parts_cp_op *op, *create = NULL;
+	TAILQ_FOREACH(op, &cproc->ops, entry) {
+		if (op == until)
+			break;
+		if (op->type == PARTS_CP_CREATE)
+			create = op;
+		else if ((op->type != PARTS_CP_FILL && op->type != PARTS_CP_FILL_WITH_ALPHA) || !create)
+			return NULL;
+	}
+	if (!create)
+		return NULL;
+	const int w = cproc->common.texture.w, h = cproc->common.texture.h;
+	if (w != create->create.w || h != create->create.h)
+		return NULL;
+	uint8_t *pixels = xmalloc((size_t)w * h * 4);
+	// build_create: opaque black.
+	for (size_t i = 0; i < (size_t)w * h; i++) {
+		pixels[i*4+0] = pixels[i*4+1] = pixels[i*4+2] = 0;
+		pixels[i*4+3] = 255;
+	}
+	// gfx_fill: the colour in the rectangle, the alpha kept;
+	// gfx_fill_with_alpha: the colour and the alpha.
+	for (op = TAILQ_NEXT(create, entry); op != until; op = TAILQ_NEXT(op, entry)) {
+		const struct parts_cp_fill *f = &op->fill;
+		const bool with_alpha = op->type == PARTS_CP_FILL_WITH_ALPHA;
+		const int x0 = max(f->x, 0), y0 = max(f->y, 0);
+		const int x1 = min((int64_t)f->x + f->w, w), y1 = min((int64_t)f->y + f->h, h);
+		for (int y = y0; y < y1; y++) {
+			for (int x = x0; x < x1; x++) {
+				uint8_t *d = pixels + ((size_t)y * w + x) * 4;
+				d[0] = f->r;
+				d[1] = f->g;
+				d[2] = f->b;
+				if (with_alpha)
+					d[3] = f->a;
+			}
+		}
+	}
+	return pixels;
+}
+
 bool parts_build_construction_process(struct parts *parts,
 		struct parts_construction_process *cproc)
 {
@@ -2222,7 +2294,7 @@ bool parts_build_construction_process(struct parts *parts,
 			// Every one of them fails without a surface (e.g. 0x4ff904).
 			if (!t->handle || t->w <= 0 || t->h <= 0)
 				continue;
-			if (!pixels)
+			if (!pixels && !(pixels = cp_known_pixels(cproc, op)))
 				pixels = gfx_get_pixels(t);
 		}
 		switch (op->type) {
@@ -2253,6 +2325,9 @@ bool parts_build_construction_process(struct parts *parts,
 			break;
 		case PARTS_CP_DRAW_RECT:
 			build_draw_rect(cproc, &op->fill);
+			break;
+		case PARTS_CP_DRAW_LINE:
+			build_draw_line(cproc, &op->fill);
 			break;
 		case PARTS_CP_DRAW_CUT_CG:
 			build_draw_cut_cg(cproc, &op->cut_cg);

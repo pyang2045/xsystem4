@@ -146,7 +146,7 @@ static const struct {
 			.messages_from_zero = true,
 			.whole_mouse_events = true,
 		},
-		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
+		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true },
 		.lang = { .no_method_empty_delegate = true },
 		// 1280x720 (its CGs); AliceStart.ini has no size.
 		.view_720p_with = "CreateActivity",

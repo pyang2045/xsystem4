@@ -81,7 +81,10 @@ static bool PE_v7_AddPartsConstructionProcess(struct page **ints_page, struct pa
 		WARNING("AddPartsConstructionProcess: unexpected array sizes");
 		return false;
 	}
-#define I(n) (ip->values[CP_##n].i)
+	// 33 ints: 母爛漫's successors (は～とふるママン) pack GetA2 after GetB2.
+	const bool has_a2 = ip->nr_vars > CP_NR_INTS;
+#define I(n) (ip->values[CP_##n + (has_a2 && CP_##n >= CP_CHAR_SPACE)].i)
+#define A2 (has_a2 ? ip->values[CP_CHAR_SPACE].i : 255)
 	int no = I(NUMBER), state = I(STATE);
 	float bold = fp->values[0].f, edge = fp->values[1].f;
 	struct string *text = heap_get_string(sp->values[0].i);
@@ -117,14 +120,23 @@ static bool PE_v7_AddPartsConstructionProcess(struct page **ints_page, struct pa
 			I(R), I(G), I(B), I(FULL_SIZE), state);
 	case 17: return PE_AddMulFilterToPartsConstructionProcess(no, I(DX), I(DY), I(DW), I(DH),
 			I(R), I(G), I(B), I(FULL_SIZE), state);
+	case 18: return PE_AddDrawLineToPartsConstructionProcess(no, I(DX), I(DY), I(DX2), I(DY2),
+			I(R), I(G), I(B), I(A), state);
 	case 23: return PE_AddAlphaBlendTextToPartsConstructionProcess(TEXT_ARGS);
+	// MulAMapGradationHorizon: the alpha A at the top to A2 at the bottom;
+	// Vertical: A at the left to A2 at the right.
+	case 25: return PE_AddMulAMapGradationToPartsConstructionProcess(no, false,
+			I(DX), I(DY), I(DW), I(DH), false, I(A), A2, state);
+	case 26: return PE_AddMulAMapGradationToPartsConstructionProcess(no, true,
+			I(DX), I(DY), I(DW), I(DH), false, I(A), A2, state);
 	case 24: return PE_AddOnlyAlphaTextToPartsConstructionProcess(TEXT_ARGS);
 	default:
-		// 9 gradation, 18 line, 19-22 the alpha CG cuts: no script path seen.
+		// 9 gradation, 19-22 the alpha CG cuts: no script path seen.
 		WARNING("AddPartsConstructionProcess: command %d not implemented", I(COMMAND));
 		return false;
 	}
 #undef TEXT_ARGS
+#undef A2
 #undef I
 }
 

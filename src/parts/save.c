@@ -416,6 +416,7 @@ static void save_parts_cp_op(struct iarray_writer *w, struct parts_cp_op *op)
 	case PARTS_CP_FILL_AMAP:
 	case PARTS_CP_FILL_WITH_ALPHA:
 	case PARTS_CP_DRAW_RECT:
+	case PARTS_CP_DRAW_LINE:
 		iarray_write(w, op->fill.x);
 		iarray_write(w, op->fill.y);
 		iarray_write(w, op->fill.w);
@@ -534,6 +535,7 @@ static struct parts_cp_op *load_parts_cp_op(struct iarray_reader *r)
 	case PARTS_CP_FILL_AMAP:
 	case PARTS_CP_FILL_WITH_ALPHA:
 	case PARTS_CP_DRAW_RECT:
+	case PARTS_CP_DRAW_LINE:
 		op->fill.x = iarray_read(r);
 		op->fill.y = iarray_read(r);
 		op->fill.w = iarray_read(r);

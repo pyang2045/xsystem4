@@ -2301,9 +2301,21 @@ static bool by_value_declaration(const struct ain_hll_function *f)
 static void v8_postlink(int libno)
 {
 	v7_postlink(libno);
+	// The link's Set is the classic one (-1 is no link), and ■Ｐ＿設定コピー
+	// copies what Get reads: the v14 Get's 0 would link the copy to parts 0
+	// and hide it. Before the v14 batch, which binds that Get.
+	static_library_register(&lib_PartsEngine, "Parts_GetOnCursorShowLinkPartsNumber",
+			PE_GetOnCursorShowLinkPartsNumber);
 	static_library_set_register_filter(by_value_declaration);
 	pe_v14_register_batch(libno);
+	// The message windows and key wait marks (its message queue is the v7 one).
+	extern void pe_v14_message_register(void);
+	pe_v14_message_register();
 	static_library_set_register_filter(NULL);
+	// C_ACTIVITY_TEXT@Create rebuilds an activity's text parts from these.
+	static_library_register(&lib_PartsEngine, "GetTextPartsText", PE_GetTextPartsText);
+	static_library_register(&lib_PartsEngine, "Parts_GetTextPos", PE_GetTextPos);
+	static_library_register(&lib_PartsEngine, "Parts_SetTextPos", PE_SetTextPos);
 }
 
 const struct parts_bindings parts_bindings_v14 = {

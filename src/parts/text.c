@@ -435,6 +435,31 @@ bool PE_SetPartsFontEdgeWeight(int parts_no, float edge_weight, int state)
 	return true;
 }
 
+// The text of a text state, its lines joined by "\n".
+struct string *PE_GetTextPartsText(int parts_no, int state)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (!parts || !parts_state_valid(--state) || parts->states[state].type != PARTS_TEXT)
+		return string_ref(&EMPTY_STRING);
+	return parts_text_get(&parts->states[state].text);
+}
+
+int PE_GetTextPos(int parts_no, int state)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (!parts || !parts_state_valid(--state) || parts->states[state].type != PARTS_TEXT)
+		return 0;
+	return parts->states[state].text.text_pos;
+}
+
+bool PE_SetTextPos(int parts_no, int pos, int state)
+{
+	if (!parts_state_valid(--state))
+		return false;
+	parts_get_text(parts_get(parts_no), state)->text_pos = pos;
+	return true;
+}
+
 bool PE_SetTextCharSpace(int parts_no, int char_space, int state)
 {
 	if (!parts_state_valid(--state))

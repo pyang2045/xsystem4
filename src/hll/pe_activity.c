@@ -2362,6 +2362,7 @@ static bool pactex_apply_low_level_state(struct ex_tree *state, int parts_no, in
 		pactex_apply_text_style(state, parts_no, pe_state);
 		// After the style, so the text is laid out with it.
 		pactex_apply_default_text(state, parts_no, pe_state);
+		PE_SetTextPos(parts_no, pactex_message_number(state, PACTEX_MW_ORIGIN, 0), pe_state);
 	} else if (numeral) {
 		pactex_apply_numeral_state(state, parts_no, pe_state);
 	} else if (gauge) {
