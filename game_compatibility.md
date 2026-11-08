@@ -82,4 +82,5 @@ issues, please let me know or open a pull request to update this table.
 | どらぺこ！ ～おねだりドラゴンとおっぱい勇者～           | Unsupported |       |
 | ランス01 光をもとめて                                   | Supported   |       |
 | Rance 01 - Quest for Hikari (EN)                        | Supported   |       |
+| は～とふるママン                                        | Unknown     | Row `activities_v8` (ain v8). Title, galleries, map, save/load with comments, config and 汐梨's normal ending run; the other endings not played. The survey needs the game server. |
 | All games released after Rance 01                       | Unsupported |       |
