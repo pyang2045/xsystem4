@@ -23,9 +23,12 @@ static bool PE_v7_PlayPartsMovie(int number, int state)
 	return PE_stub_PlayPartsMovie(number, 0, state);
 }
 
-/* The keyboard focus of a text box: this engine has no text box to give it. */
+/* The keyboard focus of a text box: only rows with text boxes
+ * (profile.parts.text_box) have one to give. */
 static void PE_v7_SetFocus(possibly_unused int parts_no)
 {
+	if (profile.parts.text_box)
+		parts_text_box_set_focus(parts_no);
 }
 
 /* Swipes are touch input, which this engine does not send: none to stop. */

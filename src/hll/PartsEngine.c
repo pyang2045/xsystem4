@@ -2322,6 +2322,19 @@ static void v8_postlink(int libno)
 	static_library_register(&lib_PartsEngine, "GetComponentDrawFilter", PE_GetPartsDrawFilter);
 	static_library_register(&lib_PartsEngine, "GetComponentAlphaClipper",
 			PE_GetPartsAlphaClipperPartsNumber);
+	// テキストボックス：コメント編集 of the save confirmation (text_box.c);
+	// SetFocus is the v7 one, which gives it the keyboard.
+	if (profile.parts.text_box) {
+		static_library_register(&lib_PartsEngine, "IsFocus", parts_text_box_is_focus);
+		static_library_register(&lib_PartsEngine, "GetTextBoxText", parts_text_box_get_text);
+		static_library_register(&lib_PartsEngine, "SetTextBoxText", parts_text_box_set_text);
+		static_library_register(&lib_PartsEngine, "SetTextBoxReadOnly", parts_text_box_set_read_only);
+		static_library_register(&lib_PartsEngine, "IsTextBoxReadOnly", parts_text_box_is_read_only);
+		static_library_register(&lib_PartsEngine, "SetTextBoxMaxTextLength",
+				parts_text_box_set_max_chars);
+		static_library_register(&lib_PartsEngine, "GetTextBoxMaxTextLength",
+				parts_text_box_get_max_chars);
+	}
 }
 
 const struct parts_bindings parts_bindings_v14 = {

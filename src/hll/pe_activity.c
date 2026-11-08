@@ -952,6 +952,7 @@ static void pactex_apply_default_text(struct ex_tree *state, int parts_no, int p
 enum {
 	PACTEX_EPT_BUTTON = 0,
 	PACTEX_EPT_CHECK_BOX = 1,
+	PACTEX_EPT_TEXT_BOX = 4,
 	PACTEX_EPT_LAYOUT_BOX = 8,
 	PACTEX_EPT_RADIO_BOX = 9,
 	PACTEX_EPT_MESSAGE_WINDOW = 10,
@@ -2770,6 +2771,51 @@ static void pactex_resolve_show_links(struct activity *act)
 	pactex_nr_show_links = 0;
 }
 
+/* An RGB list of the type information, def where it is missing. */
+static SDL_Color pactex_rgb(struct ex_tree *type_info, const char *name, SDL_Color def)
+{
+	struct ex_list *l = pactex_get_list(type_info, name);
+	if (!l || l->nr_items < 3)
+		return def;
+	return (SDL_Color){ pactex_value_number(&l->items[0].value, def.r),
+		pactex_value_number(&l->items[1].value, def.g),
+		pactex_value_number(&l->items[2].value, def.b), 255 };
+}
+
+/* テキストボックス (EPartsType 4): サイズ, the text's フォント* keys,
+ * 最大文字数, 読み取り専用 and the 背景色, 読み取り専用背景色 and 枠色 it is
+ * drawn with (text_box.c). The SJIS keys of は～とふるママン's save
+ * confirmation (テキストボックス：コメント編集: 240x30, size 16, 10
+ * characters). Not read: 選択色 (no selection here), ＣＧ名 (empty), 文字間隔,
+ * 入力状態 and テキスト (empty). */
+static void pactex_apply_text_box(struct ex_tree *type_info, struct parts *p)
+{
+	int w = 100, h = 20;
+	struct ex_list *sz = pactex_key_list(type_info, &PK_SIZE);
+	if (sz && sz->nr_items >= 2) {
+		w = pactex_value_number(&sz->items[0].value, w);
+		h = pactex_value_number(&sz->items[1].value, h);
+	}
+	PE_SetFont(p->no,
+		pactex_message_number(type_info, PACTEX_MW_FACE, 0),
+		pactex_message_number(type_info, PACTEX_MW_SIZE, 16),
+		pactex_message_item(type_info, PACTEX_MW_COLOR, 0, 255),
+		pactex_message_item(type_info, PACTEX_MW_COLOR, 1, 255),
+		pactex_message_item(type_info, PACTEX_MW_COLOR, 2, 255),
+		pactex_message_number(type_info, PACTEX_MW_WEIGHT, 0),
+		pactex_message_item(type_info, PACTEX_MW_EDGE_COLOR, 0, 0),
+		pactex_message_item(type_info, PACTEX_MW_EDGE_COLOR, 1, 0),
+		pactex_message_item(type_info, PACTEX_MW_EDGE_COLOR, 2, 0),
+		pactex_message_number(type_info, PACTEX_MW_EDGE, 0), 1);
+	SDL_Color bg = pactex_rgb(type_info, "\x94\x77\x8c\x69\x90\x46", (SDL_Color){ 255, 255, 255, 255 });
+	parts_text_box_create(p, w, h, bg,
+		pactex_rgb(type_info, "\x93\xc7\x82\xdd\x8e\xe6\x82\xe8\x90\xea\x97\x70\x94\x77\x8c\x69\x90\x46",
+			(SDL_Color){ 150, 150, 150, 255 }),
+		pactex_rgb(type_info, "\x98\x67\x90\x46", bg),
+		pactex_get_int(type_info, "\x8d\xc5\x91\xe5\x95\xb6\x8e\x9a\x90\x94", 0),
+		pactex_get_int(type_info, "\x93\xc7\x82\xdd\x8e\xe6\x82\xe8\x90\xea\x97\x70", 0));
+}
+
 static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 {
 	pactex_apply_pixel_decide(node, parts_no);
@@ -3035,6 +3081,10 @@ static void pactex_apply_properties(struct ex_tree *node, int parts_no)
 	 * below: a radio box's type name contains 按鈕. --- */
 	if (widgets) {
 		const int native_type = pactex_native_type(ptype);
+		if (native_type == PACTEX_EPT_TEXT_BOX && profile.parts.text_box) {
+			pactex_apply_text_box(type_info, parts_get(parts_no));
+			return;
+		}
 		if (native_type == PACTEX_EPT_CHECK_BOX) {
 			pactex_apply_check_box(type_info, parts_get(parts_no));
 			return;

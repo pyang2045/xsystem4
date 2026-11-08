@@ -222,6 +222,10 @@ static void classic_set_parent(int parts_no, int parent_parts_no)
 	parts->pending_parent = parent_parts_no;
 	parts->pending_index = -1;
 	parts_component_dirty(parts);
+	// The script reads the tree back in the same call (■Ｐ＿子コピー: while
+	// NumofChild(src) > 0, AddChild(dst, GetChild(src, 0))).
+	if (profile.parts.immediate_parents)
+		parts_attach_now(parts, -1);
 }
 
 static void classic_set_component_type(int parts_no, int type, int state)

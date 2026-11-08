@@ -149,6 +149,8 @@ static const struct {
 			.whole_mouse_events = true,
 			.child_takes_parent_controller = true,
 			.message_window_type = true,
+			.text_box = true,
+			.immediate_parents = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true },
 		// The legacy score fires on its SJIS script (54) and the config's

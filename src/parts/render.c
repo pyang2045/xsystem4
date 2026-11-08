@@ -326,6 +326,57 @@ static void parts_render_message_mark(struct parts *parts, Texture *t, Point pos
 			add_color, multiply_color, 0, parts->alpha_clipper_parts_no);
 }
 
+static void parts_render_text_box_rect(struct parts *parts, Texture *t, int x, int y, float alpha)
+{
+	vec3 add_color;
+	parts_shader_add_color(parts, add_color);
+	vec3 multiply_color = {
+		parts->global.multiply_color.r / 255.0f,
+		parts->global.multiply_color.g / 255.0f,
+		parts->global.multiply_color.b / 255.0f,
+	};
+	mat4 m;
+	parts_anchor_transform(parts, glm_rad(parts->local.rotation.z), true, m);
+	glm_translate(m, (vec3){ x, y, 0 });
+	glm_scale(m, (vec3){ t->w, t->h, 1.0f });
+	Rectangle r = { 0, 0, t->w, t->h };
+	parts_render_texture(parts, t, m, &r, alpha, add_color, multiply_color, 0,
+			parts->alpha_clipper_parts_no);
+}
+
+/* A text box's background, frame and caret, before its text state draws the
+ * text (text_box.c). Returns where the text goes: 4 pixels in, centred in
+ * the box's height. */
+Point parts_text_box_render(struct parts *parts)
+{
+	struct parts_text_box *tb = parts->text_box;
+	struct parts_text *t = &parts->states[0].text;
+	int font_h = t->ts.size > 0 ? (int)t->ts.size : 16;
+	if (!tb->textures_valid) {
+		gfx_init_texture_rgba(&tb->frame_t, tb->w, tb->h, (SDL_Color){
+				tb->frame.r, tb->frame.g, tb->frame.b, 255 });
+		SDL_Color bg = tb->read_only ? tb->read_only_bg : tb->bg;
+		gfx_init_texture_rgba(&tb->bg_t, tb->w - 2, tb->h - 2,
+				(SDL_Color){ bg.r, bg.g, bg.b, 255 });
+		gfx_init_texture_rgba(&tb->caret_t, 2, font_h, (SDL_Color){
+				t->ts.color.r, t->ts.color.g, t->ts.color.b, 255 });
+		tb->textures_valid = true;
+	}
+	float alpha = parts->global.alpha / 255.0f;
+	parts_render_text_box_rect(parts, &tb->frame_t, 0, 0, alpha);
+	parts_render_text_box_rect(parts, &tb->bg_t, 1, 1, alpha);
+	const int pad = 4;
+	int ty = (tb->h - font_h) / 2;
+	if (parts_text_box_focus_no == parts->no && parts_text_box_focused()
+			&& (SDL_GetTicks() / 500) % 2 == 0) {
+		int w, h;
+		parts_text_extent(t, &w, &h);
+		if (pad + w + 1 < tb->w - 2)
+			parts_render_text_box_rect(parts, &tb->caret_t, pad + w + 1, ty, alpha);
+	}
+	return (Point){ parts->global.pos.x + pad, parts->global.pos.y + ty };
+}
+
 /*
  * 描畫フィルタ covers the subtree (v14): a parts without its own filter is
  * drawn with the nearest ancestor's. SceneLogo's Light has 描畫フィルタ 3 (screen)
@@ -926,6 +977,10 @@ void parts_render(struct parts *parts)
 			parts_render_cg(parts, &state->common, parts_cg_deform(parts, parts->state));
 		break;
 	case PARTS_TEXT:
+		if (parts->text_box && parts->state == 0) {
+			parts_render_text(parts, &state->text, parts_text_box_render(parts));
+			break;
+		}
 		parts_render_text(parts, &state->text, (Point){
 			parts->global.pos.x + state->text.common.origin_offset.x,
 			parts->global.pos.y + state->text.common.origin_offset.y});

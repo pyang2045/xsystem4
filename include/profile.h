@@ -102,6 +102,15 @@ struct parts_features {
 	// An activity's message window (EPartsType 10) answers GetComponentType
 	// with 10: Ａ＿システムボタン設定 looks up the button's parents for it.
 	bool message_window_type;
+	// An activity's テキストボックス (EPartsType 4) is one: it is drawn, takes
+	// the keyboard focus and typed text, and sends Fixed on Return.
+	bool text_box;
+	// SetParentPartsNumber, AddChild and InsertChild attach at once, as the
+	// original does: the script reads the tree back in the same call
+	// (■Ｐ＿子コピー moves children while NumofChild(src) > 0). Pending until
+	// the update, the save confirmation's text box was left behind when its
+	// template was deleted, without a parent.
+	bool immediate_parents;
 };
 
 // Other libraries.

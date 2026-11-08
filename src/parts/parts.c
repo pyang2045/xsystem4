@@ -1722,6 +1722,7 @@ void parts_release(int parts_no)
 	parts_input_release(parts);
 	parts_clear_motion(parts);
 	parts_message_window_free(parts->message);
+	parts_text_box_free(parts);
 	for (int i = 0; i < PARTS_NR_STATES; i++) {
 		parts_state_free(&parts->states[i]);
 	}
@@ -1897,6 +1898,55 @@ static void parts_update_component(struct parts *parts)
 
 static void parts_set_controller(struct parts *parts, int controller_no);
 
+/* Puts the parts under parent, before its index-th child (the end for -1 or
+ * no such child), out of its old parent's list first: what a pending parent
+ * becomes at the update, and at once with profile.parts.immediate_parents. */
+void parts_attach(struct parts *parts, struct parts *parent, int index)
+{
+	if (parts->parent) {
+		TAILQ_REMOVE(&parts->parent->children, parts, child_list_entry);
+	}
+	parts->parent = parent;
+	struct parts *at = NULL;
+	if (index >= 0) {
+		int i = 0;
+		PARTS_FOREACH_CHILD(at, parent) {
+			if (i++ == index)
+				break;
+		}
+	}
+	if (at)
+		TAILQ_INSERT_BEFORE(at, parts, child_list_entry);
+	else
+		TAILQ_INSERT_TAIL(&parent->children, parts, child_list_entry);
+	if (profile.parts.child_takes_parent_controller
+			&& parent->controller_no != parts->controller_no)
+		parts_set_controller(parts, parent->controller_no);
+
+	// if parent is layout box, mark it dirty so that it can re-layout its children
+	if (parent->states[0].type == PARTS_LAYOUT_BOX)
+		parts_component_dirty(parent);
+	parts_user_component_dirty(parent);
+	// v14: also a box above a free box or a user component
+	parts_layout_size_changed(parts);
+	parts->pending_parent = -1;
+	parts->pending_index = -1;
+}
+
+/* The pending parent at once, unless it is gone or the parts itself or
+ * below it (which would make a cycle; left pending, the update takes it). */
+void parts_attach_now(struct parts *parts, int index)
+{
+	struct parts *parent = parts_try_get(parts->pending_parent);
+	if (!parent)
+		return;
+	for (struct parts *p = parent; p; p = p->parent) {
+		if (p == parts)
+			return;
+	}
+	parts_attach(parts, parent, index);
+}
+
 void PE_UpdateComponent(possibly_unused int passed_time)
 {
 	// After loading a save, the game script may compute a negative time delta
@@ -1912,34 +1962,8 @@ void PE_UpdateComponent(possibly_unused int passed_time)
 
 		// update parent
 		struct parts *parent;
-		if (parts->pending_parent >= 0 && (parent = parts_try_get(parts->pending_parent))) {
-			if (parts->parent) {
-				TAILQ_REMOVE(&parts->parent->children, parts, child_list_entry);
-			}
-			parts->parent = parent;
-			struct parts *at = NULL;
-			if (parts->pending_index >= 0) {
-				int i = 0;
-				PARTS_FOREACH_CHILD(at, parent) {
-					if (i++ == parts->pending_index)
-						break;
-				}
-			}
-			if (at)
-				TAILQ_INSERT_BEFORE(at, parts, child_list_entry);
-			else
-				TAILQ_INSERT_TAIL(&parent->children, parts, child_list_entry);
-			if (profile.parts.child_takes_parent_controller
-					&& parent->controller_no != parts->controller_no)
-				parts_set_controller(parts, parent->controller_no);
-
-			// if parent is layout box, mark it dirty so that it can re-layout its children
-			if (parent->states[0].type == PARTS_LAYOUT_BOX)
-				parts_component_dirty(parent);
-			parts_user_component_dirty(parent);
-			// v14: also a box above a free box or a user component
-			parts_layout_size_changed(parts);
-		}
+		if (parts->pending_parent >= 0 && (parent = parts_try_get(parts->pending_parent)))
+			parts_attach(parts, parent, parts->pending_index);
 		// TODO: should the child be orphaned if it already has a parent and an invalid
 		//       parent no is given?
 		parts->pending_parent = -1;
@@ -1993,6 +2017,7 @@ void PE_UpdateScaled(int passed_time, int scaled_passed_time, bool message_windo
 	// whose value changed is drawn again.
 	parts_scrollbar_update();
 	parts_checkbox_update();
+	parts_text_box_update();
 	parts_render_update();
 }
 
@@ -2879,17 +2904,20 @@ void PE_SetParentPartsNumber(int parts_no, int parent_parts_no)
 
 /* void InsertChild(int Number, int Index, int ChildNumber): as AddChild, but
  * the child goes before the parts' Index-th child (the end when there is no
- * such child). ■Ｐ＿親コピー puts a copied widget where its template is. Taken
- * at the next update with the parent: attaching now made ■Ｐ＿子コピー, which
- * walks the children it copies into, go round for ever. */
+ * such child). ■Ｐ＿親コピー puts a copied widget where its template is.
+ * Pending, it is taken at the next update with the parent; attached at once
+ * (immediate_parents), the AddChild of ■Ｐ＿子コピー must be too, or its loop
+ * never sees the source's children go and runs for ever. */
 void PE_InsertChild(int parts_no, int index, int child_parts_no)
 {
 	if (!parts_try_get(parts_no) || !parts_try_get(child_parts_no))
 		return;
-	PE_SetParentPartsNumber(child_parts_no, parts_no);
 	struct parts *child = parts_get(child_parts_no);
-	if (child->pending_parent == parts_no)
-		child->pending_index = index < 0 ? -1 : index;
+	child->pending_parent = parts_no;
+	parts_component_dirty(child);
+	child->pending_index = index < 0 ? -1 : index;
+	if (profile.parts.immediate_parents)
+		parts_attach_now(child, child->pending_index);
 }
 
 int PE_GetParentPartsNumber(int parts_no)

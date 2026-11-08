@@ -853,6 +853,8 @@ struct parts {
 	// until the parts is one and is first used as one.
 	struct parts_checkbox *checkbox;
 	struct parts_radio_box *radio_box;
+	// An activity's テキストボックス (text_box.c); NULL for any other parts.
+	struct parts_text_box *text_box;
 };
 
 #define PARTS_LIST_FOREACH(iter) TAILQ_FOREACH(iter, &parts_list, parts_list_entry)
@@ -1012,6 +1014,8 @@ void parts_list_resort(struct parts *parts);
 void parts_list_ensure_sorted(void);
 void parts_ensure_scene_registered(struct parts *parts);
 void parts_component_dirty(struct parts *parts);
+void parts_attach(struct parts *parts, struct parts *parent, int index);
+void parts_attach_now(struct parts *parts, int index);
 void parts_recalculate_hitbox(struct parts *parts);
 void parts_state_reset(struct parts_state *state, enum parts_type type);
 bool parts_cg_set(struct parts *parts, struct parts_cg *cg, struct string *cg_name);
@@ -1134,6 +1138,7 @@ enum parts_message_type {
 	PARTS_MSG_KEY_UP         = 17,
 	PARTS_MSG_SCROLL         = 20,	// ain v7: the bar's position and its largest
 	PARTS_MSG_CHANGED_FLAG   = 22,	// ain v7: a check box's value
+	PARTS_MSG_FIXED          = 25,	// ain v8: Return in a text box (CallDelegateFixed)
 };
 
 // v14: the types the input update sends, by the type function of each
@@ -1154,6 +1159,25 @@ enum parts_v14_message_type {
 };
 
 void parts_msg_push(struct parts* parts, int type, const char *fmt, ...);
+
+// text_box.c
+struct parts_text_box {
+	int w, h;
+	SDL_Color bg, read_only_bg, frame;
+	int max_chars;
+	bool read_only;
+	struct string *text;     // what was typed, in the game's encoding
+	struct string *editing;  // what the input method is composing
+	Texture frame_t, bg_t, caret_t;
+	bool textures_valid;
+};
+extern int parts_text_box_focus_no;
+struct parts *parts_text_box_focused(void);
+void parts_text_box_create(struct parts *parts, int w, int h, SDL_Color bg,
+		SDL_Color read_only_bg, SDL_Color frame, int max_chars, bool read_only);
+void parts_text_box_free(struct parts *parts);
+void parts_text_box_update(void);
+Point parts_text_box_render(struct parts *parts);
 
 // construction.c
 void parts_cp_op_free(struct parts_cp_op *op);
