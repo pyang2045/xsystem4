@@ -106,6 +106,33 @@ Finally install it to your system (optional),
 
     ninja -C build install
 
+### macOS
+
+Install the dependencies with [Homebrew](https://brew.sh):
+
+    brew install meson ninja bison flex pkg-config sdl2 libffi jpeg-turbo libpng \
+        webp libsndfile freetype cglm
+
+GLEW is not needed: the renderer is Metal (`-Dmetal=enabled`, the default on
+macOS). For the OpenGL renderer instead, `brew install glew` and configure with `-Dmetal=disabled`. FFmpeg is optional:
+without it, movies play through the bundled MPEG-1 decoder (pl_mpeg), which covers the
+games listed above. Optional: `readline` for line editing in the debugger.
+
+macOS's own bison and flex are too old, and Homebrew does not put its libffi and
+jpeg-turbo on the pkg-config path, so set both before configuring:
+
+    git clone -b haharanman-on-usada --recurse-submodules https://github.com/pyang2045/xsystem4
+    cd xsystem4
+    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+    export PKG_CONFIG_PATH="$(brew --prefix libffi)/lib/pkgconfig:$(brew --prefix jpeg-turbo)/lib/pkgconfig"
+    meson setup build -Dbuildtype=debugoptimized
+    ninja -C build
+
+The log line `Renderer: Metal | <your GPU>` at startup confirms the Metal renderer.
+For a build without the `XSYS4_*` test hooks, add `-Ddev_hooks=false`. The binary
+links Homebrew's libraries from `/usr/local` (Intel) or `/opt/homebrew` (Apple
+Silicon), so it runs on Macs with the same Homebrew packages installed.
+
 ### iPad
 
 xsystem4 builds as an iPadOS app (Xcode project or meson cross build); the player copies
@@ -219,6 +246,16 @@ Alternatively, run xsystem4 from within the game directory,
 To show a translation from the game directory's `locale/zh_CN.po`,
 
     build/src/xsystem4 --lang zh_CN /path/to/game_directory
+
+### macOS
+
+From the source directory, pass the folder holding the game's `.ain` file:
+
+    build/src/xsystem4 --nodebug /path/to/game_directory
+
+`--nodebug` turns off the debugger. Saves go to `~/.xsystem4/<game>/`; set
+`XSYSTEM4_HOME` to use another folder. For a translation, add
+`--lang <lang>` as shown above.
 
 ### Windows
 
