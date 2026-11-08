@@ -115,6 +115,14 @@ struct parts_features {
 	// camera (parts_rotate_xy, parts_perspective) with the classic
 	// transforms: C_DOT_PATTERN's tiles flip, CASTaskParts rotate events.
 	bool xy_rotation;
+	// Boxes by their origin mode as v14 (layoutbox.c): a vertical/horizontal
+	// box sizes a child box by its content (lb_v14_box_size), a free box
+	// moves its children by its own origin mode and size (lb_v14_free_layout),
+	// and the boxes above a parts lay out again when its size changes. The
+	// CG and 回想 page tabs (a horizontal box in a vertical box with origin 3,
+	// top right, at x 1258) and the CG viewer's counter (a free box with
+	// origin 9, bottom right, at 1270,710) were drawn off the screen.
+	bool box_origin_layout;
 };
 
 // Other libraries.

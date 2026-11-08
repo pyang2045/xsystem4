@@ -3,6 +3,10 @@
 static void parts_get_layout_size(struct parts *parts, int *w, int *h)
 {
 	struct parts_state *state = &parts->states[parts->state];
+	if (profile.parts.box_origin_layout && parts->states[0].type == PARTS_LAYOUT_BOX) {
+		lb_v14_box_size(parts, w, h);
+		return;
+	}
 	if (state->type == PARTS_FLAT && state->flat.flat) {
 		// The layout size of Flat is specified in the header, and this may
 		// differ from the hitbox size.
@@ -84,15 +88,26 @@ static void parts_layout_calc_size_vertical(struct parts_layout_box *lb, struct 
  */
 void classic_layout_size_changed(struct parts *parts)
 {
+	// profile.parts.box_origin_layout: the boxes above, up to the first parts
+	// that is not a box, size their children again.
+	if (!profile.parts.box_origin_layout)
+		return;
+	for (struct parts *a = parts->parent; a && a->states[0].type == PARTS_LAYOUT_BOX; a = a->parent)
+		parts_component_dirty(a);
 }
+
+static void lb_v14_free_layout(struct parts *box);
 
 void classic_do_layout(struct parts *parts)
 {
 	if (parts->states[0].type != PARTS_LAYOUT_BOX)
 		return;
 	struct parts_layout_box *lb = &parts->states[0].layout_box;
-	if (lb->layout_type == PARTS_LAYOUT_FREE)
+	if (lb->layout_type == PARTS_LAYOUT_FREE) {
+		if (profile.parts.box_origin_layout)
+			lb_v14_free_layout(parts);
 		return;
+	}
 
 	int total_w, total_h;
 	if (lb->layout_type == PARTS_LAYOUT_HORIZONTAL)

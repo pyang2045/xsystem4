@@ -153,6 +153,7 @@ static const struct {
 			.text_box = true,
 			.immediate_parents = true,
 			.xy_rotation = true,
+			.box_origin_layout = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true,
 			// Its MsgSkip declares the v14 four (no Init): the original
