@@ -132,6 +132,7 @@ void PE_SetAlpha(int parts_no, int alpha);
 int PE_GetPartsAlpha(int parts_no);
 void PE_SetPartsDrawFilter(int parts_no, int draw_filter);
 int PE_GetPartsDrawFilter(int parts_no);
+int PE_GetPartsAlphaClipperPartsNumber(int parts_no);
 void PE_SetAddColor(int parts_no, int r, int g, int b);
 void PE_GetAddColor(int parts_no, int *r, int *g, int *b);
 void PE_SetMultiplyColor(int parts_no, int r, int g, int b);

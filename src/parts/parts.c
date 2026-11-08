@@ -2982,6 +2982,11 @@ void PE_SetPartsAlphaClipperPartsNumber(int parts_no, int alpha_clipper_parts_no
 	parts_dirty(parts);
 }
 
+int PE_GetPartsAlphaClipperPartsNumber(int parts_no)
+{
+	return parts_get(parts_no)->alpha_clipper_parts_no;
+}
+
 void PE_SetPartsPixelDecide(int parts_no, bool pixel_decide)
 {
 	parts_get(parts_no)->pixel_hittest = pixel_decide;

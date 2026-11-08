@@ -2317,6 +2317,11 @@ static void v8_postlink(int libno)
 	static_library_register(&lib_PartsEngine, "Parts_GetTextPos", PE_GetTextPos);
 	static_library_register(&lib_PartsEngine, "Parts_SetTextPos", PE_SetTextPos);
 	static_library_register(&lib_PartsEngine, "InsertChild", PE_InsertChild);
+	// ■Ｐ＿設定コピー hands what these read to the bound setters: unbound,
+	// every copied widget lost its template's blend mode and clipper.
+	static_library_register(&lib_PartsEngine, "GetComponentDrawFilter", PE_GetPartsDrawFilter);
+	static_library_register(&lib_PartsEngine, "GetComponentAlphaClipper",
+			PE_GetPartsAlphaClipperPartsNumber);
 }
 
 const struct parts_bindings parts_bindings_v14 = {
