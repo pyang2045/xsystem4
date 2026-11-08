@@ -156,6 +156,7 @@ static const struct {
 			.box_origin_layout = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true,
+			.soft_limiter = true,
 			// Its MsgSkip declares the v14 four (no Init): the original
 			// MsgSkip.msk with the ADV flags.
 			.msgskip_v14 = true,

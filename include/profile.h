@@ -127,6 +127,10 @@ struct parts_features {
 
 // Other libraries.
 struct hll_features {
+	// The mixers keep samples above full scale and a limiter on the output
+	// (audio_mixer.c, soft_limit) brings them down, where each mixer clipped
+	// them: a loud voice over music no longer crackles on its peaks.
+	bool soft_limiter;
 	// The log of AnteaterADVEngine as v14 keeps it, reset on a restart.
 	bool adv_log_v14;
 	// The window settings structure of v14 SystemService.

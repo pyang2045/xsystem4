@@ -132,6 +132,42 @@ static bool window_active = true;
 static atomic_bool focus_muted;
 
 /*
+ * profile.hll.soft_limiter: the output's peak limiter. The mixers do not clip
+ * (sts_mixer_t.no_clamp); above -1 dBFS the gain follows the frame's peak
+ * down within about 1 ms and recovers over about 100 ms, and a soft knee
+ * rounds off what the attack lets through, so the output never reaches
+ * full scale. Below the threshold the samples pass unchanged.
+ */
+#define LIMIT_THRESHOLD 0.8913f // -1 dBFS
+static float limit_gain = 1.0f;
+
+static float soft_knee(float x)
+{
+	float a = fabsf(x);
+	if (a <= LIMIT_THRESHOLD)
+		return x;
+	float y = LIMIT_THRESHOLD + (1.0f - LIMIT_THRESHOLD)
+		* tanhf((a - LIMIT_THRESHOLD) / (1.0f - LIMIT_THRESHOLD));
+	return x < 0 ? -y : y;
+}
+
+static void soft_limit(float *buf, int frames, int rate)
+{
+	const float attack = expf(-1.0f / (0.001f * rate));
+	const float release = expf(-1.0f / (0.100f * rate));
+	float g = limit_gain;
+	for (int i = 0; i < frames; i++) {
+		float l = buf[i*2], r = buf[i*2+1];
+		float peak = fmaxf(fabsf(l), fabsf(r));
+		float target = peak > LIMIT_THRESHOLD ? LIMIT_THRESHOLD / peak : 1.0f;
+		g = target + (g - target) * (target < g ? attack : release);
+		buf[i*2] = soft_knee(l * g);
+		buf[i*2+1] = soft_knee(r * g);
+	}
+	limit_gain = g;
+}
+
+/*
  * The SDL2 audio callback.
  */
 static void audio_callback(possibly_unused void *data, Uint8 *stream, int len)
@@ -140,7 +176,10 @@ static void audio_callback(possibly_unused void *data, Uint8 *stream, int len)
 		memset(stream, 0, len);
 		return;
 	}
-	sts_mixer_mix_audio(&master->mixer, stream, len / (sizeof(float) * 2));
+	int frames = len / (sizeof(float) * 2);
+	sts_mixer_mix_audio(&master->mixer, stream, frames);
+	if (profile.hll.soft_limiter)
+		soft_limit((float *)stream, frames, master->mixer.frequency);
 	if (master->muted || focus_muted) {
 		memset(stream, 0, len);
 	}
@@ -1128,6 +1167,7 @@ static void groups_init(const struct groups_config *gc)
 	movie_internal_volume = gc->movie_internal;
 	for (int i = 0; i < nr_mixers; i++) {
 		sts_mixer_init(&mixers[i].mixer, 44100, STS_MIXER_SAMPLE_FORMAT_FLOAT);
+		mixers[i].mixer.no_clamp = profile.hll.soft_limiter;
 		mixers[i].default_volume = gc->default_volume[i];
 		mixers[i].volume = clamp(0, 100, gc->default_volume[i]);
 		mixers[i].mixer.gain = mixers[i].volume / 100.0f;
@@ -1204,6 +1244,7 @@ static void legacy_mixers_init(void)
 	// initialize mixers
 	for (int i = 0; i < nr_mixers; i++) {
 		sts_mixer_init(&mixers[i].mixer, 44100, STS_MIXER_SAMPLE_FORMAT_FLOAT);
+		mixers[i].mixer.no_clamp = profile.hll.soft_limiter;
 		int volume = i < (int)config.mixer_nr_channels ? config.mixer_volumes[i] : config.default_volume;
 		mixers[i].volume = clamp(0, 100, volume);
 		mixers[i].mixer.gain = clamp(0.0f, 1.0f, (float)volume / 100.0f);

@@ -108,6 +108,9 @@ typedef struct {
   unsigned int              frequency;        // the frequency for the output of mixed audio data
   int                       audio_format;     // the audio format for the output of mixed audio data
   sts_mixer_voice_t         voices[STS_MIXER_VOICES]; // holding all audio voices for this state
+  // added in xsystem4: keep float samples above full scale (no clamping), for
+  // a limiter after the last mixer (audio_mixer.c, profile.hll.soft_limiter)
+  int                       no_clamp;
 } sts_mixer_t;
 
 
@@ -221,6 +224,7 @@ void sts_mixer_init(sts_mixer_t* mixer, unsigned int frequency, int audio_format
   mixer->frequency = frequency;
   mixer->gain = 1.0f;
   mixer->audio_format = audio_format;
+  mixer->no_clamp = 0;
 }
 
 
@@ -333,8 +337,10 @@ void sts_mixer_mix_audio(sts_mixer_t* mixer, void* output, unsigned int samples)
         if (status == STS_STREAM_COMPLETE) {
           sts_mixer_stop_voice(mixer, i);
         } else {
-          left += sts_mixer__clamp_sample(sts_mixer__get_sample(&voice->stream->sample, position) * voice->gain);
-          right += sts_mixer__clamp_sample(sts_mixer__get_sample(&voice->stream->sample, position + 1) * voice->gain);
+          float l = sts_mixer__get_sample(&voice->stream->sample, position) * voice->gain;
+          float r = sts_mixer__get_sample(&voice->stream->sample, position + 1) * voice->gain;
+          left += mixer->no_clamp ? l : sts_mixer__clamp_sample(l);
+          right += mixer->no_clamp ? r : sts_mixer__clamp_sample(r);
           voice->position += (float)voice->stream->sample.frequency * advance;
         }
       }
@@ -342,8 +348,12 @@ void sts_mixer_mix_audio(sts_mixer_t* mixer, void* output, unsigned int samples)
 
     // write to buffer
     // NOTE: xsystem4 change: use mixer gain (not sure why this isn't implemented upstream...)
-    left = sts_mixer__clamp_sample(left * mixer->gain);
-    right = sts_mixer__clamp_sample(right * mixer->gain);
+    left *= mixer->gain;
+    right *= mixer->gain;
+    if (!mixer->no_clamp) {
+      left = sts_mixer__clamp_sample(left);
+      right = sts_mixer__clamp_sample(right);
+    }
     switch (mixer->audio_format) {
       case STS_MIXER_SAMPLE_FORMAT_8:
         *out_8++ = (char)(left * 127.0f);
