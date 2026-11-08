@@ -123,6 +123,11 @@ struct parts_features {
 	// top right, at x 1258) and the CG viewer's counter (a free box with
 	// origin 9, bottom right, at 1270,710) were drawn off the screen.
 	bool box_origin_layout;
+	// A parts' alpha clipper also masks its children, the nearest one up the
+	// chain as with native_compositing (parts_effective_alpha_clipper): the
+	// day change's rolling digits hang under a window whose clipper hides
+	// the old and new rows outside it, and were all drawn.
+	bool inherited_alpha_clipper;
 };
 
 // Other libraries.

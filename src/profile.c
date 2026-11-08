@@ -154,6 +154,7 @@ static const struct {
 			.immediate_parents = true,
 			.xy_rotation = true,
 			.box_origin_layout = true,
+			.inherited_alpha_clipper = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true,
 			.soft_limiter = true,

@@ -118,7 +118,7 @@ int parts_clip_area_transform(struct parts *parts, mat4 out)
  * a valid untextured mask still replaces the inherited one. */
 int parts_effective_alpha_clipper(struct parts *parts)
 {
-	if (!profile.parts.native_compositing)
+	if (!profile.parts.native_compositing && !profile.parts.inherited_alpha_clipper)
 		return parts->alpha_clipper_parts_no;
 	for (struct parts *p = parts; p; p = p->parent) {
 		struct parts *mask = p->alpha_clipper_parts_no
@@ -175,7 +175,7 @@ static void parts_render_texture(struct parts *parts, struct texture *texture, m
 	if (clip_area)
 		glUniformMatrix4fv(parts_shader.inv_clip_area_transform, 1, GL_FALSE, clip_area_inverse[0]);
 
-	if (profile.parts.native_compositing)
+	if (profile.parts.native_compositing || profile.parts.inherited_alpha_clipper)
 		alpha_clipper = parts_effective_alpha_clipper(parts);
 	struct parts *clipper = alpha_clipper ? parts_try_get(alpha_clipper) : NULL;
 	// A clipper without a texture has no alpha to sample (e.g. a
