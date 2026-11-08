@@ -413,6 +413,9 @@ enum mouse_pos_source mouse_peek_pos(int *x, int *y)
  * <ms> at XSYS4_AUTO_CLICK_X/Y (default 350,180), at most
  * XSYS4_AUTO_CLICK_COUNT times if that is given.
  */
+static void cursor_moved(uint32_t now);
+static void cursor_auto_hide(int type);
+
 enum auto_step_kind { AUTO_CLICK, AUTO_MOVE, AUTO_DOWN, AUTO_UP, AUTO_WHEEL, AUTO_KEY, AUTO_TEXT };
 
 // The text box's handlers (register_input_handler and the others below).
@@ -841,6 +844,8 @@ static void auto_input_sequence(uint32_t now)
 		auto_input.started = now;
 		break;
 	case AUTO_MOVE:
+		// As a mouse move: it shows a cursor the settings hid.
+		cursor_moved(now);
 		if (s->ms) {
 			mouse_peek_pos(&auto_input.from_x, &auto_input.from_y);
 			auto_input.busy = true;
@@ -866,6 +871,7 @@ static void auto_input_sequence(uint32_t now)
 	case AUTO_KEY:
 		// The key alone: the pointer stays where it is.
 		key_state[s->key] = true;
+		cursor_auto_hide(1);
 		if (key_handler)
 			key_handler(s->key);
 		auto_input.busy = true;
@@ -1027,9 +1033,73 @@ void mouse_clear_wheel(void)
 	wheel_dir = 0;
 }
 
+/*
+ * The cursor is hidden for two reasons, kept apart: the game asked
+ * (HideCursorByGame), or the settings' input page did (rows with
+ * profile.hll.mouse_cursor_configs, three check boxes): 0 hides a cursor that
+ * has not moved for CURSOR_IDLE_MS, 1 hides it on keyboard input, 2 hides it
+ * when a message is stepped (IbisInputEngine.Mouse_HideByStepMessage, called
+ * at the end of each key wait). A settings' hide lasts until the mouse moves;
+ * the key and step hides come at most once a second. As in 母爛漫's engine
+ * (its cursor manager, FUN_00497a70 and its callers: the idle time 0xbb8 is
+ * set at 0x49796f, the key and step hides wait 1000 ms since the last).
+ */
+#define CURSOR_IDLE_MS 3000
+#define CURSOR_REHIDE_MS 1000
+static bool cursor_hidden_by_game, cursor_auto_hidden;
+static uint32_t cursor_last_motion, cursor_last_hide;
+
+static bool cursor_apply(void)
+{
+	bool show = !cursor_hidden_by_game && !cursor_auto_hidden;
+	return SDL_ShowCursor(show ? SDL_ENABLE : SDL_DISABLE) >= 0;
+}
+
 bool mouse_show_cursor(bool show)
 {
-	return SDL_ShowCursor(show ? SDL_ENABLE : SDL_DISABLE) >= 0;
+	cursor_hidden_by_game = !show;
+	return cursor_apply();
+}
+
+bool mouse_is_cursor_hidden_by_game(void)
+{
+	return cursor_hidden_by_game;
+}
+
+static void cursor_auto_hide(int type)
+{
+	if (cursor_auto_hidden || !profile.hll.mouse_cursor_configs || !mouse_cursor_config_get(type))
+		return;
+	uint32_t now = SDL_GetTicks();
+	if (type != 0) {
+		if (cursor_last_hide && now - cursor_last_hide < CURSOR_REHIDE_MS)
+			return;
+		cursor_last_hide = now;
+	}
+	cursor_auto_hidden = true;
+	cursor_apply();
+}
+
+void mouse_hide_cursor_by_step_message(void)
+{
+	cursor_auto_hide(2);
+}
+
+static void cursor_moved(uint32_t now)
+{
+	cursor_last_motion = now;
+	if (cursor_auto_hidden) {
+		cursor_auto_hidden = false;
+		cursor_apply();
+	}
+}
+
+static void cursor_update(uint32_t now)
+{
+	if (!cursor_last_motion)
+		cursor_last_motion = now;
+	if (!cursor_auto_hidden && now - cursor_last_motion >= CURSOR_IDLE_MS)
+		cursor_auto_hide(0);
 }
 
 static void key_event(SDL_KeyboardEvent *e, bool pressed)
@@ -1645,6 +1715,8 @@ void handle_events(void)
 	if (close_confirm && !quit_signals_watched)
 		quit_signals_watched = watch_quit_signals();
 
+	cursor_update(now_ms);
+
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		switch (e.type) {
@@ -1667,6 +1739,8 @@ void handle_events(void)
 					screenshot_save();
 				}
 			}
+			if (!e.key.repeat)
+				cursor_auto_hide(1);
 			// fallthrough
 		case SDL_KEYUP:
 #ifdef __ANDROID__
@@ -1687,6 +1761,7 @@ void handle_events(void)
 			break;
 		case SDL_MOUSEMOTION:
 			pointer_real_event(e.motion.timestamp, true);
+			cursor_moved(SDL_GetTicks());
 			break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEBUTTONDOWN:

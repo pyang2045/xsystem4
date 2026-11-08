@@ -441,8 +441,8 @@ static bool SystemService_GetWindowSetting(int type, int *value)
 // SetHideKeyOrJoypadInputMouseCursor, SetHideStepMessageMouseCursor): a type
 // that is refused unchecks its box at once. The original of that game takes
 // exactly these three types, keeps a flag for each (all start as 0), returns
-// 0 or 1 and refuses any other type. The values are only kept, the cursor is
-// never hidden. They last across restarts in MouseCursor.sav in the save folder
+// 0 or 1 and refuses any other type. src/input.c hides the cursor by them
+// (mouse_cursor_config_get). They last across restarts in MouseCursor.sav in the save folder
 // (a port's file: the original has a settings file of its own for them; the
 // scripts do not set them again at the start). Engines before v14 keep the one
 // type they had.
@@ -484,6 +484,14 @@ static void mouse_cursor_config_save(void)
 static int nr_mouse_cursor_config(void)
 {
 	return profile.hll.mouse_cursor_configs ? NR_MOUSE_CURSOR_CONFIG : 1;
+}
+
+bool mouse_cursor_config_get(int type)
+{
+	if (type < 0 || type >= nr_mouse_cursor_config())
+		return false;
+	mouse_cursor_config_load();
+	return mouse_cursor_config[type];
 }
 
 static bool SystemService_SetMouseCursorConfig(int type, int value)

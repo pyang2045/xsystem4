@@ -177,6 +177,12 @@ bool input_stage2_trace(void);
 void mouse_get_wheel(int *forward, int *back);
 void mouse_clear_wheel(void);
 bool mouse_show_cursor(bool show);
+bool mouse_is_cursor_hidden_by_game(void);
+// The settings' cursor hiding (SystemService's mouse cursor configs, rows with
+// profile.hll.mouse_cursor_configs): type 2 hides it as a message is stepped.
+void mouse_hide_cursor_by_step_message(void);
+// SystemService: the value of a mouse cursor config, false for a bad type.
+bool mouse_cursor_config_get(int type);
 void register_input_handler(void(*handler)(const char*));
 void clear_input_handler(void);
 void register_editing_handler(void(*handler)(const char*, int, int));

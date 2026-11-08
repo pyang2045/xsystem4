@@ -30,8 +30,16 @@ bool IbisInputEngine_Mouse_HideCursorByGame(bool hide)
 }
 
 //bool Mouse_IsHideCursorByGame(void);
-//void Mouse_HideByStepMessage(void);
-HLL_QUIET_UNIMPLEMENTED(, void, IbisInputEngine, Mouse_HideByStepMessage);
+static bool IbisInputEngine_Mouse_IsHideCursorByGame(void)
+{
+	return mouse_is_cursor_hidden_by_game();
+}
+
+// The end of each key wait: the settings' "hide it when a message is stepped".
+static void IbisInputEngine_Mouse_HideByStepMessage(void)
+{
+	mouse_hide_cursor_by_step_message();
+}
 
 static void IbisInputEngine_Joystick_ClearCaptureFlag(void)
 {
@@ -55,7 +63,7 @@ HLL_LIBRARY(IbisInputEngine,
 	    HLL_EXPORT(Mouse_GetPos, sact_Mouse_GetPos),
 	    HLL_EXPORT(Mouse_MovePosImmediately, IbisInputEngine_Mouse_MovePosImmediately),
 	    HLL_EXPORT(Mouse_HideCursorByGame, IbisInputEngine_Mouse_HideCursorByGame),
-	    HLL_TODO_EXPORT(Mouse_IsHideCursorByGame, IbisInputEngine_Mouse_IsHideCursorByGame),
+	    HLL_EXPORT(Mouse_IsHideCursorByGame, IbisInputEngine_Mouse_IsHideCursorByGame),
 	    HLL_EXPORT(Mouse_HideByStepMessage, IbisInputEngine_Mouse_HideByStepMessage),
 	    HLL_EXPORT(MouseWheel_ClearCount, mouse_clear_wheel),
 	    HLL_EXPORT(MouseWheel_GetCount, mouse_get_wheel),
