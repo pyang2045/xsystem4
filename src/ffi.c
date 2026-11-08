@@ -1421,7 +1421,7 @@ void init_libraries(void)
 	library_run_all("_PreLink");
 	link_libraries();
 	library_run_all("_PostLink");
-	const char *report = getenv("XSYS4_LINK_REPORT");
+	const char *report = dev_getenv("XSYS4_LINK_REPORT");
 	if (report)
 		write_link_report(report);
 	const char *called = dev_getenv("XSYS4_HLL_CALLED");
