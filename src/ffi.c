@@ -1425,7 +1425,8 @@ void init_libraries(void)
 	if (report)
 		write_link_report(report);
 	const char *called = dev_getenv("XSYS4_HLL_CALLED");
-	if (called && !(hll_called_file = fopen(called, "w")))
+	// Once: a game reset (after an ending) runs this again.
+	if (called && !hll_called_file && !(hll_called_file = fopen(called, "w")))
 		WARNING("Can't write %s", called);
 	library_run_all("_ModuleInit");
 	libraries_initialized = true;
