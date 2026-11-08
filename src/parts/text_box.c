@@ -98,6 +98,24 @@ struct parts *parts_text_box_focused(void)
 	return parts;
 }
 
+// The bytes of the character at p in the game's charset.
+static int game_char_len(const char *p)
+{
+	unsigned char c = *p;
+	int n = 1;
+	if (game_charset_is_utf8())
+		n = c >= 0xf0 ? 4 : c >= 0xe0 ? 3 : c >= 0xc0 ? 2 : 1;
+	else if (game_charset_is_gbk())
+		n = c >= 0x81 ? 2 : 1;
+	else if (SJIS_2BYTE(c))
+		n = 2;
+	for (int i = 1; i < n; i++) {
+		if (!p[i])
+			return i;
+	}
+	return n;
+}
+
 static void on_text(const char *utf8)
 {
 	struct parts *parts = parts_text_box_focused();
@@ -107,9 +125,7 @@ static void on_text(const char *utf8)
 	char *game = utf8_to_game(utf8, 0);
 	// One character at a time, so that 最大文字数 cuts between characters.
 	for (const char *p = game; *p; ) {
-		int n = SJIS_2BYTE(*p) && p[1] ? 2 : 1;
-		if (game_charset_is_gbk())
-			n = ((unsigned char)*p >= 0x81 && p[1]) ? 2 : 1;
+		int n = game_char_len(p);
 		if (tb->max_chars > 0 && mbcs_count_char(tb->text->text) >= tb->max_chars)
 			break;
 		string_append_cstr(&tb->text, p, n);
@@ -150,7 +166,7 @@ static void on_key(int code)
 	if (tb->editing && tb->editing->size)
 		return;
 	if (code == VK_BACK && tb->text->size) {
-		game_charset_is_gbk() ? string_pop_back(&tb->text) : string_pop_back_sjis(&tb->text);
+		string_pop_back(&tb->text);
 		text_box_redraw(parts);
 	} else if (code == VK_RETURN) {
 		text_box_unfocus();

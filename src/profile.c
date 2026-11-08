@@ -122,6 +122,7 @@ static const struct {
 			.layers_by_position = true,
 			.save_activity_fields = true,
 			.movies_in_update = true,
+			.text_box = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true },
 		.lang = { .no_method_empty_delegate = true },

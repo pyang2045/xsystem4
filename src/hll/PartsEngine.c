@@ -2284,6 +2284,40 @@ static void v7_postlink(int libno)
 	pe_activity_prelink();
 }
 
+/* An activity's text box (text_box.c, profile.parts.text_box): the save
+ * confirmation's comment. SetFocus is the v7 one, which gives it the
+ * keyboard; get_text is the declaration's GetTextBoxText. */
+static void register_text_box(void *get_text)
+{
+	if (!profile.parts.text_box)
+		return;
+	static_library_register(&lib_PartsEngine, "IsFocus", parts_text_box_is_focus);
+	static_library_register(&lib_PartsEngine, "GetTextBoxText", get_text);
+	static_library_register(&lib_PartsEngine, "SetTextBoxText", parts_text_box_set_text);
+	static_library_register(&lib_PartsEngine, "SetTextBoxReadOnly", parts_text_box_set_read_only);
+	static_library_register(&lib_PartsEngine, "IsTextBoxReadOnly", parts_text_box_is_read_only);
+	static_library_register(&lib_PartsEngine, "SetTextBoxMaxTextLength",
+			parts_text_box_set_max_chars);
+	static_library_register(&lib_PartsEngine, "GetTextBoxMaxTextLength",
+			parts_text_box_get_max_chars);
+}
+
+/* ain v7 妻みぐい３: GetTextBoxText(Number, ref string Text). */
+static void PE_v7_GetTextBoxText(int parts_no, struct string **text)
+{
+	if (*text)
+		free_string(*text);
+	*text = parts_text_box_get_text(parts_no);
+}
+
+/* ain v7 activities alone (v8 runs v7_postlink and binds its own text box
+ * functions): コメント編集 of C_SAVE_CONFIRM. */
+static void v7_only_postlink(int libno)
+{
+	v7_postlink(libno);
+	register_text_box(PE_v7_GetTextBoxText);
+}
+
 /* No argument by reference: the ain v7 and v14 declarations of such a function
  * pass the same values. */
 static bool by_value_declaration(const struct ain_hll_function *f)
@@ -2322,19 +2356,8 @@ static void v8_postlink(int libno)
 	static_library_register(&lib_PartsEngine, "GetComponentDrawFilter", PE_GetPartsDrawFilter);
 	static_library_register(&lib_PartsEngine, "GetComponentAlphaClipper",
 			PE_GetPartsAlphaClipperPartsNumber);
-	// テキストボックス：コメント編集 of the save confirmation (text_box.c);
-	// SetFocus is the v7 one, which gives it the keyboard.
-	if (profile.parts.text_box) {
-		static_library_register(&lib_PartsEngine, "IsFocus", parts_text_box_is_focus);
-		static_library_register(&lib_PartsEngine, "GetTextBoxText", parts_text_box_get_text);
-		static_library_register(&lib_PartsEngine, "SetTextBoxText", parts_text_box_set_text);
-		static_library_register(&lib_PartsEngine, "SetTextBoxReadOnly", parts_text_box_set_read_only);
-		static_library_register(&lib_PartsEngine, "IsTextBoxReadOnly", parts_text_box_is_read_only);
-		static_library_register(&lib_PartsEngine, "SetTextBoxMaxTextLength",
-				parts_text_box_set_max_chars);
-		static_library_register(&lib_PartsEngine, "GetTextBoxMaxTextLength",
-				parts_text_box_get_max_chars);
-	}
+	// テキストボックス：コメント編集 of the save confirmation.
+	register_text_box(parts_text_box_get_text);
 }
 
 const struct parts_bindings parts_bindings_v14 = {
@@ -2344,7 +2367,7 @@ const struct parts_bindings parts_bindings_v14 = {
 };
 
 const struct parts_bindings parts_bindings_v7 = {
-	.postlink = v7_postlink,
+	.postlink = v7_only_postlink,
 };
 
 const struct parts_bindings parts_bindings_v8 = {
