@@ -711,6 +711,35 @@ void PE_SetMessageWindowTextFont(int parts_no, int type, int size,
 	message_window_rebuild(parts);
 }
 
+/* GetMessageWindowTextFont (ain v8): what SetMessageWindowTextFont stored;
+ * CMessageTextView@GetTextFontColorList reads it when a window is saved. */
+void PE_GetMessageWindowTextFont(int parts_no, int *type, int *size,
+		int *r, int *g, int *b, float *bold_weight,
+		int *edge_r, int *edge_g, int *edge_b, float *edge_weight)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	struct parts_message_window *mw = parts ? parts->message : NULL;
+	struct text_style ts = mw ? mw->text.ts : (struct text_style){0};
+	*type = ts.face;
+	*size = ts.size;
+	*r = ts.color.r;
+	*g = ts.color.g;
+	*b = ts.color.b;
+	*bold_weight = ts.bold_weight;
+	*edge_r = ts.edge_color.r;
+	*edge_g = ts.edge_color.g;
+	*edge_b = ts.edge_color.b;
+	*edge_weight = mw ? mw->font_edge_weight : 0.0f;
+}
+
+void PE_GetMessageWindowTextSpace(int parts_no, int *letter_space, int *line_space)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	struct parts_message_window *mw = parts ? parts->message : NULL;
+	*letter_space = mw ? mw->text.ts.font_spacing : 0;
+	*line_space = mw ? mw->text.line_space : 0;
+}
+
 void PE_SetMessageWindowTextSpace(int parts_no, int letter_space, int line_space)
 {
 	struct parts *parts = parts_get(parts_no);

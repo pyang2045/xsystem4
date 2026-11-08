@@ -2358,6 +2358,51 @@ static void v8_postlink(int libno)
 			PE_GetPartsAlphaClipperPartsNumber);
 	// テキストボックス：コメント編集 of the save confirmation.
 	register_text_box(parts_text_box_get_text);
+	// What ■Ｐ＿設定コピー reads back from a template and sets on the copy.
+	struct { const char *name; void *fun; } v8[] = {
+		{ "GetComponentSpeedupRateByMessageSkip", PE_GetComponentSpeedupRateByMessageSkip },
+		{ "SetComponentTextureFilterType", PE_SetComponentTextureFilterType },
+		{ "GetComponentTextureFilterType", PE_GetComponentTextureFilterType },
+		{ "SetComponentMipmap", PE_SetComponentMipmap },
+		{ "IsComponentMipmap", PE_IsComponentMipmap },
+		{ "Parts_SetResetTimerByChangeInputStatus", PE_SetResetTimerByChangeInputStatus },
+		{ "Parts_GetResetTimerByChangeInputStatus", PE_GetResetTimerByChangeInputStatus },
+		{ "Parts_SetPosForRate", PE_SetPosForRate },
+		{ "Parts_IsPosForRate", PE_IsPosForRate },
+		{ "Parts_SetUpdateLookAtPos", PE_SetUpdateLookAtPos },
+		{ "Parts_IsUpdateLookAtPos", PE_IsUpdateLookAtPos },
+		{ "Parts_GetPartsDrag", PE_GetPartsDrag },
+		{ "SetButtonText", PE_SetButtonText },
+		{ "GetButtonText", PE_GetButtonText },
+		{ "SetButtonFontProperty", PE_SetButtonFontProperty },
+		{ "GetButtonFontProperty", PE_GetButtonFontProperty },
+		{ "SetButtonTextOriginPosMode", PE_SetButtonTextOriginPosMode },
+		{ "GetButtonTextOriginPosMode", PE_GetButtonTextOriginPosMode },
+		{ "SetButtonCharSpace", PE_SetButtonCharSpace },
+		{ "GetButtonCharSpace", PE_GetButtonCharSpace },
+		{ "SetButtonLineSpace", PE_SetButtonLineSpace },
+		{ "GetButtonLineSpace", PE_GetButtonLineSpace },
+		{ "SetButtonColor", PE_SetButtonColor },
+		{ "GetButtonR", PE_GetButtonR },
+		{ "GetButtonG", PE_GetButtonG },
+		{ "GetButtonB", PE_GetButtonB },
+		{ "SetButtonSize", PE_SetButtonSize },
+		{ "SetButtonFlatName", PE_SetButtonFlatName },
+		{ "GetButtonFlatName", PE_GetButtonFlatName },
+		// A shake (CASTaskParts@SetVibrationEvent).
+		{ "SetComponentVibrationPos", PE_SetComponentVibrationPos },
+		// The survey's labels and a layout box's items.
+		{ "ClearChild", PE_ClearChild },
+		{ "RemoveChild", PE_RemoveChild },
+		{ "SetLockInputState", PE_SetLockInputState },
+		{ "IsLockInputState", PE_IsLockInputState },
+		// Read when a message window is saved.
+		{ "GetMessageWindowTextFont", PE_GetMessageWindowTextFont },
+		{ "GetMessageWindowTextSpace", PE_GetMessageWindowTextSpace },
+		{ "GetMessageWindowTextArea", PE_GetMessageWindowTextArea },
+	};
+	for (size_t i = 0; i < sizeof(v8) / sizeof(v8[0]); i++)
+		static_library_register(&lib_PartsEngine, v8[i].name, v8[i].fun);
 }
 
 const struct parts_bindings parts_bindings_v14 = {

@@ -149,6 +149,48 @@ void PE_SetPartsOriginPosMode(int parts_no, int origin_pos_mode);
 int PE_GetPartsOriginPosMode(int parts_no);
 void PE_SetParentPartsNumber(int parts_no, int parent_parts_no);
 void PE_InsertChild(int parts_no, int index, int child_parts_no);
+// ain v8 (parts.c, message_window.c)
+int PE_GetComponentSpeedupRateByMessageSkip(int parts_no);
+void PE_SetComponentTextureFilterType(int parts_no, int type);
+int PE_GetComponentTextureFilterType(int parts_no);
+void PE_SetComponentMipmap(int parts_no, bool mipmap);
+bool PE_IsComponentMipmap(int parts_no);
+void PE_SetResetTimerByChangeInputStatus(int parts_no, bool reset, int state);
+bool PE_GetResetTimerByChangeInputStatus(int parts_no, int state);
+void PE_SetPosForRate(int parts_no, bool rate);
+bool PE_IsPosForRate(int parts_no);
+void PE_SetUpdateLookAtPos(int parts_no, bool enable);
+bool PE_IsUpdateLookAtPos(int parts_no);
+void PE_SetLockInputState(int parts_no, bool lock);
+bool PE_IsLockInputState(int parts_no);
+bool PE_GetPartsDrag(int parts_no);
+void PE_SetComponentVibrationPos(int parts_no, float x, float y);
+void PE_ClearChild(int parts_no);
+void PE_RemoveChild(int parts_no, int child_no);
+void PE_SetButtonText(int parts_no, struct string *text);
+struct string *PE_GetButtonText(int parts_no);
+void PE_SetButtonFontProperty(int parts_no, int type, int size, int r, int g, int b,
+		float bold, int edge_r, int edge_g, int edge_b, float edge);
+void PE_GetButtonFontProperty(int parts_no, int *type, int *size, int *r, int *g, int *b,
+		float *bold, int *edge_r, int *edge_g, int *edge_b, float *edge);
+void PE_SetButtonTextOriginPosMode(int parts_no, int mode);
+int PE_GetButtonTextOriginPosMode(int parts_no);
+void PE_SetButtonCharSpace(int parts_no, int space);
+int PE_GetButtonCharSpace(int parts_no);
+void PE_SetButtonLineSpace(int parts_no, int space);
+int PE_GetButtonLineSpace(int parts_no);
+void PE_SetButtonColor(int parts_no, int r, int g, int b);
+int PE_GetButtonR(int parts_no);
+int PE_GetButtonG(int parts_no);
+int PE_GetButtonB(int parts_no);
+void PE_SetButtonSize(int parts_no, int w, int h);
+void PE_SetButtonFlatName(int parts_no, struct string *name);
+struct string *PE_GetButtonFlatName(int parts_no);
+void PE_GetMessageWindowTextFont(int parts_no, int *type, int *size,
+		int *r, int *g, int *b, float *bold_weight,
+		int *edge_r, int *edge_g, int *edge_b, float *edge_weight);
+void PE_GetMessageWindowTextSpace(int parts_no, int *letter_space, int *line_space);
+
 void parts_text_box_set_focus(int parts_no);
 bool parts_text_box_is_focus(int parts_no);
 struct string *parts_text_box_get_text(int parts_no);

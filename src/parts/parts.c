@@ -82,6 +82,7 @@ static void parts_init(struct parts *parts)
 	parts->pending_index = -1;
 	parts->linked_to = -1;
 	parts->linked_from = -1;
+	parts->props.speedup_rate = 1;
 	TAILQ_INIT(&parts->children);
 	TAILQ_INIT(&parts->motion);
 }
@@ -551,8 +552,8 @@ void parts_recalculate_hitbox(struct parts *parts)
 Point parts_placed_pos(const struct parts *parts)
 {
 	return (Point) {
-		parts->local.pos.x + parts->layout_offset.x,
-		parts->local.pos.y + parts->layout_offset.y
+		parts->local.pos.x + parts->layout_offset.x + parts->vibration.x,
+		parts->local.pos.y + parts->layout_offset.y + parts->vibration.y
 	};
 }
 
@@ -1767,6 +1768,7 @@ void parts_release(int parts_no)
 	parts_list_remove(parts);
 	dirty_list_remove(parts);
 	free(parts->user_component_name);
+	free(parts->props.button_flat);
 	free(parts->button_cg_name);
 	for (int i = 0; i < PARTS_NR_SOUND_NAMES; i++) {
 		if (parts->sound_names[i])
@@ -2970,14 +2972,14 @@ float PE_GetPartsMagY(int parts_no)
 // v14 draws them (parts_rotate_xy); the engines before it store them only.
 void PE_SetPartsRotateX(int parts_no, float rot_x)
 {
-	if (!profile.parts.native_transforms)
+	if (!profile.parts.native_transforms && !profile.parts.xy_rotation)
 		UNIMPLEMENTED("(%d, %f)", parts_no, rot_x);
 	parts_set_rotation_x(parts_get(parts_no), rot_x);
 }
 
 void PE_SetPartsRotateY(int parts_no, float rot_y)
 {
-	if (!profile.parts.native_transforms)
+	if (!profile.parts.native_transforms && !profile.parts.xy_rotation)
 		UNIMPLEMENTED("(%d, %f)", parts_no, rot_y);
 	parts_set_rotation_y(parts_get(parts_no), rot_y);
 }
@@ -3338,10 +3340,13 @@ bool PE_IsExist(int parts_no)
 	return !!ht_get_int(parts_table, parts_no, NULL);
 }
 
+/* Stored for GetComponentSpeedupRateByMessageSkip (ain v8): what the rate
+ * does while messages are skipped is not known, so it changes nothing. */
 void PE_SetSpeedupRateByMessageSkip(int parts_no, int rate)
 {
-	if (rate != 1)
-		UNIMPLEMENTED("(%d, %d)");
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.speedup_rate = rate;
 }
 
 // 0x546070 -> 0x5336f0 reads the rate of the parts' component; here it stays 1.
@@ -3721,3 +3726,267 @@ bool PE_ReleaseParts3DLayerPluginID(int parts_no, int state)
 #include "classic/parts.h"
 #include "v14/parts.h"
 #include "v7/parts.h"
+
+/*
+ * ain v8 (は～とふるママン): properties ■Ｐ＿設定コピー reads from a template
+ * and gives to the widget made from it (parts->props), the shake offset and
+ * the children's release. Bound in v8_postlink.
+ */
+int PE_GetComponentSpeedupRateByMessageSkip(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts ? parts->props.speedup_rate : 1;
+}
+
+void PE_SetComponentTextureFilterType(int parts_no, int type)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.texture_filter = type;
+}
+
+int PE_GetComponentTextureFilterType(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts ? parts->props.texture_filter : 0;
+}
+
+void PE_SetComponentMipmap(int parts_no, bool mipmap)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.mipmap = mipmap;
+}
+
+bool PE_IsComponentMipmap(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->props.mipmap;
+}
+
+// State is 1-based, as in the other per-state functions.
+void PE_SetResetTimerByChangeInputStatus(int parts_no, bool reset, int state)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts && parts_state_valid(--state))
+		parts->props.reset_timer[state] = reset;
+}
+
+bool PE_GetResetTimerByChangeInputStatus(int parts_no, int state)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts_state_valid(--state) && parts->props.reset_timer[state];
+}
+
+void PE_SetPosForRate(int parts_no, bool rate)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.pos_for_rate = rate;
+}
+
+bool PE_IsPosForRate(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->props.pos_for_rate;
+}
+
+void PE_SetUpdateLookAtPos(int parts_no, bool enable)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.update_look_at = enable;
+}
+
+bool PE_IsUpdateLookAtPos(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->props.update_look_at;
+}
+
+void PE_SetLockInputState(int parts_no, bool lock)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.lock_input = lock;
+}
+
+bool PE_IsLockInputState(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->props.lock_input;
+}
+
+bool PE_GetPartsDrag(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->draggable;
+}
+
+void PE_SetComponentVibrationPos(int parts_no, float x, float y)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (!parts)
+		return;
+	Point v = { (int)lroundf(x), (int)lroundf(y) };
+	if (v.x == parts->vibration.x && v.y == parts->vibration.y)
+		return;
+	parts->vibration = v;
+	parts_recalculate_hitbox(parts);
+	parts_update_global_pos(parts, parts->parent ? &parts->parent->global : NULL);
+	parts_dirty(parts);
+}
+
+/* ClearChild (Ｐ＿子全解放) and RemoveChild (Ｐ＿子解放): the children are
+ * released, as Release does each (the survey's labels, a layout box's
+ * items). */
+void PE_ClearChild(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (!parts)
+		return;
+	struct parts *child;
+	while ((child = TAILQ_FIRST(&parts->children)))
+		parts_release(child->no);
+}
+
+void PE_RemoveChild(int parts_no, int child_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	struct parts *child = parts_try_get(child_no);
+	if (parts && child && child->parent == parts)
+		parts_release(child_no);
+}
+
+/* The button's text and look (ボタン), kept with its text style
+ * (parts_button_text); the game's buttons have no text, so nothing new is
+ * drawn. */
+void PE_SetButtonText(int parts_no, struct string *text)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts) {
+		parts_button_text_set(parts, text->text);
+		parts_dirty(parts);
+	}
+}
+
+struct string *PE_GetButtonText(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	const char *t = parts && parts->button_text && parts->button_text->text
+		? parts->button_text->text : "";
+	return make_string(t, strlen(t));
+}
+
+void PE_SetButtonFontProperty(int parts_no, int type, int size, int r, int g, int b,
+		float bold, int edge_r, int edge_g, int edge_b, float edge)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (!parts)
+		return;
+	parts_get_button_text(parts)->font = (struct parts_widget_font) {
+		.type = type, .size = size, .r = r, .g = g, .b = b, .bold = bold,
+		.edge = edge, .edge_r = edge_r, .edge_g = edge_g, .edge_b = edge_b,
+	};
+	parts_dirty(parts);
+}
+
+void PE_GetButtonFontProperty(int parts_no, int *type, int *size, int *r, int *g, int *b,
+		float *bold, int *edge_r, int *edge_g, int *edge_b, float *edge)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	struct parts_widget_font f = {0};
+	if (parts && parts->button_text)
+		f = parts->button_text->font;
+	*type = f.type; *size = f.size; *r = f.r; *g = f.g; *b = f.b; *bold = f.bold;
+	*edge_r = f.edge_r; *edge_g = f.edge_g; *edge_b = f.edge_b; *edge = f.edge;
+}
+
+void PE_SetButtonTextOriginPosMode(int parts_no, int mode)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts_get_button_text(parts)->text_pos = mode;
+}
+
+int PE_GetButtonTextOriginPosMode(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->button_text ? parts->button_text->text_pos : 0;
+}
+
+void PE_SetButtonCharSpace(int parts_no, int space)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts_get_button_text(parts)->char_space = space;
+}
+
+int PE_GetButtonCharSpace(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->button_text ? parts->button_text->char_space : 0;
+}
+
+void PE_SetButtonLineSpace(int parts_no, int space)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts_get_button_text(parts)->line_space = space;
+}
+
+int PE_GetButtonLineSpace(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts && parts->button_text ? parts->button_text->line_space : 0;
+}
+
+void PE_SetButtonColor(int parts_no, int r, int g, int b)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts)
+		parts->props.button_color = (SDL_Color){ r, g, b, 255 };
+}
+
+int PE_GetButtonR(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts ? parts->props.button_color.r : 0;
+}
+
+int PE_GetButtonG(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts ? parts->props.button_color.g : 0;
+}
+
+int PE_GetButtonB(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	return parts ? parts->props.button_color.b : 0;
+}
+
+void PE_SetButtonSize(int parts_no, int w, int h)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (parts) {
+		parts->props.button_w = w;
+		parts->props.button_h = h;
+	}
+}
+
+void PE_SetButtonFlatName(int parts_no, struct string *name)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	if (!parts)
+		return;
+	free(parts->props.button_flat);
+	parts->props.button_flat = name->size ? xstrdup(name->text) : NULL;
+}
+
+struct string *PE_GetButtonFlatName(int parts_no)
+{
+	struct parts *parts = parts_try_get(parts_no);
+	const char *n = parts && parts->props.button_flat ? parts->props.button_flat : "";
+	return make_string(n, strlen(n));
+}

@@ -139,7 +139,8 @@ static void parts_render_texture(struct parts *parts, struct texture *texture, m
 	// through the original's camera (parts_perspective), and its back is
 	// not drawn (parts_box_faces_away); without depth the projection would
 	// change nothing and is left out.
-	bool use_persp = profile.parts.native_transforms && !parts_matrix_is_flat(mw_transform);
+	bool use_persp = (profile.parts.native_transforms || profile.parts.xy_rotation)
+		&& !parts_matrix_is_flat(mw_transform);
 	if (use_persp && parts_box_faces_away(mw_transform))
 		return;
 	mat4 wv_transform = WV_TRANSFORM(config.view_width, config.view_height);

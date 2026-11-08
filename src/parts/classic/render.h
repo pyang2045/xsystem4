@@ -35,8 +35,12 @@ void classic_anchor_transform(struct parts *parts, float angle, bool rotate_scal
 	parts_reverse_scale(out, parts->global.reverse_lr != parts->local.reverse_lr,
 			parts->global.reverse_tb != parts->local.reverse_tb);
 	if (rotate_scale) {
-		// FIXME: need perspective for 3D rotate
 		glm_rotate_z(out, angle, out);
+		// The X and Y angles down the tree, as v14 turns them
+		// (parts_rotate_xy); the renderer then projects through the
+		// original's camera.
+		if (profile.parts.xy_rotation)
+			parts_rotate_xy(out, &parts->global);
 		glm_scale(out, (vec3){ parts->global.scale.x, parts->global.scale.y, 1.0 });
 	}
 	parts_reverse_scale(out, parts->local.reverse_lr, parts->local.reverse_tb);

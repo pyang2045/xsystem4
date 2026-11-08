@@ -111,6 +111,10 @@ struct parts_features {
 	// the update, the save confirmation's text box was left behind when its
 	// template was deleted, without a parent.
 	bool immediate_parents;
+	// SetComponentRotateX/Y turn the parts in depth through the original's
+	// camera (parts_rotate_xy, parts_perspective) with the classic
+	// transforms: C_DOT_PATTERN's tiles flip, CASTaskParts rotate events.
+	bool xy_rotation;
 };
 
 // Other libraries.

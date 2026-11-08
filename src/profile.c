@@ -152,8 +152,12 @@ static const struct {
 			.message_window_type = true,
 			.text_box = true,
 			.immediate_parents = true,
+			.xy_rotation = true,
 		},
-		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true },
+		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true,
+			// Its MsgSkip declares the v14 four (no Init): the original
+			// MsgSkip.msk with the ADV flags.
+			.msgskip_v14 = true },
 		// The legacy score fires on its SJIS script (54) and the config's
 		// sample message (a TrueType face) came out as GBK.
 		.lang = { .no_method_empty_delegate = true, .strings_are_sjis = true },

@@ -855,6 +855,25 @@ struct parts {
 	struct parts_radio_box *radio_box;
 	// An activity's テキストボックス (text_box.c); NULL for any other parts.
 	struct parts_text_box *text_box;
+	// Set by the script and read back by ■Ｐ＿設定コピー (ain v8), which copies
+	// them to a widget made from a template; they change nothing drawn here.
+	// Not saved.
+	struct {
+		int speedup_rate;              // SetComponentSpeedupRateByMessageSkip
+		int texture_filter;            // SetComponentTextureFilterType
+		bool mipmap;                   // SetComponentMipmap
+		bool reset_timer[PARTS_NR_STATES]; // Parts_SetResetTimerByChangeInputStatus
+		bool pos_for_rate;             // Parts_SetPosForRate
+		bool update_look_at;           // Parts_SetUpdateLookAtPos
+		bool lock_input;               // SetLockInputState
+		SDL_Color button_color;        // SetButtonColor
+		int button_w, button_h;        // SetButtonSize
+		char *button_flat;             // SetButtonFlatName
+	} props;
+	// SetComponentVibrationPos: added to the placed position, so the parts
+	// and its subtree shake (CASTaskParts@SetVibrationEvent). Not saved: a
+	// shake ends with (0, 0).
+	Point vibration;
 };
 
 #define PARTS_LIST_FOREACH(iter) TAILQ_FOREACH(iter, &parts_list, parts_list_entry)
