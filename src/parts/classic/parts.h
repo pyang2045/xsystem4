@@ -220,6 +220,7 @@ static void classic_set_parent(int parts_no, int parent_parts_no)
 {
 	struct parts *parts = parts_get(parts_no);
 	parts->pending_parent = parent_parts_no;
+	parts->pending_index = -1;
 	parts_component_dirty(parts);
 }
 

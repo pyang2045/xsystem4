@@ -770,6 +770,9 @@ struct parts {
 	struct string *sound_names[PARTS_NR_SOUND_NAMES];
 	int origin_mode;
 	int pending_parent;
+	// InsertChild's place among pending_parent's children, -1 for the end
+	// (where SetParent and AddChild put it). Taken with pending_parent.
+	int pending_index;
 	int linked_to;
 	int linked_from;
 	// v14: is_hovered is the original's +0x1ac (the cursor walk entered the

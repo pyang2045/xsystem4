@@ -2316,6 +2316,7 @@ static void v8_postlink(int libno)
 	static_library_register(&lib_PartsEngine, "GetTextPartsText", PE_GetTextPartsText);
 	static_library_register(&lib_PartsEngine, "Parts_GetTextPos", PE_GetTextPos);
 	static_library_register(&lib_PartsEngine, "Parts_SetTextPos", PE_SetTextPos);
+	static_library_register(&lib_PartsEngine, "InsertChild", PE_InsertChild);
 }
 
 const struct parts_bindings parts_bindings_v14 = {

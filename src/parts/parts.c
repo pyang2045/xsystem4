@@ -79,6 +79,7 @@ static void parts_init(struct parts *parts)
 	parts->on_click_sound = -1;
 	parts->origin_mode = 1;
 	parts->pending_parent = -1;
+	parts->pending_index = -1;
 	parts->linked_to = -1;
 	parts->linked_from = -1;
 	TAILQ_INIT(&parts->children);
@@ -1916,7 +1917,18 @@ void PE_UpdateComponent(possibly_unused int passed_time)
 				TAILQ_REMOVE(&parts->parent->children, parts, child_list_entry);
 			}
 			parts->parent = parent;
-			TAILQ_INSERT_TAIL(&parent->children, parts, child_list_entry);
+			struct parts *at = NULL;
+			if (parts->pending_index >= 0) {
+				int i = 0;
+				PARTS_FOREACH_CHILD(at, parent) {
+					if (i++ == parts->pending_index)
+						break;
+				}
+			}
+			if (at)
+				TAILQ_INSERT_BEFORE(at, parts, child_list_entry);
+			else
+				TAILQ_INSERT_TAIL(&parent->children, parts, child_list_entry);
 			if (profile.parts.child_takes_parent_controller
 					&& parent->controller_no != parts->controller_no)
 				parts_set_controller(parts, parent->controller_no);
@@ -1931,6 +1943,7 @@ void PE_UpdateComponent(possibly_unused int passed_time)
 		// TODO: should the child be orphaned if it already has a parent and an invalid
 		//       parent no is given?
 		parts->pending_parent = -1;
+		parts->pending_index = -1;
 
 		// don't do anything here if parent is dirty
 		if (parts_has_dirty_parent(parts))
@@ -2862,6 +2875,21 @@ static void parts_set_controller(struct parts *parts, int controller_no)
 void PE_SetParentPartsNumber(int parts_no, int parent_parts_no)
 {
 	profile.parts.widgets->set_parent(parts_no, parent_parts_no);
+}
+
+/* void InsertChild(int Number, int Index, int ChildNumber): as AddChild, but
+ * the child goes before the parts' Index-th child (the end when there is no
+ * such child). ■Ｐ＿親コピー puts a copied widget where its template is. Taken
+ * at the next update with the parent: attaching now made ■Ｐ＿子コピー, which
+ * walks the children it copies into, go round for ever. */
+void PE_InsertChild(int parts_no, int index, int child_parts_no)
+{
+	if (!parts_try_get(parts_no) || !parts_try_get(child_parts_no))
+		return;
+	PE_SetParentPartsNumber(child_parts_no, parts_no);
+	struct parts *child = parts_get(child_parts_no);
+	if (child->pending_parent == parts_no)
+		child->pending_index = index < 0 ? -1 : index;
 }
 
 int PE_GetParentPartsNumber(int parts_no)
