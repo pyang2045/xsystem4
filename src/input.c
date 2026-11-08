@@ -378,7 +378,10 @@ enum mouse_pos_source mouse_peek_pos(int *x, int *y)
  *                            in include/input.h: 27 Esc, 32 space, 13
  *                            Return) for MS ms (default 100); the pointer
  *                            does not move; not the mouse buttons (1, 2, 4),
- *                            which have the steps above
+ *                            which have the steps above; a text box with
+ *                            the focus gets it as a real press
+ *   text,T,STRING            the text an input method commits (UTF-8, no
+ *                            ',' or ';'), to a text box with the focus
  * The steps run in their order: a step starts at its T, or when the one
  * before it is over if that is later (a click when its button is up again,
  * a move with MS when it has arrived, a wheel when its last notch has been
@@ -410,7 +413,12 @@ enum mouse_pos_source mouse_peek_pos(int *x, int *y)
  * <ms> at XSYS4_AUTO_CLICK_X/Y (default 350,180), at most
  * XSYS4_AUTO_CLICK_COUNT times if that is given.
  */
-enum auto_step_kind { AUTO_CLICK, AUTO_MOVE, AUTO_DOWN, AUTO_UP, AUTO_WHEEL, AUTO_KEY };
+enum auto_step_kind { AUTO_CLICK, AUTO_MOVE, AUTO_DOWN, AUTO_UP, AUTO_WHEEL, AUTO_KEY, AUTO_TEXT };
+
+// The text box's handlers (register_input_handler and the others below).
+static void(*input_handler)(const char*);
+static void(*editing_handler)(const char*, int, int);
+static void(*key_handler)(int);
 
 #define AUTO_INPUT_READ_WAIT 500
 #define AUTO_INPUT_COORD_MAX 1000000
@@ -425,6 +433,7 @@ struct auto_step {
 	uint32_t ms;			// a click, a key: held; a move: on its way
 	int notches;
 	int key;			// a key: its code
+	char text[64];			// a text: what the input method commits
 };
 
 static struct {
@@ -511,6 +520,7 @@ static const char *auto_step_describe(const struct auto_step *s, char *buf, size
 	case AUTO_UP:    snprintf(buf, size, "up %c", auto_button_name(s->button)); break;
 	case AUTO_WHEEL: snprintf(buf, size, "wheel %d", s->notches); break;
 	case AUTO_KEY:   snprintf(buf, size, "key %d %ums", s->key, s->ms); break;
+	case AUTO_TEXT:  snprintf(buf, size, "text \"%s\"", s->text); break;
 	}
 	return buf;
 }
@@ -522,8 +532,8 @@ static void auto_input_add(struct auto_step s)
 	auto_input.steps[i] = s;
 	if (s.first_form) {
 		WARNING("Auto-click seq[%d]: t=%dms pos=(%d,%d)", i, (int)s.t, s.x, s.y);
-	} else if (s.kind == AUTO_KEY) {
-		char d[32];
+	} else if (s.kind == AUTO_KEY || s.kind == AUTO_TEXT) {
+		char d[96];
 		WARNING("Auto-input seq[%d]: %s t=%ums", i, auto_step_describe(&s, d, sizeof(d)), s.t);
 	} else {
 		char d[32];
@@ -595,6 +605,16 @@ static bool auto_input_parse_step(char *tok)
 	while (1 + nr_ints < n && nr_ints < 8 && auto_parse_int(f[1 + nr_ints], &v[nr_ints]))
 		nr_ints++;
 	int rest = n - 1 - nr_ints;		// fields after the numbers
+	if (!strcasecmp(f[0], "text")) {
+		// text,T,STRING
+		if (n != 3 || nr_ints < 1 || !auto_parse_int(f[1], &v[0]) || v[0] < 0
+				|| !*f[2] || strlen(f[2]) >= sizeof(((struct auto_step *)0)->text))
+			return false;
+		struct auto_step s = { .kind = AUTO_TEXT, .t = v[0] };
+		strcpy(s.text, f[2]);
+		auto_input_add(s);
+		return true;
+	}
 	if (!strcasecmp(f[0], "key")) {
 		// key,T,VK[,MS]
 		if (rest || nr_ints < 2 || nr_ints > 3 || v[0] < 0 || v[1] <= 0 || v[1] >= VK_NR_KEYCODES
@@ -757,7 +777,7 @@ static void auto_input_notch(const struct auto_step *s, int i, uint32_t now)
 
 static void auto_input_sequence(uint32_t now)
 {
-	char d[32];
+	char d[96];
 	if (auto_input.busy) {
 		struct auto_step *s = &auto_input.steps[auto_input.next - 1];
 		uint32_t elapsed = now - auto_input.started;
@@ -846,13 +866,20 @@ static void auto_input_sequence(uint32_t now)
 	case AUTO_KEY:
 		// The key alone: the pointer stays where it is.
 		key_state[s->key] = true;
+		if (key_handler)
+			key_handler(s->key);
 		auto_input.busy = true;
 		auto_input.started = now;
+		break;
+	case AUTO_TEXT:
+		// As SDL_TEXTINPUT gives it, to whoever has the text input.
+		if (input_handler)
+			input_handler(s->text);
 		break;
 	}
 	if (s->first_form) {
 		WARNING("Auto-click seq #%d at %ums game=(%d,%d)", i, now, s->x, s->y);
-	} else if (s->kind == AUTO_KEY) {
+	} else if (s->kind == AUTO_KEY || s->kind == AUTO_TEXT) {
 		WARNING("Auto-input #%d %s at %ums", i, auto_step_describe(s, d, sizeof(d)), now);
 	} else if (s->kind == AUTO_MOVE && s->ms) {
 		WARNING("Auto-input #%d %s at %ums from=(%d,%d) to=(%d,%d)", i, auto_step_describe(s, d, sizeof(d)),
@@ -1004,10 +1031,6 @@ bool mouse_show_cursor(bool show)
 {
 	return SDL_ShowCursor(show ? SDL_ENABLE : SDL_DISABLE) >= 0;
 }
-
-static void(*input_handler)(const char*);
-static void(*editing_handler)(const char*, int, int);
-static void(*key_handler)(int);
 
 static void key_event(SDL_KeyboardEvent *e, bool pressed)
 {
