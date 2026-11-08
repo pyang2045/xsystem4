@@ -151,7 +151,9 @@ static const struct {
 			.message_window_type = true,
 		},
 		.hll = { .sound_groups = true, .fnl_face_by_scale = true, .fnl_bold_no_advance = true },
-		.lang = { .no_method_empty_delegate = true },
+		// The legacy score fires on its SJIS script (54) and the config's
+		// sample message (a TrueType face) came out as GBK.
+		.lang = { .no_method_empty_delegate = true, .strings_are_sjis = true },
 		// 1280x720 (its CGs); AliceStart.ini has no size.
 		.view_720p_with = "CreateActivity",
 	},
