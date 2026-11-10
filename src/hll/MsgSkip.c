@@ -23,7 +23,7 @@
 #ifndef _WIN32
 #include <unistd.h>
 #endif
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "system4.h"
 #include "system4/ain.h"
@@ -334,16 +334,16 @@ static bool msk_save(void)
 }
 
 #ifdef __ANDROID__
-static int msgskip_event_handler(possibly_unused void *user_data, SDL_Event *e) {
+static bool SDLCALL msgskip_event_handler(possibly_unused void *user_data, SDL_Event *e) {
 	switch (e->type) {
-	case SDL_APP_WILLENTERBACKGROUND:
+	case SDL_EVENT_WILL_ENTER_BACKGROUND:
 		if (msk_active)
 			msk_save();
 		else if (flags)
 			msgskip_save();
 		break;
 	}
-	return 0;
+	return true;
 }
 #endif
 

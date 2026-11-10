@@ -23,7 +23,7 @@
 #ifdef __APPLE__
 #include <malloc/malloc.h>
 #endif
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "system4/string.h"
 #include "vm.h"
 #include "vm/heap.h"

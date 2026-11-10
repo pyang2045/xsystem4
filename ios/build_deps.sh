@@ -30,7 +30,7 @@ fetch() {  # name url sha256
 	rm -rf "$d"; mkdir -p "$d"; tar -xf "$f" -C "$d" --strip-components 1
 	basename "$f" > "$d/.tarball"
 }
-fetch SDL2 https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.tar.gz 5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165
+fetch SDL3 https://github.com/libsdl-org/SDL/releases/download/release-3.4.18/SDL3-3.4.18.tar.gz 9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
 fetch freetype https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz 0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289
 fetch libffi https://github.com/libffi/libffi/releases/download/v3.5.2/libffi-3.5.2.tar.gz f3a3082a23b37c293a4fcd1053147b371f2ff91fa7ea1b2a52e335676bac82dc
 fetch libjpeg-turbo https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.0/libjpeg-turbo-3.1.0.tar.gz 9564c72b1dfd1d6fe6274c5f95a8d989b59854575d4bbee44ade7bc17aa9bc93
@@ -85,7 +85,7 @@ for plat in "$@"; do
 	mkdir -p "$pfx/lib/pkgconfig"  # zlib is the SDK's
 	printf 'Name: zlib\nDescription: zlib (iOS SDK)\nVersion: 1.2.12\nLibs: -lz\nCflags:\n' \
 		>"$pfx/lib/pkgconfig/zlib.pc"
-	cm SDL2 -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST=OFF
+	cm SDL3 -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF
 	ac libffi --disable-docs --disable-multi-os-directory
 	cm freetype -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_PNG=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON
 	cm libjpeg-turbo -DENABLE_SHARED=OFF -DWITH_SIMD=OFF

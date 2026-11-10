@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <execinfo.h>
 #include <pthread.h>
-#include <SDL.h> // for system.MsgBox
+#include <SDL3/SDL.h> // for system.MsgBox
 
 #include "system4.h"
 #include "system4/ain.h"
@@ -550,7 +550,7 @@ static void stage2_trace_on_message(int msg_idx)
 	if (!stage2_trace_msg_ready && msg_idx >= stage2_trace_from_msg) {
 		stage2_trace_msg_ready = true;
 		memset(stage2_trace_hits, 0, sizeof(stage2_trace_hits));
-		NOTICE("STAGE2 armed msg=%d ms=%u", msg_idx, SDL_GetTicks());
+		NOTICE("STAGE2 armed msg=%d ms=%u", msg_idx, (uint32_t)SDL_GetTicks());
 	}
 }
 
@@ -576,7 +576,7 @@ void vm_stage2_trace_page_event(const char *event, int slot, int index, int valu
 		int current = p && index >= 0 && index < p->nr_vars ? p->values[index].i : -999;
 		int ref = slot > 0 && (size_t)slot < heap_size ? HEAP_REF(slot) : -1;
 		NOTICE("STAGE2 watch event=%s ms=%u msg=%d target_f=%d slot=%d ref=%d page_f=%d vars=%d index=%d value=%d current=%d width=%d caller=%d caller2=%d ip=%zx",
-			event, SDL_GetTicks(), stage2_trace_last_msg, call_stack[i].fno, slot, ref,
+			event, (uint32_t)SDL_GetTicks(), stage2_trace_last_msg, call_stack[i].fno, slot, ref,
 			p ? p->index : -1, p ? p->nr_vars : -1, index, value, current, width,
 			call_stack_ptr > 0 ? call_stack[call_stack_ptr-1].fno : -1,
 			call_stack_ptr > 1 ? call_stack[call_stack_ptr-2].fno : -1, instr_ptr);
@@ -2432,7 +2432,7 @@ static bool show_two_button_box(SDL_Window *window, const char *title, const cha
 	};
 	if (vm_ask_test.show)
 		return !vm_ask_test.show(&mbox, button);
-	return !SDL_ShowMessageBox(&mbox, button);
+	return SDL_ShowMessageBox(&mbox, button);
 }
 
 /*
@@ -2476,12 +2476,10 @@ static const struct ask_words *ask_words(void)
 	if (vm_ask_test.language)
 		return ask_words_for(vm_ask_test.language, vm_ask_test.country ? vm_ask_test.country : "");
 	const struct ask_words *words = ask_words_for("en", "");
-#if SDL_VERSION_ATLEAST(2, 0, 14)
-	SDL_Locale *locales = SDL_GetPreferredLocales();
-	if (locales && locales->language)
-		words = ask_words_for(locales->language, locales->country ? locales->country : "");
+	SDL_Locale **locales = SDL_GetPreferredLocales(NULL);
+	if (locales && locales[0] && locales[0]->language)
+		words = ask_words_for(locales[0]->language, locales[0]->country ? locales[0]->country : "");
 	SDL_free(locales);
-#endif
 	return words;
 }
 
@@ -2655,14 +2653,10 @@ static void system_call(enum syscall_code code)
 		break;
 	}
 	case SYS_OPEN_WEB: {
-#if !SDL_VERSION_ATLEAST(2, 0, 14)
-		WARNING("SDL_OpenURL not available");
-#else
 		struct string *url = stack_peek_string(0);
-		if (SDL_OpenURL(url->text) < 0) {
+		if (!SDL_OpenURL(url->text)) {
 			WARNING("SDL_OpenURL failed: %s", SDL_GetError());
 		}
-#endif
 		heap_unref(stack_pop().i);
 		break;
 	};
@@ -2698,7 +2692,7 @@ static void system_call(enum syscall_code code)
 			stop_continue_buttons,
 			NULL
 		};
-		if (SDL_ShowMessageBox(&mbox, &result)) {
+		if (!SDL_ShowMessageBox(&mbox, &result)) {
 			WARNING("Error displaying message box");
 		}
 		free(utf);

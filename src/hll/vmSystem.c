@@ -17,7 +17,7 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "system4/string.h"
 
@@ -61,7 +61,7 @@ static void vmSystem_Shutdown(void)
 
 static int vmSystem_OpenWeb(struct string *url)
 {
-	return SDL_OpenURL(url->text) == 0;
+	return SDL_OpenURL(url->text);
 }
 
 HLL_WARN_UNIMPLEMENTED(0, int, vmSystem, AddURLMenu, struct string *title, struct string *url);

@@ -14,7 +14,7 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "hll.h"
 #include "id_pool.h"
@@ -64,7 +64,7 @@ static void vmTimer_Set(int handle, int time)
 	struct vm_timer *timer = id_pool_get(&pool, handle);
 	if (!timer)
 		return;
-	timer->origin = SDL_GetTicks64() - time;
+	timer->origin = SDL_GetTicks() - time;
 }
 
 static int vmTimer_Get(int handle)
@@ -72,7 +72,7 @@ static int vmTimer_Get(int handle)
 	struct vm_timer *timer = id_pool_get(&pool, handle);
 	if (!timer)
 		return 0;
-	return SDL_GetTicks64() - timer->origin;
+	return SDL_GetTicks() - timer->origin;
 }
 
 static void vmTimer_Wait(int time)
@@ -85,7 +85,7 @@ static void vmTimer_Pass(int handle, int time)
 	struct vm_timer *timer = id_pool_get(&pool, handle);
 	if (!timer)
 		return;
-	int ms = timer->origin + time - SDL_GetTicks64();
+	int ms = timer->origin + time - SDL_GetTicks();
 	if (ms > 0)
 		SDL_Delay(ms);
 }

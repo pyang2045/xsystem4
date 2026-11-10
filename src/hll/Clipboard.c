@@ -14,7 +14,7 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "system4/string.h"
 #include "xsystem4.h"
 #include "hll.h"

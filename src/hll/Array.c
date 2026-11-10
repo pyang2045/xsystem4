@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #ifdef __APPLE__
 #include <malloc/malloc.h>
 #else

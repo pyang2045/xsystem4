@@ -14,7 +14,7 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "system4/cg.h"
 
@@ -118,7 +118,7 @@ static void vmAnime_Draw(int handle, int return_)
 	gfx_copy_main_surface(&old);
 	Texture *dst = gfx_main_surface();
 
-	uint64_t start_time = SDL_GetTicks64();
+	uint64_t start_time = SDL_GetTicks();
 	for (int i = 0; i < anime->length; i++) {
 		struct cg *cg = asset_cg_load(anime->cg + i);
 		Texture src;
@@ -128,7 +128,7 @@ static void vmAnime_Draw(int handle, int return_)
 		gfx_delete_texture(&src);
 		cg_free(cg);
 		gfx_swap();
-		SDL_Delay(start_time + (i + 1) * anime->interval - SDL_GetTicks64());
+		SDL_Delay(start_time + (i + 1) * anime->interval - SDL_GetTicks());
 	}
 	if (return_) {
 		gfx_copy(dst, 0, 0, &old, 0, 0, old.w, old.h);

@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "frame_pacing.h"
 #include "gfx/gfx.h"
@@ -51,9 +51,9 @@ void frame_pacing_sleep(uint32_t ms)
 	}
 	// The due time is ms after this call; the first tick at or after it is
 	// the (ms + 1)th tick of the millisecond timer from here.
-	uint64_t target = SDL_GetTicks64() + ms + 1;
+	uint64_t target = SDL_GetTicks() + ms + 1;
 	for (;;) {
-		uint64_t t = SDL_GetTicks64();
+		uint64_t t = SDL_GetTicks();
 		if (t >= target)
 			return;
 		// Between target - t - 1 and target - t milliseconds remain. Sleep
@@ -96,7 +96,7 @@ bool frame_pacing_limit(void)
 		return false;
 	if (message_skip_frame_skip())
 		return false;
-	int sleep_ms = frame_pacing_limiter_step(&limiter_carry, SDL_GetTicks() - limiter_last_ms);
+	int sleep_ms = frame_pacing_limiter_step(&limiter_carry, (uint32_t)SDL_GetTicks() - limiter_last_ms);
 	if (sleep_ms >= 0)
 		frame_pacing_sleep(sleep_ms);
 	limiter_last_ms = SDL_GetTicks();

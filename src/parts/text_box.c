@@ -29,13 +29,14 @@
  * The focus also goes when the parts is hidden or released.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdlib.h>
 #include <string.h>
 #include "system4.h"
 #include "system4/string.h"
 #include "system4/utfsjis.h"
 #include "gfx/gfx.h"
+#include "gfx/private.h"
 #include "input.h"
 #include "xsystem4.h"
 #include "parts.h"
@@ -179,12 +180,12 @@ static void text_box_input_begin(void)
 	register_input_handler(on_text);
 	register_editing_handler(on_editing);
 	register_key_handler(on_key);
-	SDL_StartTextInput();
+	SDL_StartTextInput(sdl.window);
 }
 
 static void text_box_input_end(void)
 {
-	SDL_StopTextInput();
+	SDL_StopTextInput(sdl.window);
 	clear_input_handler();
 	clear_editing_handler();
 	clear_key_handler();

@@ -20,10 +20,11 @@
 #include <math.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "system4.h"
 #include "system4/ain.h"
 #include "queue.h"
@@ -156,7 +157,7 @@ bool mouse_focus = true;
 bool keyboard_focus = true;
 
 #define MAX_CONTROLLERS 4
-static SDL_GameController *controllers[MAX_CONTROLLERS];
+static SDL_Gamepad *controllers[MAX_CONTROLLERS];
 
 #ifdef __ANDROID__
 struct deferred_keyevent {
@@ -287,9 +288,18 @@ static struct {
 } pointer;
 
 // The scheduled input's SDL events (the wheel) carry this as their mouse.
-#define AUTO_INPUT_MOUSEID ((Uint32)-2)
+#define AUTO_INPUT_MOUSEID ((Uint32)-3)	// SDL3 uses -1 (touch) and -2 (pen)
 
 static bool auto_input_guards(uint32_t timestamp);
+
+// SDL2's SDL_TICKS_PASSED, on the 32-bit ms ticks kept here.
+#define TICKS_PASSED(A, B) ((int32_t)((B) - (A)) <= 0)
+
+// An SDL3 event's timestamp (ns) in the ms of SDL_GetTicks().
+static uint32_t event_ms(Uint64 timestamp)
+{
+	return (uint32_t)SDL_NS_TO_MS(timestamp);
+}
 
 static void pointer_set(enum mouse_pos_source source, int x, int y)
 {
@@ -304,7 +314,7 @@ static void pointer_real_event(uint32_t timestamp, bool motion)
 {
 	if (motion && auto_input_guards(timestamp))
 		return;
-	if (pointer.source != MOUSE_POS_SDL && SDL_TICKS_PASSED(timestamp, pointer.set_at + 1))
+	if (pointer.source != MOUSE_POS_SDL && TICKS_PASSED(timestamp, pointer.set_at + 1))
 		pointer.source = MOUSE_POS_SDL;
 }
 
@@ -325,8 +335,9 @@ bool input_stage2_trace(void)
 
 static void sdl_mouse_pos(int *x, int *y)
 {
-	int wx, wy;
-	SDL_GetMouseState(&wx, &wy);
+	float fx, fy;
+	SDL_GetMouseState(&fx, &fy);
+	int wx = (int)fx, wy = (int)fy;
 	*x = (wx - sdl.viewport.x) * sdl.w / sdl.viewport.w;
 	*y = (wy - sdl.viewport.y) * sdl.h / sdl.viewport.h;
 }
@@ -488,7 +499,7 @@ static bool auto_input_guards(uint32_t timestamp)
 	if (auto_input.held != 0)
 		return true;
 	return auto_input.guard && input_reads == auto_input.released_reads
-		&& !SDL_TICKS_PASSED(timestamp, auto_input.released_at + AUTO_INPUT_READ_WAIT);
+		&& !TICKS_PASSED(timestamp, auto_input.released_at + AUTO_INPUT_READ_WAIT);
 }
 
 static void auto_input_button(enum sact_keycode b, bool down)
@@ -753,22 +764,18 @@ static void auto_input_load_env(void)
 // handle_events that queued it handles it.
 static void auto_input_notch(const struct auto_step *s, int i, uint32_t now)
 {
-	SDL_Event e = { .type = SDL_MOUSEWHEEL };
+	SDL_Event e = { .type = SDL_EVENT_MOUSE_WHEEL };
 	e.wheel.windowID = sdl.window ? SDL_GetWindowID(sdl.window) : 0;
 	e.wheel.which = AUTO_INPUT_MOUSEID;
-	e.wheel.y = s->notches > 0 ? 1 : -1;
+	e.wheel.integer_y = s->notches > 0 ? 1 : -1;
+	e.wheel.y = e.wheel.integer_y;
 	e.wheel.direction = SDL_MOUSEWHEEL_NORMAL;
-#if SDL_VERSION_ATLEAST(2, 0, 18)
-	e.wheel.preciseY = e.wheel.y;
-#endif
-#if SDL_VERSION_ATLEAST(2, 26, 0)
 	if (sdl.w > 0 && sdl.h > 0) {
-		e.wheel.mouseX = (int)((int64_t)s->x * sdl.viewport.w / sdl.w + sdl.viewport.x);
-		e.wheel.mouseY = (int)((int64_t)s->y * sdl.viewport.h / sdl.h + sdl.viewport.y);
+		e.wheel.mouse_x = (int)((int64_t)s->x * sdl.viewport.w / sdl.w + sdl.viewport.x);
+		e.wheel.mouse_y = (int)((int64_t)s->y * sdl.viewport.h / sdl.h + sdl.viewport.y);
 	}
-#endif
 	pointer_set(MOUSE_POS_AUTO, s->x, s->y);
-	if (SDL_PushEvent(&e) < 0)
+	if (!SDL_PushEvent(&e))
 		WARNING("Auto-input: wheel event not queued: %s", SDL_GetError());
 	auto_input.notches_left--;
 	auto_input.notches_done++;
@@ -805,7 +812,7 @@ static void auto_input_sequence(uint32_t now)
 		if (s->kind == AUTO_WHEEL) {
 			// The last notch is read by an input update, or it is late.
 			if (input_reads == auto_input.notch_reads
-					&& !SDL_TICKS_PASSED(now, auto_input.notch_at + AUTO_INPUT_READ_WAIT))
+					&& !TICKS_PASSED(now, auto_input.notch_at + AUTO_INPUT_READ_WAIT))
 				return;
 			if (auto_input.notches_left > 0) {
 				auto_input_notch(s, auto_input.next - 1, now);
@@ -878,7 +885,7 @@ static void auto_input_sequence(uint32_t now)
 		auto_input.started = now;
 		break;
 	case AUTO_TEXT:
-		// As SDL_TEXTINPUT gives it, to whoever has the text input.
+		// As SDL_EVENT_TEXT_INPUT gives it, to whoever has the text input.
 		if (input_handler)
 			input_handler(s->text);
 		break;
@@ -991,16 +998,13 @@ static void wheel_add_notches(double notches)
 static void wheel_event(const SDL_MouseWheelEvent *event)
 {
 	if (!wheel_is_v14()) {
-		wheel_dir = event->y;
+		// Whole notches, as SDL2's integer y.
+		wheel_dir = event->integer_y;
 		return;
 	}
+	// The precise amount (SDL2's preciseY). A horizontal-only event has
+	// y zero and leaves all wheel state untouched.
 	double notches = event->y;
-#if SDL_VERSION_ATLEAST(2, 0, 18)
-	// Older synthetic producers fill only y. A genuine horizontal-only
-	// event has both y values zero and leaves all wheel state untouched.
-	if (event->preciseY != 0 || event->y == 0)
-		notches = event->preciseY;
-#endif
 	if (event->direction == SDL_MOUSEWHEEL_FLIPPED)
 		notches = -notches;
 	wheel_add_notches(notches);
@@ -1052,7 +1056,7 @@ static uint32_t cursor_last_motion, cursor_last_hide;
 static bool cursor_apply(void)
 {
 	bool show = !cursor_hidden_by_game && !cursor_auto_hidden;
-	return SDL_ShowCursor(show ? SDL_ENABLE : SDL_DISABLE) >= 0;
+	return show ? SDL_ShowCursor() : SDL_HideCursor();
 }
 
 bool mouse_show_cursor(bool show)
@@ -1104,9 +1108,9 @@ static void cursor_update(uint32_t now)
 
 static void key_event(SDL_KeyboardEvent *e, bool pressed)
 {
-	if (e->keysym.scancode >= (sizeof(sdl_keytable)/sizeof(*sdl_keytable)))
+	if (e->scancode >= (sizeof(sdl_keytable)/sizeof(*sdl_keytable)))
 		return;
-	enum sact_keycode code = sdl_keytable[e->keysym.scancode];
+	enum sact_keycode code = sdl_keytable[e->scancode];
 	if (code) {
 		key_state[code] = pressed;
 		if (pressed && key_handler)
@@ -1124,7 +1128,7 @@ static bool mouse_release_pending[8]; // an UP received before the deadline
 static void release_pending_mouse_buttons(uint32_t now)
 {
 	for (int btn = 1; btn <= 3; btn++) {
-		if (mouse_release_pending[btn] && SDL_TICKS_PASSED(now, mouse_hold_until[btn])) {
+		if (mouse_release_pending[btn] && TICKS_PASSED(now, mouse_hold_until[btn])) {
 			enum sact_keycode code = sdl_to_sact_button(btn);
 			if (code) key_state[code] = false;
 			mouse_release_pending[btn] = false;
@@ -1151,8 +1155,8 @@ static void release_pending_mouse_buttons(uint32_t now)
 void input_modal_closed(void)
 {
 	SDL_PumpEvents();
-	SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
-	SDL_FlushEvents(SDL_MOUSEBUTTONDOWN, SDL_MOUSEWHEEL);
+	SDL_FlushEvents(SDL_EVENT_KEY_DOWN, SDL_EVENT_TEXT_INPUT);
+	SDL_FlushEvents(SDL_EVENT_MOUSE_BUTTON_DOWN, SDL_EVENT_MOUSE_WHEEL);
 	key_clear_flag(false);
 	memset(mouse_hold_until, 0, sizeof(mouse_hold_until));
 	memset(mouse_release_pending, 0, sizeof(mouse_release_pending));
@@ -1166,13 +1170,14 @@ static void mouse_event(SDL_MouseButtonEvent *e)
 {
 	static unsigned trace_count;
 	if (input_stage2_trace() && trace_count++ < 40) {
-		int ww, wh, dw, dh, mx, my;
+		int ww, wh, dw, dh;
+		float mx, my;
 		SDL_GetWindowSize(sdl.window, &ww, &wh);
 		gfx_drawable_size(&dw, &dh);
 		SDL_GetMouseState(&mx, &my);
 		bool set = pointer.source != MOUSE_POS_SDL;
-		WARNING("S2 mouse t=%u state=%d event=(%d,%d) polled=(%d,%d) override=(%d,%d) window=%dx%d drawable=%dx%d logical=%dx%d viewport=%d,%d,%d,%d pointer=%s",
-			SDL_GetTicks(), e->state, e->x, e->y, mx, my,
+		WARNING("S2 mouse t=%u state=%d event=(%g,%g) polled=(%g,%g) override=(%d,%d) window=%dx%d drawable=%dx%d logical=%dx%d viewport=%d,%d,%d,%d pointer=%s",
+			(uint32_t)SDL_GetTicks(), e->down, e->x, e->y, mx, my,
 			set ? pointer.x : -1, set ? pointer.y : -1, ww, wh, dw, dh, sdl.w, sdl.h,
 			sdl.viewport.x, sdl.viewport.y, sdl.viewport.w, sdl.viewport.h,
 			mouse_pos_source_name(pointer.source));
@@ -1180,12 +1185,12 @@ static void mouse_event(SDL_MouseButtonEvent *e)
 	enum sact_keycode code = sdl_to_sact_button(e->button);
 	if (code) {
 		int button = e->button & 7;
-		if (e->state == SDL_PRESSED) {
+		if (e->down) {
 			key_state[code] = true;
 			mouse_hold_until[button] = SDL_GetTicks() + 50;
 			mouse_release_pending[button] = false;
 		} else {
-			if (!key_state[code] || SDL_TICKS_PASSED(SDL_GetTicks(), mouse_hold_until[button])) {
+			if (!key_state[code] || TICKS_PASSED(SDL_GetTicks(), mouse_hold_until[button])) {
 				key_state[code] = false;
 				mouse_hold_until[button] = 0;
 				mouse_release_pending[button] = false;
@@ -1195,7 +1200,7 @@ static void mouse_event(SDL_MouseButtonEvent *e)
 		}
 	}
 #ifdef DEBUGGER_ENABLED
-	if (e->button == SDL_BUTTON_MIDDLE && e->state == SDL_PRESSED
+	if (e->button == SDL_BUTTON_MIDDLE && e->down
 			&& (dbg_start_in_debugger || dbg_dap))
 		dbg_repl(DBG_STOP_PAUSE, NULL);
 #endif
@@ -1203,9 +1208,9 @@ static void mouse_event(SDL_MouseButtonEvent *e)
 
 static void synthetic_mouse_event(SDL_MouseButtonEvent *e)
 {
-	if (e->state == SDL_PRESSED) {
+	if (e->down) {
 		// Touch outside the viewport is treated as right-click.
-		SDL_Point p = { .x = e->x, .y = e->y };
+		SDL_Point p = { .x = (int)e->x, .y = (int)e->y };
 		if (SDL_PointInRect(&p, &sdl.viewport))
 			key_state[VK_LBUTTON] = true;
 		else
@@ -1249,7 +1254,7 @@ struct joyaxis {
 
 struct joyaxis joyaxis_state[2] = { 0 };
 
-bool joybutton_state[SDL_CONTROLLER_BUTTON_MAX];
+bool joybutton_state[SDL_GAMEPAD_BUTTON_COUNT];
 
 static unsigned long joy_time(void)
 {
@@ -1286,35 +1291,35 @@ bool joy_key_is_down(uint8_t code)
 	case 4: // Down Arrow
 		return joy_check_axis(&joyaxis_state[JOYAXIS_Y], JOYAXIS_DIR_RIGHT_DOWN);
 	case 5: // Esc
-		return joybutton_state[SDL_CONTROLLER_BUTTON_A];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_SOUTH];
 	case 6: // Enter
-		return joybutton_state[SDL_CONTROLLER_BUTTON_B];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_EAST];
 	case 7: // Space
-		return joybutton_state[SDL_CONTROLLER_BUTTON_X];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_WEST];
 	case 8: // Ctrl
-		return joybutton_state[SDL_CONTROLLER_BUTTON_Y];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_NORTH];
 	case 9: // a
-		return joybutton_state[SDL_CONTROLLER_BUTTON_LEFTSHOULDER];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_LEFT_SHOULDER];
 	case 10: // z
-		return joybutton_state[SDL_CONTROLLER_BUTTON_RIGHTSHOULDER];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER];
 	case 11: // Page Up
-		return joybutton_state[SDL_CONTROLLER_BUTTON_BACK];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_BACK];
 	case 12: // Page Down
-		return joybutton_state[SDL_CONTROLLER_BUTTON_START];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_START];
 	case 13:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_GUIDE];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_GUIDE];
 	case 14:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_LEFTSTICK];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_LEFT_STICK];
 	case 15:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_RIGHTSTICK];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_RIGHT_STICK];
 	case 16:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_DPAD_LEFT];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_DPAD_LEFT];
 	case 17:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_DPAD_RIGHT];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_DPAD_RIGHT];
 	case 18:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_DPAD_UP];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_DPAD_UP];
 	case 19:
-		return joybutton_state[SDL_CONTROLLER_BUTTON_DPAD_DOWN];
+		return joybutton_state[SDL_GAMEPAD_BUTTON_DPAD_DOWN];
 	default:
 		return false;
 	}
@@ -1357,12 +1362,12 @@ static float joy_calc_trigger(int left, int right)
 
 bool joy_get_stick_status(int controller, int type, float *deg, float *pow)
 {
-	SDL_GameController *ctrl = controllers[controller];
+	SDL_Gamepad *ctrl = controllers[controller];
 	if (!ctrl)
 		goto invalid;
 	if (type == 0) {
-		int x = SDL_GameControllerGetAxis(ctrl, SDL_CONTROLLER_AXIS_LEFTX);
-		int y = SDL_GameControllerGetAxis(ctrl, SDL_CONTROLLER_AXIS_LEFTY);
+		int x = SDL_GetGamepadAxis(ctrl, SDL_GAMEPAD_AXIS_LEFTX);
+		int y = SDL_GetGamepadAxis(ctrl, SDL_GAMEPAD_AXIS_LEFTY);
 		if (abs(x) < JOYAXIS_DEADZONE && abs(y) < JOYAXIS_DEADZONE) {
 			*pow = 0.0f;
 			*deg = 0.0f;
@@ -1373,8 +1378,8 @@ bool joy_get_stick_status(int controller, int type, float *deg, float *pow)
 		return true;
 	}
 	if (type == 1) {
-		int left = SDL_GameControllerGetAxis(ctrl, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-		int right = SDL_GameControllerGetAxis(ctrl, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+		int left = SDL_GetGamepadAxis(ctrl, SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+		int right = SDL_GetGamepadAxis(ctrl, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 		*pow = 1.0f;
 		*deg = joy_calc_trigger(left, right);
 		return true;
@@ -1400,7 +1405,7 @@ static void joyaxis_clear_flag(struct joyaxis *joy)
 
 void joy_clear_flag(void)
 {
-	for (int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
+	for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++) {
 		joybutton_state[i] = false;
 	}
 	joyaxis_clear_flag(&joyaxis_state[JOYAXIS_X]);
@@ -1425,13 +1430,13 @@ static void joyaxis_update(enum joyaxis_axis axis, int value)
 	}
 }
 
-static void controller_axis_event(SDL_ControllerAxisEvent *e)
+static void controller_axis_event(SDL_GamepadAxisEvent *e)
 {
 	switch (e->axis) {
-	case SDL_CONTROLLER_AXIS_LEFTX:
+	case SDL_GAMEPAD_AXIS_LEFTX:
 		joyaxis_update(JOYAXIS_X, e->value);
 		break;
-	case SDL_CONTROLLER_AXIS_LEFTY:
+	case SDL_GAMEPAD_AXIS_LEFTY:
 		joyaxis_update(JOYAXIS_Y, e->value);
 		break;
 	default:
@@ -1439,9 +1444,9 @@ static void controller_axis_event(SDL_ControllerAxisEvent *e)
 	}
 }
 
-static void controller_button_event(SDL_ControllerButtonEvent *e)
+static void controller_button_event(SDL_GamepadButtonEvent *e)
 {
-	joybutton_state[e->button] = e->state == SDL_PRESSED;
+	joybutton_state[e->button] = e->down;
 }
 
 void register_input_handler(void(*handler)(const char*))
@@ -1474,13 +1479,50 @@ void clear_key_handler(void)
 	key_handler = NULL;
 }
 
+// The fingers on a touch device now (SDL2's SDL_GetNumTouchFingers).
+static int touch_fingers(SDL_TouchID id)
+{
+	int n = 0;
+	SDL_free(SDL_GetTouchFingers(id, &n));
+	return n;
+}
+
+/*
+ * Two fingers moving up or down scroll, a notch each time their mid point
+ * moves SCROLL_GESTURE_SENSITIVITY of the screen height (SDL2's
+ * SDL_MULTIGESTURE gave that point; SDL3 has no gestures).
+ */
+static void two_finger_scroll(SDL_TouchID id)
+{
+	int n = 0;
+	SDL_Finger **f = SDL_GetTouchFingers(id, &n);
+	if (!f || n != 2) {
+		SDL_free(f);
+		return;
+	}
+	float y = (f[0]->y + f[1]->y) / 2;
+	SDL_free(f);
+	if (scroll_gesture_y < 0.0f)
+		scroll_gesture_y = y;
+	float dy = scroll_gesture_y - y;
+	if (dy * dy > SCROLL_GESTURE_SENSITIVITY * SCROLL_GESTURE_SENSITIVITY) {
+		// Swipe up to scroll down, one notch per crossing.
+		if (wheel_is_v14())
+			wheel_add_notches(dy < 0 ? 1 : -1);
+		else
+			wheel_dir = dy < 0 ? 1 : -1;
+		scroll_gesture_y = y;
+		two_finger_tap_start = 0;  // a scroll, not a tap
+	}
+}
+
 static void fire_deferred_events(void)
 {
 	uint32_t now = SDL_GetTicks();
 
 	// Flush the deferred mouse button event if it's older than 50ms.
 	if (deferred_synthetic_mouse_event.timestamp &&
-		deferred_synthetic_mouse_event.timestamp + SYNTHETIC_MOUSE_EVENT_DELAY < now) {
+		event_ms(deferred_synthetic_mouse_event.timestamp) + SYNTHETIC_MOUSE_EVENT_DELAY < now) {
 		synthetic_mouse_event(&deferred_synthetic_mouse_event);
 		deferred_synthetic_mouse_event.timestamp = 0;
 	}
@@ -1499,14 +1541,14 @@ static void fire_deferred_events(void)
 	while (!STAILQ_EMPTY(&deferred_keyevent_queue) && now >= last_keyevent_timestamp + DEFERRED_KEY_DELAY) {
 		struct deferred_keyevent *ev = STAILQ_FIRST(&deferred_keyevent_queue);
 		switch (ev->e.type) {
-		case SDL_TEXTINPUT:
+		case SDL_EVENT_TEXT_INPUT:
 			if (input_handler)
 				input_handler(ev->e.text.text);
 			break;
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
+		case SDL_EVENT_KEY_DOWN:
+		case SDL_EVENT_KEY_UP:
 			last_keyevent_timestamp = now;
-			key_event(&ev->e.key, ev->e.type == SDL_KEYDOWN);
+			key_event(&ev->e.key, ev->e.type == SDL_EVENT_KEY_DOWN);
 			break;
 		}
 		STAILQ_REMOVE_HEAD(&deferred_keyevent_queue, entry);
@@ -1518,30 +1560,30 @@ static void fire_deferred_events(void)
 static void handle_window_event(SDL_Event *e)
 {
 	extern bool scene_is_dirty;
-	switch (e->window.event) {
-	case SDL_WINDOWEVENT_EXPOSED:
+	switch (e->type) {
+	case SDL_EVENT_WINDOW_EXPOSED:
 		// Don't call gfx_swap() directly — it blocks on macOS
 		// Cocoa_GL_SwapWindow (pthread_cond_wait for vsync) if called
 		// during global struct init (before the main event loop starts).
 		// Mark dirty so the next regular render cycle handles it.
 		scene_is_dirty = true;
 		break;
-	case SDL_WINDOWEVENT_ENTER:
+	case SDL_EVENT_WINDOW_MOUSE_ENTER:
 		mouse_focus = true;
 		break;
-	case SDL_WINDOWEVENT_LEAVE:
+	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
 		mouse_focus = false;
 		break;
-	case SDL_WINDOWEVENT_FOCUS_GAINED:
+	case SDL_EVENT_WINDOW_FOCUS_GAINED:
 		keyboard_focus = true;
 		// the v14 sound groups mute an inactive window (SetGlobalFocus)
 		mixer_set_window_focus(true);
 		break;
-	case SDL_WINDOWEVENT_FOCUS_LOST:
+	case SDL_EVENT_WINDOW_FOCUS_LOST:
 		keyboard_focus = false;
 		mixer_set_window_focus(false);
 		break;
-	case SDL_WINDOWEVENT_SIZE_CHANGED:
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 		gfx_update_screen_scale();
 		scene_is_dirty = true;
 		break;
@@ -1555,7 +1597,7 @@ static bool close_confirm;
 void input_set_close_confirm(bool on)
 {
 #ifdef __ANDROID__
-	// Never on Android, where SDL_QUIT ends the program as before: SDL
+	// Never on Android, where SDL_EVENT_QUIT ends the program as before: SDL
 	// sends it when the activity is destroyed and then waits on the UI
 	// thread for this thread to end, while a message box is shown by the
 	// UI thread and waited for here. (SDLActivity.java of SDL 2.32,
@@ -1567,7 +1609,7 @@ void input_set_close_confirm(bool on)
 }
 
 /*
- * SDL turns SIGINT and SIGTERM into the SDL_QUIT that the window's close
+ * SDL turns SIGINT and SIGTERM into the SDL_EVENT_QUIT that the window's close
  * button gives. They are noted here, on top of SDL's own handlers, so that
  * only the user's requests are confirmed.
  */
@@ -1606,14 +1648,14 @@ static bool watch_quit_signals(void)
 	return watched;
 }
 #else
-// Signals are not told apart on Windows: an SDL_QUIT that SDL makes of a
+// Signals are not told apart on Windows: an SDL_EVENT_QUIT that SDL makes of a
 // Ctrl+C on the console there would be confirmed like the close button
 // (not built, not tried).
 static bool watch_quit_signals(void) { return true; }
 #endif
 
 /*
- * SDL_QUIT: the window's close button, the application's Quit, or a signal.
+ * SDL_EVENT_QUIT: the window's close button, the application's Quit, or a signal.
  *
  * The original's window procedure asks before it closes while the window
  * setting "confirm closing the game" is on: 0x4be920 (WM_CLOSE) reads
@@ -1641,7 +1683,7 @@ static void close_requested(void)
 		if (!vm_ask(VM_ASK_YES_NO, NULL, true) && !quit_signal) {
 			// One answer is for every request made so far: the
 			// SDL_QUITs still queued do not ask again.
-			SDL_FlushEvent(SDL_QUIT);
+			SDL_FlushEvent(SDL_EVENT_QUIT);
 			return;
 		}
 	}
@@ -1657,11 +1699,11 @@ void handle_window_events(void)
 	SDL_Event events[32];
 	int n;
 	// Process QUIT events
-	n = SDL_PeepEvents(events, 32, SDL_GETEVENT, SDL_QUIT, SDL_QUIT);
+	n = SDL_PeepEvents(events, 32, SDL_GETEVENT, SDL_EVENT_QUIT, SDL_EVENT_QUIT);
 	if (n > 0)
 		close_requested();
 	// Process WINDOWEVENT
-	n = SDL_PeepEvents(events, 32, SDL_GETEVENT, SDL_WINDOWEVENT, SDL_WINDOWEVENT);
+	n = SDL_PeepEvents(events, 32, SDL_GETEVENT, SDL_EVENT_WINDOW_FIRST, SDL_EVENT_WINDOW_LAST);
 	for (int i = 0; i < n; i++) {
 		handle_window_event(&events[i]);
 	}
@@ -1720,52 +1762,49 @@ void handle_events(void)
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		switch (e.type) {
-		case SDL_QUIT:
+		case SDL_EVENT_QUIT:
 			close_requested();
 			break;
-		case SDL_WINDOWEVENT:
-			handle_window_event(&e);
-			break;
-		case SDL_APP_DIDENTERFOREGROUND:
+		case SDL_EVENT_DID_ENTER_FOREGROUND:
 			gfx_swap();
 			break;
-		case SDL_KEYDOWN:
-			if (e.key.keysym.scancode == SDL_SCANCODE_F9) {
+		case SDL_EVENT_KEY_DOWN:
+			if (e.key.scancode == SDL_SCANCODE_F9) {
 				vm_stack_trace();
-			} else if (e.key.keysym.scancode == SDL_SCANCODE_F11) {
+			} else if (e.key.scancode == SDL_SCANCODE_F11) {
 				gfx_toggle_fullscreen();
-			} else if (e.key.keysym.scancode == SDL_SCANCODE_S) {
-				if (e.key.keysym.mod & (KMOD_LALT | KMOD_RALT)) {
+			} else if (e.key.scancode == SDL_SCANCODE_S) {
+				if (e.key.mod & (SDL_KMOD_LALT | SDL_KMOD_RALT)) {
 					screenshot_save();
 				}
 			}
 			if (!e.key.repeat)
 				cursor_auto_hide(1);
 			// fallthrough
-		case SDL_KEYUP:
+		case SDL_EVENT_KEY_UP:
 #ifdef __ANDROID__
-			if (input_handler && e.key.timestamp < last_keyevent_timestamp + DEFERRED_KEY_DELAY) {
+			if (input_handler && event_ms(e.key.timestamp) < last_keyevent_timestamp + DEFERRED_KEY_DELAY) {
 				// Input from virtual keyboard is sent as consecutive
-				// SDL_KEYDOWN and SDL_KEYUP events. To give the game a chance
+				// SDL_EVENT_KEY_DOWN and SDL_EVENT_KEY_UP events. To give the game a chance
 				// to see the previous key event, delay the event.
 				struct deferred_keyevent *ev = xmalloc(sizeof(struct deferred_keyevent));
 				ev->e = e;
 				STAILQ_INSERT_TAIL(&deferred_keyevent_queue, ev, entry);
 			} else {
-				last_keyevent_timestamp = e.key.timestamp;
-				key_event(&e.key, e.type == SDL_KEYDOWN);
+				last_keyevent_timestamp = event_ms(e.key.timestamp);
+				key_event(&e.key, e.type == SDL_EVENT_KEY_DOWN);
 			}
 #else
-			key_event(&e.key, e.type == SDL_KEYDOWN);
+			key_event(&e.key, e.type == SDL_EVENT_KEY_DOWN);
 #endif
 			break;
-		case SDL_MOUSEMOTION:
-			pointer_real_event(e.motion.timestamp, true);
+		case SDL_EVENT_MOUSE_MOTION:
+			pointer_real_event(event_ms(e.motion.timestamp), true);
 			cursor_moved(SDL_GetTicks());
 			break;
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEBUTTONDOWN:
-			pointer_real_event(e.button.timestamp, false);
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			pointer_real_event(event_ms(e.button.timestamp), false);
 			if (e.button.which == SDL_TOUCH_MOUSEID) {
 				if (deferred_synthetic_mouse_event.timestamp)
 					synthetic_mouse_event(&deferred_synthetic_mouse_event);
@@ -1774,32 +1813,32 @@ void handle_events(void)
 				mouse_event(&e.button);
 			}
 			break;
-		case SDL_MOUSEWHEEL:
+		case SDL_EVENT_MOUSE_WHEEL:
 			if (e.wheel.which != AUTO_INPUT_MOUSEID)
-				pointer_real_event(e.wheel.timestamp, false);
+				pointer_real_event(event_ms(e.wheel.timestamp), false);
 			wheel_event(&e.wheel);
 			// Trace (XSYS4_STAGE2_TRACE): every wheel event the engine
 			// takes, the schedule's (auto) or the mouse's (real).
 			{
 				static unsigned traced;
 				if (input_stage2_trace() && traced++ < 2000)
-					NOTICE("S2 wheel ms=%u y=%d (%s)", SDL_GetTicks(), e.wheel.y,
+					NOTICE("S2 wheel ms=%u y=%g (%s)", (uint32_t)SDL_GetTicks(), e.wheel.y,
 							e.wheel.which == AUTO_INPUT_MOUSEID ? "auto" : "real");
 			}
 			break;
-		case SDL_FINGERDOWN:
-			if (SDL_GetNumTouchFingers(e.tfinger.touchId) >= 2) {
+		case SDL_EVENT_FINGER_DOWN:
+			if (touch_fingers(e.tfinger.touchID) >= 2) {
 				// The user is about to start a multi-touch gesture.
 				key_state[VK_LBUTTON] = false;
 				key_state[VK_RBUTTON] = false;
 				deferred_synthetic_mouse_event.timestamp = 0;
 				long_touch_start_timestamp = 0;
 				scroll_gesture_y = -1.0f;
-				two_finger_tap_start = SDL_GetNumTouchFingers(e.tfinger.touchId) == 2
-					? e.tfinger.timestamp : 0;
+				two_finger_tap_start = touch_fingers(e.tfinger.touchID) == 2
+					? event_ms(e.tfinger.timestamp) : 0;
 				break;
 			}
-			long_touch_start_timestamp = e.tfinger.timestamp;
+			long_touch_start_timestamp = event_ms(e.tfinger.timestamp);
 			// Movement within this rect (1% of the screen size from the touch
 			// start position) will be ignored.
 			long_touch_finger_rect = (SDL_FRect) {
@@ -1809,53 +1848,43 @@ void handle_events(void)
 				.h = 0.02
 			};
 			break;
-		case SDL_FINGERMOTION:
-			if (SDL_PointInFRect(&(SDL_FPoint){ e.tfinger.x, e.tfinger.y }, &long_touch_finger_rect))
+		case SDL_EVENT_FINGER_MOTION:
+			two_finger_scroll(e.tfinger.touchID);
+			if (SDL_PointInRectFloat(&(SDL_FPoint){ e.tfinger.x, e.tfinger.y }, &long_touch_finger_rect))
 				break;
 			// Cancel the timer only if Ctrl emulation has not already started.
 			if (!key_state[VK_CONTROL])
 				long_touch_start_timestamp = 0;
 			break;
-		case SDL_FINGERUP:
+		case SDL_EVENT_FINGER_UP:
 			long_touch_start_timestamp = 0;
 			key_state[VK_CONTROL] = false;
-			if (two_finger_tap_start && SDL_GetNumTouchFingers(e.tfinger.touchId) == 0) {
-				if (e.tfinger.timestamp - two_finger_tap_start <= TWO_FINGER_TAP_DURATION) {
+			if (two_finger_tap_start && touch_fingers(e.tfinger.touchID) == 0) {
+				if (event_ms(e.tfinger.timestamp) - two_finger_tap_start <= TWO_FINGER_TAP_DURATION) {
 					key_state[VK_RBUTTON] = true;
 					right_click_release = SDL_GetTicks() + RIGHT_CLICK_HOLD;
 				}
 				two_finger_tap_start = 0;
 			}
 			break;
-		case SDL_MULTIGESTURE:
-			if (e.mgesture.numFingers == 2) {
-				if (scroll_gesture_y < 0.0f)
-					scroll_gesture_y = e.mgesture.y;
-				float dy = scroll_gesture_y - e.mgesture.y;
-				if (dy * dy > SCROLL_GESTURE_SENSITIVITY * SCROLL_GESTURE_SENSITIVITY) {
-					// Swipe up to scroll down, retaining the old
-					// gesture threshold and one notch per crossing.
-					if (wheel_is_v14())
-						wheel_add_notches(dy < 0 ? 1 : -1);
-					else
-						wheel_dir = dy < 0 ? 1 : -1;
-					scroll_gesture_y = e.mgesture.y;
-					two_finger_tap_start = 0;  // a scroll, not a tap
+		case SDL_EVENT_GAMEPAD_ADDED:
+			// SDL3 names a gamepad by its instance ID: it takes the first
+			// free slot (SDL2 gave the device index).
+			for (int i = 0; i < MAX_CONTROLLERS; i++) {
+				if (!controllers[i]) {
+					controllers[i] = SDL_OpenGamepad(e.gdevice.which);
+					break;
 				}
 			}
 			break;
-		case SDL_CONTROLLERDEVICEADDED:
-			if (e.cdevice.which < MAX_CONTROLLERS)
-				controllers[e.cdevice.which] = SDL_GameControllerOpen(e.cdevice.which);
+		case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+			controller_axis_event(&e.gaxis);
 			break;
-		case SDL_CONTROLLERAXISMOTION:
-			controller_axis_event(&e.caxis);
+		case SDL_EVENT_GAMEPAD_BUTTON_UP:
+		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+			controller_button_event(&e.gbutton);
 			break;
-		case SDL_CONTROLLERBUTTONUP:
-		case SDL_CONTROLLERBUTTONDOWN:
-			controller_button_event(&e.cbutton);
-			break;
-		case SDL_TEXTINPUT:
+		case SDL_EVENT_TEXT_INPUT:
 			if (!input_handler) {
 				break;
 #ifdef __ANDROID__
@@ -1869,11 +1898,13 @@ void handle_events(void)
 				input_handler(e.text.text);
 			}
 			break;
-		case SDL_TEXTEDITING:
+		case SDL_EVENT_TEXT_EDITING:
 			if (editing_handler)
 				editing_handler(e.edit.text, e.edit.start, e.edit.length);
 			break;
 		default:
+			if (e.type >= SDL_EVENT_WINDOW_FIRST && e.type <= SDL_EVENT_WINDOW_LAST)
+				handle_window_event(&e);
 			break;
 		}
 	}

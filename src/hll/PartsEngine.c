@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,7 @@
 #include "profile.h"
 #include "hll.h"
 #include "input.h"
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "frame_pacing.h"
 #include "gfx/gfx.h"
 #include "scene.h"

@@ -86,7 +86,7 @@ First install the dependencies (corresponding Debian package in parentheses):
 * libsndfile (libsndfile-dev)
 * libturbojpeg (libturbojpeg0-dev)
 * libwebp (libwebp-dev)
-* SDL2 (libsdl2-dev)
+* SDL3 (libsdl3-dev)
 * zlib (zlib1g-dev)
 
 Then fetch the git submodules,
@@ -110,7 +110,7 @@ Finally install it to your system (optional),
 
 Install the dependencies with [Homebrew](https://brew.sh):
 
-    brew install meson ninja bison flex pkg-config sdl2 libffi jpeg-turbo libpng \
+    brew install meson ninja bison flex pkg-config sdl3 libffi jpeg-turbo libpng \
         webp libsndfile freetype cglm
 
 GLEW is not needed: the renderer is Metal (`-Dmetal=enabled`, the default on
@@ -148,7 +148,7 @@ First install MSYS2, and then open the MINGW64 shell and run the following comma
         mingw-w64-x86_64-gcc \
         mingw-w64-x86_64-meson \
         mingw-w64-x86_64-pkg-config \
-        mingw-w64-x86_64-SDL2 \
+        mingw-w64-x86_64-sdl3 \
         mingw-w64-x86_64-freetype \
         mingw-w64-x86_64-libjpeg-turbo \
         mingw-w64-x86_64-libwebp \

@@ -141,7 +141,7 @@ void handle_window_events(void);
 void handle_events(void);
 // A modal box of the system has just closed: nothing stays held.
 void input_modal_closed(void);
-// Ask the user before SDL_QUIT ends the program (the v14 window setting).
+// Ask the user before SDL_EVENT_QUIT ends the program (the v14 window setting).
 void input_set_close_confirm(bool on);
 bool key_is_down(enum sact_keycode code);
 // While InputString's IME is open, the left button also reads as Return (see input.c).

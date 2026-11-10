@@ -49,6 +49,7 @@
 #include "version.h"
 #ifdef XSYS4_IOS
 #include "ios/ios.h"
+#include <SDL3/SDL_main.h>	// SDL3 renames main() to SDL_main on iOS
 #endif
 
 void set_msgskip_delay(struct ain *ain, unsigned ms);

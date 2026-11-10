@@ -42,7 +42,7 @@ from xml.sax.saxutils import escape
 XS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 MIN_IOS = "17.0"
 # ios/xcframeworks.sh output, in link order
-LIBS = ["SDL2", "SDL2main", "freetype", "ffi", "cglm", "sndfile", "FLAC", "vorbisenc", "vorbis", "ogg",
+LIBS = ["SDL3", "freetype", "ffi", "cglm", "sndfile", "FLAC", "vorbisenc", "vorbis", "ogg",
         "opus", "turbojpeg", "webp", "sharpyuv", "png16"]
 SYS4_LIBS = ["png16", "turbojpeg", "webp"]  # the ones libsys4 includes headers from
 
@@ -385,7 +385,7 @@ rm -f "$res/shaders/metal/glsl2msl.py"
         src_phase = self.phase("app-sources", "PBXSourcesBuildPhase",
                                [self.buildfile(self.fileref(self.xs(p)), "app") for p in self.engine])
 
-        frameworks = ["AVFoundation", "AudioToolbox", "CoreAudio", "CoreBluetooth", "CoreFoundation",
+        frameworks = ["AVFoundation", "AudioToolbox", "CoreAudio", "CoreBluetooth", "CoreFoundation", "CoreMedia",
                       "CoreGraphics", "CoreMotion", "CoreVideo", "Foundation", "Metal", "OpenGLES",
                       "QuartzCore", "UIKit"]
         weak = ["CoreHaptics", "GameController"]

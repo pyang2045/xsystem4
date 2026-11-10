@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "gfx/gl.h"
 #include <cglm/cglm.h>
 #include <string.h>
@@ -216,12 +216,12 @@ static bool gfx_initialized = false;
 static void init_window_size(void)
 {
 #ifndef __ANDROID__
-	int display_id = SDL_GetWindowDisplayIndex(sdl.window);
-	if (display_id < 0)
+	SDL_DisplayID display_id = SDL_GetDisplayForWindow(sdl.window);
+	if (!display_id)
 		return;
 
 	SDL_Rect bounds;
-	if (SDL_GetDisplayUsableBounds(display_id, &bounds) < 0)
+	if (!SDL_GetDisplayUsableBounds(display_id, &bounds))
 		return;
 
 	int w, h;
@@ -230,7 +230,7 @@ static void init_window_size(void)
 		return;
 
 	int border_top, border_bot;
-	if (SDL_GetWindowBordersSize(sdl.window, &border_top, NULL, &border_bot, NULL) < 0)
+	if (!SDL_GetWindowBordersSize(sdl.window, &border_top, NULL, &border_bot, NULL))
 		return;
 
 	int scaled_h = bounds.h - (border_top + border_bot);
@@ -249,8 +249,8 @@ int gfx_init(void)
 
 	uint32_t flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
 	if (config.joypad)
-		flags |= SDL_INIT_GAMECONTROLLER;
-	if (SDL_Init(flags) < 0)
+		flags |= SDL_INIT_GAMEPAD;
+	if (!SDL_Init(flags))
 		ERROR("SDL_Init failed: %s", SDL_GetError());
 
 #ifdef USE_METAL
@@ -264,21 +264,19 @@ int gfx_init(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
-	sdl.format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32);
+	sdl.format = SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA32);
 	sdl.window =  SDL_CreateWindow("XSystem4",
-				       SDL_WINDOWPOS_UNDEFINED,
-				       SDL_WINDOWPOS_UNDEFINED,
 				       config.view_width,
 				       config.view_height,
 #ifdef XSYS4_IOS
-				       SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN |
+				       SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_FULLSCREEN |
 #endif
 #ifdef USE_METAL
 				       SDL_WINDOW_METAL |
 #else
 				       SDL_WINDOW_OPENGL |
 #endif
-				       SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+				       SDL_WINDOW_RESIZABLE);
 	if (!sdl.window)
 		ERROR("SDL_CreateWindow failed: %s", SDL_GetError());
 
@@ -303,7 +301,8 @@ int gfx_init(void)
 #endif
 
 	SDL_GL_SetSwapInterval(wait_vsync ? 1 : 0);
-	vsync_active = SDL_GL_GetSwapInterval() != 0;
+	int interval = 0;
+	vsync_active = SDL_GL_GetSwapInterval(&interval) && interval != 0;
 	NOTICE("GL: %s | %s", (const char *)glGetString(GL_VERSION),
 		(const char *)glGetString(GL_RENDERER));
 #endif
@@ -325,7 +324,6 @@ void gfx_fini(void)
 	metal_fini();
 #endif
 	SDL_DestroyWindow(sdl.window);
-	SDL_FreeFormat(sdl.format);
 	SDL_Quit();
 }
 
@@ -365,8 +363,8 @@ void gfx_set_window_logical_size(int w, int h)
 
 bool gfx_set_fullscreen(bool enable)
 {
-	uint32_t flags = enable ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
-	if (SDL_SetWindowFullscreen(sdl.window, flags) < 0) {
+	// No fullscreen mode set: the desktop's (SDL2's SDL_WINDOW_FULLSCREEN_DESKTOP).
+	if (!SDL_SetWindowFullscreen(sdl.window, enable)) {
 		WARNING("Failed to set fullscreen mode: %s", SDL_GetError());
 		return false;
 	}
@@ -375,7 +373,7 @@ bool gfx_set_fullscreen(bool enable)
 
 bool gfx_is_fullscreen(void)
 {
-	return SDL_GetWindowFlags(sdl.window) & SDL_WINDOW_FULLSCREEN_DESKTOP;
+	return SDL_GetWindowFlags(sdl.window) & SDL_WINDOW_FULLSCREEN;
 }
 
 void gfx_toggle_fullscreen(void)
@@ -429,7 +427,8 @@ void gfx_set_wait_vsync(bool wait)
 		vsync_active = metal_vsync();
 #else
 		SDL_GL_SetSwapInterval(wait ? 1 : 0);
-		vsync_active = SDL_GL_GetSwapInterval() != 0;
+		int interval = 0;
+		vsync_active = SDL_GL_GetSwapInterval(&interval) && interval != 0;
 #endif
 	}
 }
@@ -493,7 +492,7 @@ static void gfx_update_frame_rate_counter(void)
 	static int frame_count;
 
 	frame_count++;
-	uint64_t current_time = SDL_GetTicks64();
+	uint64_t current_time = SDL_GetTicks();
 	if (current_time > timestamp + 1000) {
 		frame_rate = frame_count * 1000.f / (current_time - timestamp);
 		timestamp = current_time;
@@ -566,13 +565,13 @@ static void gfx_stage2_perf_presented(uint64_t swap_start, uint64_t presented)
 	unsigned p95 = (stage2_perf.samples * 95 + 99) / 100 - 1;
 	double ms_per_tick = 1000.0 / stage2_perf.frequency;
 	NOTICE("STAGE2_PERF t_ms=%llu window_ms=%.3f presents=%llu samples=%u avg_fps=%.3f p95_interval_ms=%.3f max_interval_ms=%.3f avg_swap_ms=%.3f p95_swap_ms=%.3f max_swap_ms=%.3f gt33=%u gt50=%u window_flags=0x%x vsync=%d",
-		(unsigned long long)SDL_GetTicks64(), elapsed * ms_per_tick,
+		(unsigned long long)SDL_GetTicks(), elapsed * ms_per_tick,
 		(unsigned long long)stage2_perf.frames, stage2_perf.samples,
 		stage2_perf.frames * (double)stage2_perf.frequency / elapsed,
 		stage2_perf.intervals[p95] * ms_per_tick, stage2_perf.max_interval * ms_per_tick,
 		stage2_perf.total_swap * ms_per_tick / stage2_perf.frames,
 		stage2_perf.swaps[p95] * ms_per_tick, stage2_perf.max_swap * ms_per_tick,
-		stage2_perf.over33, stage2_perf.over50, SDL_GetWindowFlags(sdl.window), vsync_active);
+		stage2_perf.over33, stage2_perf.over50, (unsigned)SDL_GetWindowFlags(sdl.window), vsync_active);
 	stage2_perf.window_start = presented;
 	stage2_perf.frames = stage2_perf.total_swap = 0;
 	stage2_perf.max_interval = stage2_perf.max_swap = 0;
@@ -617,7 +616,7 @@ void gfx_swap(void)
 			// (a scheduled pointer, a move, or the real mouse).
 			int mx, my;
 			enum mouse_pos_source source = mouse_peek_pos(&mx, &my);
-			NOTICE("S2 shot xsys4_t%02d.png ms=%u cursor=%d,%d (%s%s)", shot_count, SDL_GetTicks(),
+			NOTICE("S2 shot xsys4_t%02d.png ms=%u cursor=%d,%d (%s%s)", shot_count, (uint32_t)SDL_GetTicks(),
 					mx, my, mouse_pos_source_name(source),
 					source == MOUSE_POS_SDL && !mouse_focus ? ", outside the window" : "");
 			shot_count++;
@@ -663,7 +662,7 @@ void gfx_drawable_size(int *w, int *h)
 #ifdef USE_METAL
 	metal_drawable_size(w, h);
 #else
-	SDL_GL_GetDrawableSize(sdl.window, w, h);
+	SDL_GetWindowSizeInPixels(sdl.window, w, h);
 #endif
 }
 
@@ -867,7 +866,7 @@ void gfx_init_texture_amap(struct texture *t, int w, int h, uint8_t *amap, SDL_C
 {
 	uint32_t *pixels = xmalloc(sizeof(uint32_t) * w * h);
 	for (int i = 0; i < w*h; i++) {
-		uint32_t c = SDL_MapRGBA(sdl.format, color.r, color.g, color.b, amap[i]);
+		uint32_t c = SDL_MapRGBA(sdl.format, NULL, color.r, color.g, color.b, amap[i]);
 		pixels[i] = c;
 	}
 
@@ -1011,7 +1010,7 @@ static int pixels_write_main(void *data)
 void gfx_wait_pixels_writes(void)
 {
 	// An error on the writer thread itself must not wait for itself.
-	if (pixels_write_thread && SDL_GetThreadID(pixels_write_thread) != SDL_ThreadID()) {
+	if (pixels_write_thread && SDL_GetThreadID(pixels_write_thread) != SDL_GetCurrentThreadID()) {
 		SDL_WaitThread(pixels_write_thread, NULL);
 		pixels_write_thread = NULL;
 	}

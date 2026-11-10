@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <sndfile.h>
 
 #include "system4.h"
@@ -41,7 +41,7 @@ static Shader movie_shader;
 
 struct movie_context {
 	plm_t *plm;
-	SDL_mutex *decoder_mutex;
+	SDL_Mutex *decoder_mutex;
 
 	plm_frame_t *pending_video_frame;
 	GLuint textures[3];  // Y, Cb, Cr
@@ -55,7 +55,7 @@ struct movie_context {
 	// handler (i.e. we sync the video to the audio).
 	double stream_time;  // in seconds
 	uint32_t wall_time_ms;
-	SDL_mutex *timer_mutex;
+	SDL_Mutex *timer_mutex;
 
 	// APEG (AliceSoft's movie format; plm is NULL): src/apeg.c decodes the
 	// pictures on the drawing thread, libsndfile the Ogg Vorbis track (the

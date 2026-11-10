@@ -14,7 +14,7 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "cJSON.h"
 #include "effect.h"
@@ -75,12 +75,12 @@ static void check_array(struct page *array)
 static void vm_sprite_dirty(struct vm_sprite *sp)
 {
 	scene_sprite_dirty(&sp->sp);
-	SDL_UnionRect(&dirty_rect, &sp->rect, &dirty_rect);
+	SDL_GetRectUnion(&dirty_rect, &sp->rect, &dirty_rect);
 }
 
 static void update_animation(void)
 {
-	uint64_t now = SDL_GetTicks64();
+	uint64_t now = SDL_GetTicks();
 
 	for (int id = id_pool_get_first(&pool); id >= 0; id = id_pool_get_next(&pool, id)) {
 		struct vm_sprite *sp = id_pool_get(&pool, id);
@@ -293,7 +293,7 @@ static int vmSprite_SetCurrent(int sprite, int current)
 	if (sp->current != current) {
 		sp->current = current;
 		if (sp->anime) {
-			sp->anime->time_origin = SDL_GetTicks64();
+			sp->anime->time_origin = SDL_GetTicks();
 		}
 		vm_sprite_dirty(sp);
 	}
@@ -398,7 +398,7 @@ static int vmSprite_SetAnime(int sprite, int frame_s, int frame_e, struct page *
 	a->frame_e = frame_e;
 	a->nr_frames = nr_frames;
 	a->current_frame = 0;
-	a->time_origin = SDL_GetTicks64();
+	a->time_origin = SDL_GetTicks();
 	a->total_frame_time = 0;
 	for (int i = 0; i < a->nr_frames; i++) {
 		a->total_frame_time += a->frame_times[i] = array->values[i].i;
@@ -474,7 +474,7 @@ static void vmSprite_DrawEffect(int effect, int time)
 
 	if (SDL_RectEmpty(&dirty_rect))
 		return;
-	uint64_t start = SDL_GetTicks64();
+	uint64_t start = SDL_GetTicks();
 	Texture *screen = gfx_main_surface();
 	Texture base, src;
 	gfx_init_texture_blank(&src, dirty_rect.w, dirty_rect.h);
@@ -482,7 +482,7 @@ static void vmSprite_DrawEffect(int effect, int time)
 	scene_render();
 	gfx_copy_main_surface(&base);
 
-	uint64_t t = SDL_GetTicks64() - start;
+	uint64_t t = SDL_GetTicks() - start;
 	float cx = dirty_rect.x + dirty_rect.w / 2.0f;
 	float cy = dirty_rect.y + dirty_rect.h / 2.0f;
 	while (t < time) {
@@ -493,7 +493,7 @@ static void vmSprite_DrawEffect(int effect, int time)
 		gfx_copy_rot_zoom2(screen, cx, cy, &src, src.w / 2.0f, src.h / 2.0f, rate * -360, 1.0f - rate);
 		gfx_swap();
 
-		uint64_t t2 = SDL_GetTicks64() - start;
+		uint64_t t2 = SDL_GetTicks() - start;
 		if (t2 < t + 16) {
 			SDL_Delay(t + 16 - t2);
 			t += 16;
@@ -508,7 +508,7 @@ static void vmSprite_DrawEffect(int effect, int time)
 static int vmSprite_AddRect(int x, int y, int width, int height)
 {
 	SDL_Rect r = RECT(x, y, width, height);
-	SDL_UnionRect(&dirty_rect, &r, &dirty_rect);
+	SDL_GetRectUnion(&dirty_rect, &r, &dirty_rect);
 	scene_dirty();
 	return 1;
 }

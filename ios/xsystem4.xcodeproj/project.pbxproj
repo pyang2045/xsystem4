@@ -591,6 +591,10 @@
 			name = dungeon;
 			sourceTree = "<group>";
 		};
+		1AE74E405DEDF450D0C529A6 = {
+			isa = PBXBuildFile;
+			fileRef = 74CBF5F9F2C0987A53F9ABED;
+		};
 		1AEA78A3C5169A153D3B7E32 = {
 			isa = PBXBuildFile;
 			fileRef = 0BCA27E5E08249A019AE9B2D;
@@ -653,6 +657,13 @@
 		1D863066ABE315FE3672DBFB = {
 			isa = PBXBuildFile;
 			fileRef = 9DED032B1BD15DAAC9B29DD0;
+		};
+		1DC74FF64509E244A8CAFCC5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = CoreMedia.framework;
+			path = System/Library/Frameworks/CoreMedia.framework;
+			sourceTree = SDKROOT;
 		};
 		1ED608A31EAA3CB98C206B1F = {
 			isa = PBXFileReference;
@@ -810,6 +821,10 @@
 			name = acx.c;
 			path = ../subprojects/libsys4/src/acx.c;
 			sourceTree = SOURCE_ROOT;
+		};
+		28D03E4FC798C58808DF3EB4 = {
+			isa = PBXBuildFile;
+			fileRef = 1DC74FF64509E244A8CAFCC5;
 		};
 		28DF374738020B1886F38B1D = {
 			isa = PBXFileReference;
@@ -1984,10 +1999,6 @@
 			isa = PBXBuildFile;
 			fileRef = 6E9107FD8F559B7DCBFA75AE;
 		};
-		61AB70C1485A791DA24D7B55 = {
-			isa = PBXBuildFile;
-			fileRef = A923B4564AD05E2555128030;
-		};
 		61EC64148074F64719C09881 = {
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
@@ -2071,8 +2082,7 @@
 		682963F31574CA174937BF1B = {
 			isa = PBXGroup;
 			children = (
-				8193FF3ACE77FAA93878356C,
-				A923B4564AD05E2555128030,
+				74CBF5F9F2C0987A53F9ABED,
 				7184D9780BF736502AD76D69,
 				F90E8445C5843EB863BF46F4,
 				DD66892DFAC4B29C4DEC02F0,
@@ -2091,6 +2101,7 @@
 				6FFB263C680F0F69409C0BDE,
 				91F2B73734509A73E7296CD2,
 				5CC32D0F98BEA4D60DC67666,
+				1DC74FF64509E244A8CAFCC5,
 				0CE50FBE3D390886DC942D13,
 				E89A69E30276F29EAD488777,
 				5848B3F5F530A8A111FB954B,
@@ -2330,6 +2341,13 @@
 		74B7F8E12C304E2D6B00C1BC = {
 			isa = PBXBuildFile;
 			fileRef = 3B9B9F4BCE7C2175F5CA7D9B;
+		};
+		74CBF5F9F2C0987A53F9ABED = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcframework;
+			name = SDL3.xcframework;
+			path = "../ios-deps/xcframeworks/SDL3.xcframework";
+			sourceTree = SOURCE_ROOT;
 		};
 		75027948265EC5F40D97E2CB = {
 			isa = PBXFileReference;
@@ -2604,13 +2622,6 @@
 			lastKnownFileType = sourcecode.c.h;
 			name = pe_v7.h;
 			path = ../src/hll/pe_v7.h;
-			sourceTree = SOURCE_ROOT;
-		};
-		8193FF3ACE77FAA93878356C = {
-			isa = PBXFileReference;
-			lastKnownFileType = wrapper.xcframework;
-			name = SDL2.xcframework;
-			path = "../ios-deps/xcframeworks/SDL2.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		82047D1174ECE6C39CCE3A8C = {
@@ -3247,13 +3258,6 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = debug.c;
 			path = ../src/3d/debug.c;
-			sourceTree = SOURCE_ROOT;
-		};
-		A923B4564AD05E2555128030 = {
-			isa = PBXFileReference;
-			lastKnownFileType = wrapper.xcframework;
-			name = SDL2main.xcframework;
-			path = "../ios-deps/xcframeworks/SDL2main.xcframework";
 			sourceTree = SOURCE_ROOT;
 		};
 		A923EE74EE40992179D4D34E = {
@@ -4422,8 +4426,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AB8768DC6ACDD8E41E9D08D4,
-				FD37F03A6E4E26ED68B21E81,
-				61AB70C1485A791DA24D7B55,
+				1AE74E405DEDF450D0C529A6,
 				3C0E59442E1890E6821EABEA,
 				13A5C0B14F7AA796F8CA7F06,
 				32D29BDD5DB3072E2F661161,
@@ -4442,6 +4445,7 @@
 				7C6FB3C60730C09E3D7B7C75,
 				6D7C190C4643BC14250B5B9D,
 				8768547546DE4059EBA5A492,
+				28D03E4FC798C58808DF3EB4,
 				5E3C3C5645A43D9BB9D70AC9,
 				5888F7905384D01BB643E885,
 				17A93BDF5AE4F88F700C5C86,
@@ -5169,10 +5173,6 @@
 		FD223B5E3C0EBC24210E9A33 = {
 			isa = PBXBuildFile;
 			fileRef = E929A34BC36CEA20DDE17E4F;
-		};
-		FD37F03A6E4E26ED68B21E81 = {
-			isa = PBXBuildFile;
-			fileRef = 8193FF3ACE77FAA93878356C;
 		};
 		FD4AE2F82DE7615001C25D82 = {
 			isa = PBXFileReference;

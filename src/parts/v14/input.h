@@ -115,7 +115,7 @@ static void v14_trace_hover(const char *what, struct parts *parts, Point pos)
 	static unsigned traced;
 	if (input_stage2_trace() && traced < 5000) {
 		traced++;
-		NOTICE("S2 %s ms=%u pos=%d,%d parts=%d", what, SDL_GetTicks(), pos.x, pos.y, parts->no);
+		NOTICE("S2 %s ms=%u pos=%d,%d parts=%d", what, (uint32_t)SDL_GetTicks(), pos.x, pos.y, parts->no);
 	}
 }
 
@@ -267,7 +267,7 @@ static void v14_press(Point cur_pos, struct parts *target)
 	if (dev_getenv("XSYS4_STAGE2_TRACE")) {
 		unsigned candidates = 0;
 		struct parts *parts;
-		NOTICE("S2 parts press ms=%u key=%d pos=%d,%d target=%d", SDL_GetTicks(),
+		NOTICE("S2 parts press ms=%u key=%d pos=%d,%d target=%d", (uint32_t)SDL_GetTicks(),
 				VK_LBUTTON, cur_pos.x, cur_pos.y, v14_press_parts);
 		PARTS_LIST_FOREACH_REVERSE(parts) {
 			if (!parts->clickable || !parts->global.show || !parts->global.alpha || candidates++ >= 32)
@@ -290,7 +290,7 @@ static void v14_release(int pressed_no, Point cur_pos, bool have_pos)
 	struct parts *target = pressed_no ? parts_try_get(pressed_no) : NULL;
 	bool on_target = target && target->is_hovered && target->clickable && have_pos;
 	if (dev_getenv("XSYS4_STAGE2_TRACE"))
-		NOTICE("S2 click ms=%u key=%d pos=%d,%d target=%d%s%s", SDL_GetTicks(), VK_LBUTTON,
+		NOTICE("S2 click ms=%u key=%d pos=%d,%d target=%d%s%s", (uint32_t)SDL_GetTicks(), VK_LBUTTON,
 				cur_pos.x, cur_pos.y, target ? target->no : 0,
 				target && !on_target ? " (left)" : "",
 				on_target && target->button_disabled ? " (disabled)" : "");
@@ -370,7 +370,7 @@ static void v14_dispatch_wheel(Point pos, const int *counts)
 	static unsigned traced;
 	if (input_stage2_trace() && traced++ < 2000)
 		NOTICE("S2 wheel-dispatch ms=%u pos=%d,%d forward=%d back=%d target=%d fallback=%d",
-				SDL_GetTicks(), pos.x, pos.y, counts[0], counts[1],
+				(uint32_t)SDL_GetTicks(), pos.x, pos.y, counts[0], counts[1],
 				target ? target->no : 0, fallback);
 }
 
@@ -410,7 +410,7 @@ static void v14_update_input(int passed_time)
 			&& traced_scopes < 2000) {
 		traced_scopes++;
 		traced_scope = v14_scope;
-		NOTICE("S2 input-scope ms=%u controller=%d began=%d", SDL_GetTicks(), v14_scope,
+		NOTICE("S2 input-scope ms=%u controller=%d began=%d", (uint32_t)SDL_GetTicks(), v14_scope,
 				parts_began_click);
 	}
 	struct parts *target = have_pos ? v14_input_target(cur_pos) : NULL;
@@ -424,7 +424,7 @@ static void v14_update_input(int passed_time)
 	if (have_pos && input_stage2_trace() && traced_now != traced_no && traced < 5000) {
 		traced++;
 		traced_no = traced_now;
-		NOTICE("S2 hover ms=%u pos=%d,%d target=%d", SDL_GetTicks(), cur_pos.x, cur_pos.y, traced_now);
+		NOTICE("S2 hover ms=%u pos=%d,%d target=%d", (uint32_t)SDL_GetTicks(), cur_pos.x, cur_pos.y, traced_now);
 	}
 	if (!parts_began_click)
 		return;

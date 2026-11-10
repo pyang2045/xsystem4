@@ -15,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <math.h>
 
 #include "system4/cg.h"
 #include "system4/string.h"

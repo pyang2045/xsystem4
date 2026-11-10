@@ -32,8 +32,8 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
-#include <SDL.h>
-#include <SDL_metal.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_metal.h>
 #include <string.h>
 
 #include "system4.h"
@@ -228,7 +228,7 @@ static id<MTLTexture> fb_texture(GLuint fb, XTex **tex_out)
 	if (!fb) {
 		if (!drawable) {
 			int w, h;
-			SDL_Metal_GetDrawableSize(window, &w, &h);
+			SDL_GetWindowSizeInPixels(window, &w, &h);
 			if (w <= 0 || h <= 0)
 				return nil;
 			if (layer.drawableSize.width != w || layer.drawableSize.height != h)
@@ -304,7 +304,7 @@ void metal_fini(void)
 
 void metal_drawable_size(int *w, int *h)
 {
-	SDL_Metal_GetDrawableSize(window, w, h);
+	SDL_GetWindowSizeInPixels(window, w, h);
 }
 
 void metal_set_vsync(bool enable)

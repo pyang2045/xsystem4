@@ -19,7 +19,7 @@ set_target_properties(ffi PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_STAGING_PREFIX}/include)
 
 find_package(Freetype REQUIRED)
-find_package(SDL2 REQUIRED)
+find_package(SDL3 REQUIRED)
 find_package(SndFile REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -227,7 +227,7 @@ target_sources(xsystem4 PRIVATE
   )
 
 target_link_libraries(xsystem4 PRIVATE
-  m ZLIB::ZLIB SDL2::SDL2 Freetype::Freetype ffi GLESv3 cglm SndFile::sndfile sys4)
+  m ZLIB::ZLIB SDL3::SDL3 Freetype::Freetype ffi GLESv3 cglm SndFile::sndfile sys4)
 
 target_compile_options(xsystem4 PRIVATE -Wno-unused-parameter)
 

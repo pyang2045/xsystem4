@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <zlib.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "system4/ain.h"
 #include "system4/file.h"
@@ -716,7 +716,7 @@ static void system_OpenWeb(struct string *url)
 	// quoting of the old `open '%s'` and the rest ran as shell. The URL is
 	// in the game's encoding.
 	char *u = game_to_utf8(url->text, url->size);
-	if (SDL_OpenURL(u))
+	if (!SDL_OpenURL(u))
 		WARNING("OpenWeb: %s", SDL_GetError());
 	free(u);
 }

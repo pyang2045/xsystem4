@@ -619,7 +619,7 @@ static void SystemService_OpenPlayingManual(void) {
 	}
 #ifdef __ANDROID__
 	const int COMMAND_OPEN_PLAYING_MANUAL = 0x8000;
-	SDL_AndroidSendMessage(COMMAND_OPEN_PLAYING_MANUAL, 0);
+	SDL_SendAndroidMessage(COMMAND_OPEN_PLAYING_MANUAL, 0);
 #else
 	char *filename = get_manual_filename();
 
@@ -641,7 +641,7 @@ static void SystemService_OpenPlayingManual(void) {
 	strcpy(url, prefix);
 	strcat(url, path_component);
 
-	if (SDL_OpenURL(url) < 0) {
+	if (!SDL_OpenURL(url)) {
 		WARNING("Failed to open manual at '%s': %s", url, SDL_GetError());
 	}
 

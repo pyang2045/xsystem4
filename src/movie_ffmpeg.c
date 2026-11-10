@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/fifo.h>
@@ -52,7 +52,7 @@ struct decoder {
 struct movie_context {
 	AVFormatContext *format_ctx;
 	bool format_eof;
-	SDL_mutex *format_mutex;  // also protects video.queue and audio.queue
+	SDL_Mutex *format_mutex;  // also protects video.queue and audio.queue
 
 	struct decoder video;
 	struct decoder audio;
@@ -91,7 +91,7 @@ struct movie_context {
 	// handler (i.e. we sync the video to the audio).
 	double stream_time;  // in seconds
 	uint32_t wall_time_ms;
-	SDL_mutex *timer_mutex;
+	SDL_Mutex *timer_mutex;
 };
 
 static void free_decoder(struct decoder *dec)

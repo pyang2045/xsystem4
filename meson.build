@@ -28,7 +28,7 @@ endif
 
 zlib = dependency('zlib', static : static_libs)
 libm = meson.get_compiler('c').find_library('m', required: false)
-sdl2 = dependency('sdl2', static : static_libs)
+sdl3 = dependency('sdl3', static : static_libs)
 ft2 = dependency('freetype2', static : static_libs)
 ffi = dependency('libffi', static : static_libs)
 tj = dependency('libturbojpeg', static : static_libs)

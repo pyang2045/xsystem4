@@ -14,7 +14,7 @@
  * along with this program; if not, see <http://gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "system4.h"
 #include "system4/ain.h"
@@ -24,6 +24,7 @@
 #include "vm.h"
 #include "gfx/types.h"
 #include "gfx/gfx.h"
+#include "gfx/private.h"
 #include "hll.h"
 #include "input.h"
 #include "xsystem4.h"
@@ -110,12 +111,12 @@ static void InputString_OpenIME(void)
 	register_key_handler(handle_key);
 	has_editing_text = false;
 	input_set_click_returns(true);
-	SDL_StartTextInput();
+	SDL_StartTextInput(sdl.window);
 }
 
 static void InputString_CloseIME(void)
 {
-	SDL_StopTextInput();
+	SDL_StopTextInput(sdl.window);
 	input_set_click_returns(false);
 	has_editing_text = false;
 	clear_input_handler();

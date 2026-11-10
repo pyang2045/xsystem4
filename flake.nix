@@ -25,7 +25,7 @@
           nativeBuildInputs = [ meson ninja pkg-config ];
           buildInputs = [
             cglm
-            SDL2
+            sdl3
             freetype
             libffi
             libjpeg
@@ -55,7 +55,7 @@
             nativeBuildInputs = [ meson ninja pkg-config ];
             buildInputs = [
               cglm
-              SDL2
+              sdl3
               freetype
               libffi
               libjpeg

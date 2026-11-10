@@ -17,7 +17,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <cglm/cglm.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "cJSON.h"
 #include "gfx/gfx.h"

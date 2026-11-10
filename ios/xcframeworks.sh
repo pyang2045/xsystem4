@@ -25,7 +25,7 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 headers() {  # name platform-dir dest: the headers xsystem4 includes from library NAME
 	i="$2/include"; mkdir -p "$3"
 	case $1 in
-	SDL2) cp -R "$i/SDL2/." "$3" ;;                     # <SDL.h>
+	SDL3) cp -R "$i/SDL3" "$3" ;;                       # <SDL3/SDL.h>
 	freetype) cp -R "$i/freetype2/." "$3" ;;            # <ft2build.h>
 	ffi) cp "$i/ffi.h" "$i/ffitarget.h" "$3" ;;
 	cglm) cp -R "$i/cglm" "$3" ;;                        # <cglm/cglm.h>
@@ -50,7 +50,7 @@ merge_sim_headers() {  # x86_64-dir arm64-dir dest
 
 rm -rf "$out"; mkdir -p "$out"
 # name: library file in lib/
-for spec in SDL2:libSDL2.a SDL2main:libSDL2main.a freetype:libfreetype.a ffi:libffi.a cglm:libcglm.a \
+for spec in SDL3:libSDL3.a freetype:libfreetype.a ffi:libffi.a cglm:libcglm.a \
 	sndfile:libsndfile.a FLAC:libFLAC.a vorbis:libvorbis.a vorbisenc:libvorbisenc.a ogg:libogg.a \
 	opus:libopus.a turbojpeg:libturbojpeg.a webp:libwebp.a sharpyuv:libsharpyuv.a png16:libpng16.a; do
 	name="${spec%%:*}"; lib="${spec#*:}"

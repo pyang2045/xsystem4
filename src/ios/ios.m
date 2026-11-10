@@ -25,7 +25,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -101,7 +101,7 @@ static IOSEntry *choose_entry(NSArray<IOSEntry *> *entries)
 		return entries[atoi(pick)];
 	SDL_MessageBoxButtonData *buttons = xcalloc(entries.count, sizeof(SDL_MessageBoxButtonData));
 	for (NSUInteger i = 0; i < entries.count; i++) {
-		buttons[i].buttonid = (int)i;
+		buttons[i].buttonID = (int)i;
 		buttons[i].text = entries[i].title.UTF8String;
 	}
 	SDL_MessageBoxData box = {
@@ -112,7 +112,7 @@ static IOSEntry *choose_entry(NSArray<IOSEntry *> *entries)
 		.buttons = buttons,
 	};
 	int chosen = -1;
-	if (SDL_ShowMessageBox(&box, &chosen) < 0 || chosen < 0)
+	if (!SDL_ShowMessageBox(&box, &chosen) || chosen < 0)
 		chosen = 0;
 	free(buttons);
 	return entries[chosen];

@@ -511,14 +511,16 @@ static void parts_common_recalculate_hitbox(struct parts *parts, struct parts_co
 	if (common->surface_area.w || common->surface_area.h) {
 		common->origin_offset = calculate_offset(parts->origin_mode,
 				common->surface_area.w, common->surface_area.h);
-		// SDL_IntersectRect leaves x and y alone when either rectangle is
-		// empty (e.g. an emptied v14 text, 0x0). They are then the surface
+		// SDL2's SDL_IntersectRect left x and y alone when either rectangle was
+		// empty (e.g. an emptied v14 text, 0x0); SDL3's does not, so the
+		// empty case is skipped here. They are then the surface
 		// area's, as they are when neither is, and as 0x59b760 writes them
 		// whatever the content's size: the corner does not move when the
 		// content is emptied, nor add up from one call to the next.
 		Rectangle r = { 0, 0, common->w, common->h };
 		Rectangle hit = { max(0, common->surface_area.x), max(0, common->surface_area.y), 0, 0 };
-		SDL_IntersectRect(&r, &common->surface_area, &hit);
+		if (!SDL_RectEmpty(&r) && !SDL_RectEmpty(&common->surface_area))
+			SDL_GetRectIntersection(&r, &common->surface_area, &hit);
 		common->origin_offset.x -= common->surface_area.x;
 		common->origin_offset.y -= common->surface_area.y;
 		hit.x += parts->local.pos.x + common->origin_offset.x;

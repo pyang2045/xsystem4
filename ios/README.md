@@ -43,7 +43,7 @@ Needs Xcode (with the iOS platform installed: Xcode > Settings > Components) and
 `bison`, `flex` and `cmake` (libsys4's parser uses bison 3).
 
 The libraries come from `ios/build_deps.sh PLATFORM...` (`device`, `sim-x86_64`, `sim-arm64`):
-it downloads pinned, sha256-checked releases of SDL2, freetype, libffi, libjpeg-turbo, libpng,
+it downloads pinned, sha256-checked releases of SDL3, freetype, libffi, libjpeg-turbo, libpng,
 libwebp, ogg, vorbis, FLAC, opus, libsndfile and cglm and builds them as static libraries into
 `ios-deps/PLATFORM` (about 2½ minutes per platform; `XSYS4_IOS_DEPS` puts `ios-deps`
 elsewhere). A library is rebuilt when the script changes; when nothing changed it returns at once.
